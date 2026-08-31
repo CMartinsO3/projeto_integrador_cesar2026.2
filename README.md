@@ -77,7 +77,7 @@ Para garantir um escopo controlado e seguro, o projeto adota os seguintes limite
 * **Histórias de Usuário**:
   📄 [Histórias de Usuário](./docs/historia-usuarios.md)
 * **Protótipo Lo-Fi (Figma)**:
-  🎨 [Protótipo Lo-Fi no Figma](https://brand-chisel-23480165.figma.site/))
+  🎨 [Protótipo Lo-Fi no Figma](https://brand-chisel-23480165.figma.site/)
 * **Screencast de apresentação do protótipo**:
   🎥 [Vídeo no YouTube](https://youtube.com/link-do-video-aqui)
 
