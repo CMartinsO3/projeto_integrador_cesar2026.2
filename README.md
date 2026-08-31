@@ -79,7 +79,7 @@ Para garantir um escopo controlado e seguro, o projeto adota os seguintes limite
 * **Protótipo Lo-Fi (Figma)**:
   🎨 [Protótipo Lo-Fi no Figma](https://brand-chisel-23480165.figma.site/)
 * **Screencast de apresentação do protótipo**:
-  🎥 [Vídeo no YouTube](https://youtube.com/link-do-video-aqui)
+  🎥 [Vídeo no YouTube](https://youtu.be/CSTc0O8W5v8)
 
 <!--
 ### 🚀 Entrega 02
