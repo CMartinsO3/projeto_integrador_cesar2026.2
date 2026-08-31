@@ -71,7 +71,7 @@ Para garantir um escopo controlado e seguro, o projeto adota os seguintes limite
 ### 🚀 Entrega 01
  
 * **Histórias de Usuário** (mínimo 7, formato Cartão/Conversa/Confirmação com cenários BDD):
-  📄 [Histórias de Usuário — `docs/historias-usuario.md`](./docs/historias-usuario.md)
+  📄 [Histórias de Usuário](./docs/historia-usuarios.md)
 * **Protótipo Lo-Fi (Figma)** (mínimo 5 histórias representadas):
   🎨 [Protótipo Lo-Fi no Figma](https://figma.com/link-do-prototipo-aqui)
 * **Screencast de apresentação do protótipo** (com áudio ou legenda, explicando cada história implementada):
