@@ -102,7 +102,7 @@ Para garantir um escopo controlado e seguro, o projeto adota os seguintes limite
 
 ```bash
 # 1. Clonar o repositório
-$ git clone https://github.com/seu-usuario/hemoflow.git
+$ git clone https://github.com/CMartinsO3/projeto_integrador_cesar2026.2
 
 # 2. Entrar na pasta do projeto
 $ cd hemoflow
