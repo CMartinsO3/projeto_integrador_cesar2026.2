@@ -75,7 +75,7 @@ Para garantir um escopo controlado e seguro, o projeto adota os seguintes limite
 ### 🚀 Entrega 01
 
 * **Histórias de Usuário**:
-  📄 [Histórias de Usuário](./docs/historias-usuario.md)
+  📄 [Histórias de Usuário](./docs/historia-usuarios.md)
 * **Protótipo Lo-Fi (Figma)**:
   🎨 [Protótipo Lo-Fi no Figma](https://figma.com/link-do-prototipo-aqui)
 * **Screencast de apresentação do protótipo**:
