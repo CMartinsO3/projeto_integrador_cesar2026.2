@@ -196,7 +196,7 @@ Todo erro segue o mesmo formato, independentemente do endpoint:
 
 ---
 
-## 6. Estrutura de Dados Sugerida (implementação em Java)
+## 6. Estrutura de Dados
 
 Representação dos contratos como **DTOs (records)**, separando o que entra (`Requisicao`) do que sai (`Resposta`) e mantendo a camada de API independente das entidades JPA:
 
@@ -234,11 +234,3 @@ public class BolsaComponenteDTO {
 O tratamento de erro é centralizado num único `@RestControllerAdvice`, garantindo que todo endpoint devolva o mesmo formato de erro descrito na seção 5, sem repetir tratamento em cada controller.
 
 ---
-
-## 7. Limites e Cuidados de Escopo
-
-- Nenhum endpoint expõe lógica de FEFO, hash ou compatibilidade ABO/Rh nesta unidade — essas regras ficam reservadas para a Unidade 2.
-- `DELETE` em `Hospital` e `Requisicao` é sempre lógico (inativação/cancelamento), nunca exclusão física — preserva o histórico.
-- `Doacao` não tem `PUT`: é registro de um fato, não dado editável.
-- O contrato de rota (`/rotas/caminho-minimo`) apenas consulta; não persiste nem altera estoque.
-- Autenticação e autorização não fazem parte deste contrato — adicionar apenas mediante decisão explícita da equipe, para não expandir o escopo da unidade.
