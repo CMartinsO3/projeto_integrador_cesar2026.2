@@ -25,7 +25,7 @@ Cada aresta representa uma via/rota entre duas unidades, com peso associado:
 
 ---
 
-## 3. Tamanho do Grafo e Justificativa
+## 3. Tamanho do Grafo
 
 | Item | Quantidade | Justificativa |
 |---|---|---|
@@ -76,7 +76,7 @@ graph TD
 
 ---
 
-## 7. Estrutura de Dados Sugerida (implementação em Java)
+## 7. Estrutura de Dados
 
 Representação como **lista de adjacência**, adequada para grafos pequenos e esparsos como este:
 
