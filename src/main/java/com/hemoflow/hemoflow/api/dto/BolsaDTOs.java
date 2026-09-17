@@ -24,6 +24,11 @@ public final class BolsaDTOs {
     ) {
     }
 
+    public record AtualizacaoStatus(
+            @NotNull StatusBolsa status
+    ) {
+    }
+
     public record Resposta(
             Long id,
             TipoSanguineo tipoSanguineo,

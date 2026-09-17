@@ -4,8 +4,25 @@ import java.util.List;
 
 import com.hemoflow.hemoflow.dominio.Hospital;
 
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+
 public final class HospitalDTOs {
     private HospitalDTOs() {
+    }
+
+    /** Body de criação: associa o hospital a um nó de rede existente. */
+    public record Cadastro(
+            @NotBlank String nome,
+            @NotNull Long noRedeId
+    ) {
+    }
+
+    /** Body de atualização: permite alterar nome e estado ativo/inativo. */
+    public record Atualizacao(
+            @NotBlank String nome,
+            boolean ativo
+    ) {
     }
 
     public record Resposta(Long id, String nome, Long noRedeId, String codigoNo, boolean ativo) {

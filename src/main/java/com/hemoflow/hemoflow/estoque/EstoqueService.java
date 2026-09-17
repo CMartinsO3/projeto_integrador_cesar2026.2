@@ -40,6 +40,10 @@ public class EstoqueService {
         this.requisicaoRepository = requisicaoRepository;
     }
 
+    // -------------------------------------------------------------------------
+    // Bolsas
+    // -------------------------------------------------------------------------
+
     @Transactional
     public Bolsa criarBolsa(com.hemoflow.hemoflow.api.dto.BolsaDTOs.RequisicaoCadastro dto) {
         validarDatas(dto.dataColeta(), dto.dataValidade());
@@ -70,18 +74,17 @@ public class EstoqueService {
                 .orElseThrow(() -> new RecursoNaoEncontradoException("Bolsa não encontrada: " + id));
     }
 
-    @Transactional(readOnly = true)
-    public Bolsa proximaFefo() {
-        List<Bolsa> disponiveis = bolsaRepository.findByStatus(StatusBolsa.DISPONIVEL).stream()
-                .filter(b -> !b.isVencida())
-                .toList();
-        FilaFEFO fila = new FilaFEFO(disponiveis);
-        Bolsa proxima = fila.proxima();
-        if (proxima == null) {
-            throw new RecursoNaoEncontradoException("Não há bolsas disponíveis para FEFO");
-        }
-        return proxima;
+    @Transactional
+    public Bolsa transicionarStatusBolsa(Long id, StatusBolsa novoStatus) {
+        Bolsa bolsa = buscar(id);
+        validarTransicaoBolsa(bolsa.getStatus(), novoStatus);
+        bolsa.setStatus(novoStatus);
+        return bolsaRepository.save(bolsa);
     }
+
+    // -------------------------------------------------------------------------
+    // Requisições
+    // -------------------------------------------------------------------------
 
     @Transactional
     public Requisicao criarRequisicao(com.hemoflow.hemoflow.api.dto.RequisicaoDTOs.Cadastro dto) {
@@ -103,6 +106,12 @@ public class EstoqueService {
         return requisicaoRepository.save(requisicao);
     }
 
+    /**
+     * Aloca bolsas disponíveis para uma requisição pendente.
+     *
+     * <p>U1: seleção por ordem de cadastro (sem FEFO nem compatibilidade ABO/Rh).
+     * Essas regras serão incorporadas na Unidade 2.</p>
+     */
     @Transactional(noRollbackFor = RegraNegocioException.class)
     public List<Bolsa> alocar(Long requisicaoId) {
         Requisicao requisicao = requisicaoRepository.findById(requisicaoId)
@@ -112,12 +121,13 @@ public class EstoqueService {
             throw new RegraNegocioException("Requisição em status " + requisicao.getStatus() + " não pode ser alocada");
         }
 
+        // U1: filtra apenas por hemocomponente e status DISPONIVEL
+        // Compatibilidade ABO/Rh será aplicada na Unidade 2 (CompatibilidadeAboRh)
         List<Bolsa> candidatas = bolsaRepository.findByStatusAndHemocomponente(
                         StatusBolsa.DISPONIVEL,
                         requisicao.getHemocomponente()
                 ).stream()
                 .filter(b -> !b.isVencida())
-                .filter(b -> CompatibilidadeAboRh.compativel(b.getTipoSanguineo(), requisicao.getTipoSanguineo()))
                 .toList();
 
         if (candidatas.size() < requisicao.getQuantidade()) {
@@ -125,14 +135,14 @@ public class EstoqueService {
             requisicaoRepository.save(requisicao);
             throw new RegraNegocioException(
                     "Estoque insuficiente: necessários " + requisicao.getQuantidade()
-                            + ", compatíveis disponíveis " + candidatas.size()
+                            + ", disponíveis " + candidatas.size()
             );
         }
 
-        FilaFEFO fila = new FilaFEFO(candidatas);
+        // U1: seleção simples (as primeiras N bolsas da lista)
         List<Bolsa> alocadas = new ArrayList<>();
-        while (alocadas.size() < requisicao.getQuantidade()) {
-            Bolsa bolsa = fila.proxima();
+        for (int i = 0; i < requisicao.getQuantidade(); i++) {
+            Bolsa bolsa = candidatas.get(i);
             bolsa.setStatus(StatusBolsa.ALOCADA);
             alocadas.add(bolsa);
         }
@@ -142,6 +152,77 @@ public class EstoqueService {
         requisicaoRepository.save(requisicao);
         return alocadas;
     }
+
+    @Transactional
+    public Requisicao transicionarStatusRequisicao(Long id, StatusRequisicao novoStatus) {
+        Requisicao requisicao = requisicaoRepository.findById(id)
+                .orElseThrow(() -> new RecursoNaoEncontradoException("Requisição não encontrada: " + id));
+        validarTransicaoRequisicao(requisicao.getStatus(), novoStatus);
+        requisicao.setStatus(novoStatus);
+        return requisicaoRepository.save(requisicao);
+    }
+
+    // -------------------------------------------------------------------------
+    // Máquinas de estado
+    // -------------------------------------------------------------------------
+
+    private void validarTransicaoBolsa(StatusBolsa atual, StatusBolsa novo) {
+        boolean valida = switch (atual) {
+            case DISPONIVEL  -> novo == StatusBolsa.ALOCADA    || novo == StatusBolsa.DESCARTADA;
+            case ALOCADA     -> novo == StatusBolsa.EM_TRANSITO || novo == StatusBolsa.DESCARTADA;
+            case EM_TRANSITO -> novo == StatusBolsa.ENTREGUE   || novo == StatusBolsa.DESCARTADA;
+            case ENTREGUE, DESCARTADA -> false;
+        };
+        if (!valida) {
+            throw new RegraNegocioException(
+                    "Transição inválida para bolsa: " + atual + " → " + novo
+                            + ". Permitidas a partir de " + atual + ": "
+                            + transicoesPossiveisBolsa(atual)
+            );
+        }
+    }
+
+    private void validarTransicaoRequisicao(StatusRequisicao atual, StatusRequisicao novo) {
+        boolean valida = switch (atual) {
+            case PENDENTE           -> novo == StatusRequisicao.AGUARDANDO_ESTOQUE
+                                       || novo == StatusRequisicao.CANCELADA;
+            case AGUARDANDO_ESTOQUE -> novo == StatusRequisicao.CANCELADA;
+            case ALOCADA            -> novo == StatusRequisicao.EM_TRANSITO
+                                       || novo == StatusRequisicao.CANCELADA;
+            case EM_TRANSITO        -> novo == StatusRequisicao.ENTREGUE;
+            case ENTREGUE, CANCELADA -> false;
+        };
+        if (!valida) {
+            throw new RegraNegocioException(
+                    "Transição inválida para requisição: " + atual + " → " + novo
+                            + ". Permitidas a partir de " + atual + ": "
+                            + transicoesPossiveisRequisicao(atual)
+            );
+        }
+    }
+
+    private String transicoesPossiveisBolsa(StatusBolsa atual) {
+        return switch (atual) {
+            case DISPONIVEL  -> "[ALOCADA, DESCARTADA]";
+            case ALOCADA     -> "[EM_TRANSITO, DESCARTADA]";
+            case EM_TRANSITO -> "[ENTREGUE, DESCARTADA]";
+            case ENTREGUE, DESCARTADA -> "nenhuma (status terminal)";
+        };
+    }
+
+    private String transicoesPossiveisRequisicao(StatusRequisicao atual) {
+        return switch (atual) {
+            case PENDENTE           -> "[AGUARDANDO_ESTOQUE, CANCELADA]";
+            case AGUARDANDO_ESTOQUE -> "[CANCELADA]";
+            case ALOCADA            -> "[EM_TRANSITO, CANCELADA]";
+            case EM_TRANSITO        -> "[ENTREGUE]";
+            case ENTREGUE, CANCELADA -> "nenhuma (status terminal)";
+        };
+    }
+
+    // -------------------------------------------------------------------------
+    // Validações
+    // -------------------------------------------------------------------------
 
     private void validarDatas(LocalDate coleta, LocalDate validade) {
         if (validade.isBefore(coleta)) {

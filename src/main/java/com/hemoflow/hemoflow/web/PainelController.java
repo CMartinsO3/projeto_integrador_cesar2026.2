@@ -4,26 +4,26 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 
-import com.hemoflow.hemoflow.dominio.StatusBolsa;
-import com.hemoflow.hemoflow.estoque.EstoqueService;
-import com.hemoflow.hemoflow.rede.RedeService;
+import com.hemoflow.hemoflow.estatistica.EstatisticaService;
 
+/**
+ * Controller MVC que serve o painel HTML da aplicação.
+ * Agrega indicadores de estoque e requisições via EstatisticaService
+ * e os repassa ao template Thymeleaf.
+ */
 @Controller
 public class PainelController {
 
-    private final RedeService redeService;
-    private final EstoqueService estoqueService;
+    private final EstatisticaService estatisticaService;
 
-    public PainelController(RedeService redeService, EstoqueService estoqueService) {
-        this.redeService = redeService;
-        this.estoqueService = estoqueService;
+    public PainelController(EstatisticaService estatisticaService) {
+        this.estatisticaService = estatisticaService;
     }
 
     @GetMapping("/")
     public String index(Model model) {
-        model.addAttribute("nos", redeService.listarNos());
-        model.addAttribute("ligacoes", redeService.listarLigacoes());
-        model.addAttribute("bolsas", estoqueService.listar(StatusBolsa.DISPONIVEL));
+        model.addAttribute("estoque", estatisticaService.resumoEstoque());
+        model.addAttribute("requisicoes", estatisticaService.resumoRequisicoes());
         return "index";
     }
 }

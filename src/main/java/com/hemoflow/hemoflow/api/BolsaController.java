@@ -4,6 +4,7 @@ import java.util.List;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -44,8 +45,10 @@ public class BolsaController {
         return BolsaDTOs.Resposta.de(estoqueService.buscar(id));
     }
 
-    @GetMapping("/estoque/proxima-bolsa")
-    public BolsaDTOs.Resposta proximaFefo() {
-        return BolsaDTOs.Resposta.de(estoqueService.proximaFefo());
+    @PatchMapping("/{id}/status")
+    public BolsaDTOs.Resposta atualizarStatus(
+            @PathVariable Long id,
+            @Valid @RequestBody BolsaDTOs.AtualizacaoStatus dto) {
+        return BolsaDTOs.Resposta.de(estoqueService.transicionarStatusBolsa(id, dto.status()));
     }
 }

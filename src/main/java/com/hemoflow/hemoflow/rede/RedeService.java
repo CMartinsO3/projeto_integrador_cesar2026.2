@@ -102,4 +102,28 @@ public class RedeService {
         return hospitalRepository.findById(id)
                 .orElseThrow(() -> new RecursoNaoEncontradoException("Hospital não encontrado: " + id));
     }
+
+    @Transactional
+    public Hospital criarHospital(NoRedeDTOs.Cadastro dto) {
+        // Delega a criação do nó de rede + hospital à lógica existente
+        NoRede no = criarNo(dto);
+        return hospitalRepository.findByLocalizacao(no)
+                .orElseThrow(() -> new RecursoNaoEncontradoException("Hospital não criado para o nó: " + no.getCodigo()));
+    }
+
+    @Transactional
+    public Hospital atualizarHospital(Long id, com.hemoflow.hemoflow.api.dto.HospitalDTOs.Atualizacao dto) {
+        Hospital hospital = buscarHospital(id);
+        hospital.setNome(dto.nome());
+        hospital.setAtivo(dto.ativo());
+        return hospitalRepository.save(hospital);
+    }
+
+    @Transactional
+    public void inativarHospital(Long id) {
+        Hospital hospital = buscarHospital(id);
+        hospital.setAtivo(false);
+        hospitalRepository.save(hospital);
+    }
 }
+

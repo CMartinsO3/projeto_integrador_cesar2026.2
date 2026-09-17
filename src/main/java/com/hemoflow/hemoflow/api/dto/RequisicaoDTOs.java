@@ -23,6 +23,11 @@ public final class RequisicaoDTOs {
     ) {
     }
 
+    public record AtualizacaoStatus(
+            @NotNull StatusRequisicao status
+    ) {
+    }
+
     public record Resposta(
             Long id,
             Long hospitalId,
