@@ -105,8 +105,128 @@ Para garantir um escopo controlado e seguro, o projeto adota os seguintes limite
 $ git clone https://github.com/CMartinsO3/projeto_integrador_cesar2026.2
 
 # 2. Entrar na pasta do projeto
-$ cd hemoflow
+$ cd projeto_integrador_cesar2026.2
 
 # 3. Compilar e executar com Maven
 $ ./mvnw spring-boot:run
 ```
+
+A aplicação estará disponível em:
+- **API REST:** http://localhost:8080/api/v1
+- **Documentação Swagger:** http://localhost:8080/docs
+- **H2 Console:** http://localhost:8080/h2-console
+
+---
+
+## 📡 Documentação da API
+
+### Base Path
+Todos os endpoints da API seguem o padrão: `/api/v1`
+
+### Recursos Disponíveis
+
+#### 🏥 Hospitais (`/api/v1/hospitais`)
+| Método | Endpoint | Descrição |
+|--------|----------|-----------|
+| `POST` | `/hospitais` | Cadastrar novo hospital |
+| `GET` | `/hospitais` | Listar todos os hospitais |
+| `GET` | `/hospitais/{id}` | Buscar hospital por ID |
+| `PUT` | `/hospitais/{id}` | Atualizar hospital |
+| `DELETE` | `/hospitais/{id}` | Inativar hospital (soft delete) |
+
+#### 🩸 Doações (`/api/v1/doacoes`)
+| Método | Endpoint | Descrição |
+|--------|----------|-----------|
+| `POST` | `/doacoes` | Registrar nova doação |
+| `GET` | `/doacoes` | Listar todas as doações |
+| `GET` | `/doacoes/{id}` | Buscar doação por ID |
+
+#### 💉 Bolsas/Componentes (`/api/v1/bolsas`)
+| Método | Endpoint | Descrição |
+|--------|----------|-----------|
+| `POST` | `/bolsas` | Criar nova bolsa/componente |
+| `GET` | `/bolsas?status=` | Listar bolsas (filtro opcional por status) |
+| `GET` | `/bolsas/{id}` | Buscar bolsa por ID |
+| `PATCH` | `/bolsas/{id}/status` | Atualizar status da bolsa |
+| `DELETE` | `/bolsas/{id}` | Remover bolsa |
+
+#### 📋 Requisições (`/api/v1/requisicoes`)
+| Método | Endpoint | Descrição |
+|--------|----------|-----------|
+| `POST` | `/requisicoes` | Criar requisição hospitalar |
+| `GET` | `/requisicoes?status=` | Listar requisições (filtro opcional por status) |
+| `GET` | `/requisicoes/{id}` | Buscar requisição por ID |
+| `PATCH` | `/requisicoes/{id}/status` | Atualizar status da requisição |
+| `DELETE` | `/requisicoes/{id}` | Cancelar requisição |
+
+### Documentação Interativa
+
+Acesse a documentação completa com exemplos e testes interativos em:
+**http://localhost:8080/docs**
+
+A documentação Swagger/OpenAPI permite:
+- Visualizar todos os endpoints disponíveis
+- Testar requisições diretamente no navegador
+- Ver schemas de entrada e saída
+- Consultar códigos de status HTTP e mensagens de erro
+
+### Exemplos de Requisições
+
+#### Criar Hospital
+```bash
+POST /api/v1/hospitais
+Content-Type: application/json
+
+{
+  "nome": "Hospital Barão de Lucena",
+  "localizacao": "Recife - PE"
+}
+```
+
+#### Criar Bolsa de Sangue
+```bash
+POST /api/v1/bolsas
+Content-Type: application/json
+
+{
+  "doacaoId": 1,
+  "tipoComponente": "CONCENTRADO_HEMACIAS",
+  "tipoAbo": "O",
+  "fatorRh": "NEGATIVO",
+  "volumeMl": 350,
+  "dataProducao": "2026-09-10",
+  "localizacaoAtualId": 2
+}
+```
+
+#### Criar Requisição Hospitalar
+```bash
+POST /api/v1/requisicoes
+Content-Type: application/json
+
+{
+  "hospitalId": 1,
+  "tipoAbo": "A",
+  "fatorRh": "POSITIVO",
+  "tipoComponente": "CONCENTRADO_PLAQUETAS",
+  "quantidade": 2,
+  "urgencia": "URGENTE",
+  "prazoLimite": "2026-09-15T14:00:00"
+}
+```
+
+Para mais detalhes sobre os contratos de API, consulte: 📄 [Contrato de API](./docs/contrato-api.md)
+
+---
+
+## 📊 Arquitetura e Diagramas
+
+### Diagrama de Arquitetura
+O diagrama completo de arquitetura de rede, componentes e topologia está disponível em:
+- **Fonte PlantUML:** [docs/diagrama-arquitetura.puml](./docs/diagrama-arquitetura.puml)
+- **Instruções de Exportação:** [docs/instrucoes-diagrama.md](./docs/instrucoes-diagrama.md)
+
+### Documentação Técnica Adicional
+- 📄 [Modelo de Domínio](./docs/modelo-dominio.md) - Entidades, atributos e relacionamentos
+- 📄 [Escopo do Grafo](./docs/escopo-grafo.md) - Topologia de roteirização e algoritmo Dijkstra
+- 📄 [Histórias de Usuário](./docs/historia-usuarios.md) - Requisitos funcionais em formato BDD
