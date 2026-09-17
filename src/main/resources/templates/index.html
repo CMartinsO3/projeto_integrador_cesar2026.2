@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>HemoFlow</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 2rem; color: #222; }
+        h1 { color: #8b1e3f; }
+        table { border-collapse: collapse; margin-bottom: 2rem; width: 100%; max-width: 900px; }
+        th, td { border: 1px solid #ccc; padding: 0.4rem 0.6rem; text-align: left; }
+        th { background: #f4e6ea; }
+        a { color: #8b1e3f; }
+        code { background: #f6f6f6; padding: 0.1rem 0.3rem; }
+    </style>
+</head>
+<body>
+<h1>HemoFlow</h1>
+<p>Pipeline inicial, topologia da rede e estruturas-base (FEFO + grafo) já integradas à aplicação.</p>
+<ul>
+    <li><a href="/api/v1/topologia">GET /api/v1/topologia</a></li>
+    <li><a href="/api/v1/estoque/proxima-bolsa">GET /api/v1/estoque/proxima-bolsa</a> (FEFO)</li>
+    <li><a href="/h2-console">H2 Console</a> (JDBC URL: <code>jdbc:h2:mem:hemoflow</code>)</li>
+</ul>
+
+<h2>Topologia (RSD)</h2>
+<table>
+    <thead>
+    <tr><th>Código</th><th>Nome</th><th>Tipo</th></tr>
+    </thead>
+    <tbody>
+    <tr th:each="no : ${nos}">
+        <td th:text="${no.codigo}">HC</td>
+        <td th:text="${no.nome}">Hemocentro</td>
+        <td th:text="${no.tipo}">HEMOCENTRO</td>
+    </tr>
+    </tbody>
+</table>
+
+<table>
+    <thead>
+    <tr><th>Origem</th><th>Destino</th><th>Minutos</th></tr>
+    </thead>
+    <tbody>
+    <tr th:each="lig : ${ligacoes}">
+        <td th:text="${lig.origem.codigo}">HC</td>
+        <td th:text="${lig.destino.codigo}">H1</td>
+        <td th:text="${lig.tempoMinutos}">25</td>
+    </tr>
+    </tbody>
+</table>
+
+<h2>Estoque disponível (AED / FEFO)</h2>
+<table>
+    <thead>
+    <tr><th>ID</th><th>Tipo</th><th>Componente</th><th>Validade</th></tr>
+    </thead>
+    <tbody>
+    <tr th:each="bolsa : ${bolsas}">
+        <td th:text="${bolsa.id}">1</td>
+        <td th:text="${bolsa.tipoSanguineo}">O_NEG</td>
+        <td th:text="${bolsa.hemocomponente}">HEMACIAS</td>
+        <td th:text="${bolsa.dataValidade}">2026-01-01</td>
+    </tr>
+    </tbody>
+</table>
+</body>
+</html>
