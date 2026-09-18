@@ -40,7 +40,7 @@ public class ApiExceptionHandler {
 
     @ExceptionHandler(RegraNegocioException.class)
     public ResponseEntity<ErroResposta> regra(RegraNegocioException ex) {
-        return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY).body(new ErroResposta(
+        return ResponseEntity.status(HttpStatus.UNPROCESSABLE_CONTENT).body(new ErroResposta(
                 LocalDateTime.now(),
                 422,
                 "Regra de negócio violada",

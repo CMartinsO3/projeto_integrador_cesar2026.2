@@ -1,0 +1,158 @@
+# ==============================================================================
+# Pipeline de CI/CD - Projeto Hemoflow (Spring Boot)
+# ==============================================================================
+# Este fluxo automatiza:
+# 1. Integração Contínua (CI):
+#    - Disparo automático em 'push' e 'pull_request' para a branch 'main'.
+#    - Checkout do código, configuração do JDK 17 e cache inteligente do Maven.
+#    - Download e verificação das dependências.
+#    - Compilação estrita do código-fonte.
+#    - Execução da suíte completa de testes automatizados (unitários e de contexto).
+#    - Empacotamento do artefato executável (.jar) e upload como artefato de build.
+#
+# 2. Entrega Contínua (CD):
+#    - Disparo condicionado ao sucesso prévio do CI e apenas em commits na branch 'main'.
+#    - Deploy automatizado em PaaS gratuito (Render / Webhook) com fallback simulado.
+#    - Arquivamento de relatórios em caso de falhas nos testes para facilitar depuração.
+# ==============================================================================
+
+name: CI/CD Pipeline - Hemoflow
+
+on:
+  push:
+    branches:
+      - main
+      - 'CI/CD-Pipeline---Hemoflow'
+      - 'refactor/**'
+  pull_request:
+    branches:
+      - main
+  # Permite execução manual diretamente pela interface web do GitHub (Actions -> Run workflow)
+  workflow_dispatch:
+
+# Permissões mínimas de segurança no runner do GitHub Actions
+permissions:
+  contents: read
+
+jobs:
+  # ============================================================================
+  # JOB 1: Integração Contínua (Build, Testes e Empacotamento)
+  # ============================================================================
+  build-and-test:
+    name: Build & Automated Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      # Etapa 1: Baixa os arquivos do repositório no runner
+      - name: Checkout do código
+        uses: actions/checkout@v4
+
+      # Etapa 2: Configura o ambiente Java 17 com Eclipse Temurin e cache do Maven
+      - name: Configurar JDK 17 (Eclipse Temurin) com Cache
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+          # O cache do Maven armazena ~/.m2/repository entre execuções, reduzindo o tempo de CI
+          cache: 'maven'
+
+      # Etapa 3: Garante que o Maven Wrapper possa ser executado no Linux (Ubuntu)
+      - name: Conceder permissão de execução ao Maven Wrapper
+        run: chmod +x mvnw
+
+      # Etapa 4: Resolução de dependências do Maven em modo batch (-B reduz logs desnecessários)
+      - name: Baixar dependências do projeto
+        run: ./mvnw dependency:go-offline -B
+
+      # Etapa 5: Compilação do código-fonte Java da aplicação
+      - name: Compilar código-fonte
+        run: ./mvnw compile -B
+
+      # Etapa 6: Execução dos testes automatizados (unitários e integração)
+      - name: Executar testes automatizados
+        run: ./mvnw test -B
+
+      # Etapa 7: Geração do arquivo JAR executável final (sem reexecutar testes)
+      - name: Empacotar aplicação (Gerar JAR)
+        run: ./mvnw package -DskipTests -B
+
+      # Etapa 8: Publica o JAR gerado como artefato do GitHub Actions
+      - name: Upload do artefato JAR executável
+        uses: actions/upload-artifact@v4
+        with:
+          name: hemoflow-app-jar
+          path: target/*.jar
+          retention-days: 7
+
+      # Etapa 9: Em caso de falha nos testes, salva os relatórios do Surefire para análise rápida
+      - name: Salvar relatórios de falha dos testes (Surefire)
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: relatorios-testes-surefire
+          path: target/surefire-reports/
+          retention-days: 7
+
+  # ============================================================================
+  # JOB 2: Entrega Contínua (Deploy em Ambiente em Nuvem)
+  # ============================================================================
+  deploy:
+    name: Continuous Deployment (CD)
+    runs-on: ubuntu-latest
+    needs: build-and-test
+    # O deploy só acontece quando o push for confirmado na branch 'main' (bloqueia PRs)
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+
+    steps:
+      - name: Checkout do repositório
+        uses: actions/checkout@v4
+
+      # Baixa o JAR validado no job de build
+      - name: Baixar artefato da aplicação
+        uses: actions/download-artifact@v4
+        with:
+          name: hemoflow-app-jar
+          path: deploy-package
+
+      - name: Verificar integridade do pacote gerado
+        run: |
+          echo "Arquivos prontos para publicação:"
+          ls -lh deploy-package/
+
+      # Execução do Deploy: Se a secret RENDER_DEPLOY_HOOK_URL existir, dispara webhook real.
+      # Caso contrário, opera em modo simulado seguro para validação acadêmica.
+      - name: Executar Deploy no Ambiente de Produção
+        env:
+          RENDER_DEPLOY_HOOK: ${{ secrets.RENDER_DEPLOY_HOOK_URL }}
+        run: |
+          echo "============================================================"
+          echo "Iniciando etapa de Entrega Contínua (Deploy) - Hemoflow"
+          echo "Data/Hora UTC: $(date -u)"
+          echo "Commit SHA: ${{ github.sha }}"
+          echo "Executor: ${{ github.actor }}"
+          echo "============================================================"
+
+          if [ -n "$RENDER_DEPLOY_HOOK" ]; then
+            echo ">> Secret RENDER_DEPLOY_HOOK_URL configurada!"
+            echo ">> Disparando Deploy Hook no Render..."
+            
+            HTTP_RESPONSE=$(curl -s -o response.txt -w "%{http_code}" -X POST "$RENDER_DEPLOY_HOOK")
+            
+            echo "Código HTTP retornado: $HTTP_RESPONSE"
+            cat response.txt
+            
+            if [ "$HTTP_RESPONSE" -ge 200 ] && [ "$HTTP_RESPONSE" -lt 300 ]; then
+              echo ""
+              echo ">> Deploy acionado com sucesso no Render!"
+            else
+              echo ""
+              echo ">> Falha ao acionar o Deploy Hook. Código HTTP: $HTTP_RESPONSE"
+              exit 1
+            fi
+          else
+            echo ">> [MODO SIMULADO ATIVADO]"
+            echo "A Secret 'RENDER_DEPLOY_HOOK_URL' ainda não foi cadastrada no GitHub Secrets."
+            echo "A esteira executou todas as validações, checagens de build e testes com sucesso."
+            echo "Assim que você cadastrar a Secret, o deploy em nuvem passará a ser acionado automaticamente."
+            echo "Status: Simulação de Deploy concluída com êxito!"
+          fi
