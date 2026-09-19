@@ -14,13 +14,17 @@ public class CampanhaController {
 
     @GetMapping
     public List<Map<String, Object>> listar() {
-        return repo.findByAtivaTrue().stream().map(c -> Map.<String, Object>of(
-            "id", c.getId(), "titulo", c.getTitulo(),
-            "descricao", c.getDescricao() != null ? c.getDescricao() : "",
-            "dataInicio", c.getDataInicio().toString(),
-            "dataFim", c.getDataFim().toString(),
-            "hospital", c.getHospital() != null ? c.getHospital().getNome() : "Geral",
-            "tiposSanguineos", c.getTiposSanguineosAlvo() != null ? c.getTiposSanguineosAlvo() : "Todos"
-        )).toList();
+        return repo.findByAtivaTrue().stream().map(c -> {
+            Map<String, Object> m = new java.util.LinkedHashMap<>();
+            m.put("id", c.getId());
+            m.put("titulo", c.getTitulo());
+            m.put("descricao", c.getDescricao() != null ? c.getDescricao() : "");
+            m.put("dataInicio", c.getDataInicio().toString());
+            m.put("dataFim", c.getDataFim().toString());
+            m.put("hospital", c.getHospital() != null ? c.getHospital().getNome() : "Geral");
+            m.put("hospitalId", c.getHospital() != null ? c.getHospital().getId() : null);
+            m.put("tiposSanguineos", c.getTiposSanguineosAlvo() != null ? c.getTiposSanguineosAlvo() : "Todos");
+            return m;
+        }).toList();
     }
 }

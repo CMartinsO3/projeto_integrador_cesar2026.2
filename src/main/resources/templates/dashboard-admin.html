@@ -1,132 +1,136 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
-<head><meta charset="UTF-8"><title>Dashboard Admin - HemoFlow</title>
-<style>
-*{box-sizing:border-box}
-body{font-family:sans-serif;margin:0;background:#f5f5f5}
-header{background:#c0392b;color:white;padding:12px 20px;display:flex;justify-content:space-between;align-items:center}
-header h1{margin:0;font-size:1.2rem}
-header span{font-size:.9rem;opacity:.85}
-header button{background:rgba(255,255,255,.2);border:none;color:white;padding:6px 14px;cursor:pointer;border-radius:4px}
-.container{max-width:1100px;margin:0 auto;padding:20px}
-.nav{display:flex;gap:10px;margin-bottom:20px;flex-wrap:wrap}
-.nav a{background:white;padding:8px 16px;border-radius:4px;text-decoration:none;color:#333;border:1px solid #ddd;font-size:.9rem}
-.nav a:hover{background:#eee}
-section{background:white;border-radius:6px;padding:16px;margin-bottom:20px;border:1px solid #e0e0e0}
-section h2{margin:0 0 12px;font-size:1rem;display:flex;align-items:center;gap:8px}
-table{width:100%;border-collapse:collapse;font-size:.85rem}
-th{background:#555;color:white;padding:8px;text-align:left}
-td{padding:7px 8px;border-bottom:1px solid #eee}
-tr:hover td{background:#fafafa}
-.critico td{background:#fdecea}
-.alto td{background:#fff3e0}
-.medio td{background:#fffde7}
-.badge{display:inline-block;padding:2px 8px;border-radius:10px;font-size:.75rem;font-weight:700}
-.badge.CRITICO{background:#f44336;color:white}
-.badge.ALTO{background:#ff9800;color:white}
-.badge.MEDIO{background:#ffc107;color:#333}
-.badge.EM_TRANSITO{background:#2196f3;color:white}
-.form-row{display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end}
-.form-row select,.form-row input{padding:7px;border:1px solid #ccc;border-radius:4px;font-size:.85rem}
-.form-row button{padding:7px 16px;background:#c0392b;color:white;border:none;border-radius:4px;cursor:pointer}
-.msg{color:green;font-size:.85rem;margin-top:8px}
-#contadores{display:flex;gap:12px;margin-bottom:20px;flex-wrap:wrap}
-.contador{background:white;border:1px solid #e0e0e0;border-radius:6px;padding:12px 20px;text-align:center;min-width:120px}
-.contador .num{font-size:1.8rem;font-weight:700;color:#c0392b}
-.contador .label{font-size:.75rem;color:#666}
-</style>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Sala de operações — HemoFlow</title>
+  <link rel="stylesheet" href="/css/hemoflow.css">
 </head>
 <body>
-<header>
-  <h1>🩸 HemoFlow — Admin</h1>
-  <span id="nomeAdmin">Carregando...</span>
-  <button onclick="logout()">Sair</button>
-</header>
-<div class="container">
-  <div class="nav">
-    <a href="/">Painel Geral</a>
-    <a href="/mapa">Mapa</a>
-    <a href="/docs">Swagger API</a>
+<div class="app">
+  <aside class="side">
+    <a class="brand" href="/" style="color:#fff">
+      <span class="mark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3c-1.8 3.2-6 6.4-6 10.2A6 6 0 0 0 12 21a6 6 0 0 0 6-7.8C18 9.4 13.8 6.2 12 3Z"/><path d="M12 11v6M9 14h6"/></svg></span>
+      <span><strong>HemoFlow</strong><em>Equipe</em></span>
+    </a>
+    <nav>
+      <a class="is-active" href="/dashboard-admin">Operações</a>
+      <a href="/">Indicadores</a>
+      <a href="/bolsas-painel">Bolsas</a>
+      <a href="/mapa">Mapa</a>
+      <a href="/docs">Swagger</a>
+    </nav>
+    <div class="who">
+      <b id="nomeAdmin">Carregando…</b>
+      Administrador
+      <button class="btn btn-ghost btn-sm" style="margin-top:.7rem;color:#fff;border-color:rgba(255,255,255,.2)" onclick="logout()">Encerrar sessão</button>
+    </div>
+  </aside>
+  <div class="main">
+    <div class="main-bar">
+      <div>
+        <h1>Sala de operações</h1>
+        <p>Validade, trânsito e registro de entrada — conduta de hemocentro.</p>
+      </div>
+    </div>
+    <div class="main-body">
+      <div class="grid grid-5" id="contadores">
+        <article class="kpi ok"><div class="label">Disponíveis</div><div class="value" id="cntDisp">—</div></article>
+        <article class="kpi info"><div class="label">Em trânsito</div><div class="value" id="cntTransito">—</div></article>
+        <article class="kpi warn"><div class="label">Alertas de validade</div><div class="value" id="cntAlertas">—</div></article>
+        <article class="kpi teal"><div class="label">Entregues</div><div class="value" id="cntEntregues">—</div></article>
+        <article class="kpi danger"><div class="label">Descartadas</div><div class="value" id="cntDescartadas">—</div></article>
+      </div>
+
+      <section class="card" style="margin-top:1rem">
+        <div class="section-head" style="margin-top:0">
+          <div>
+            <p class="kicker">Vigilância</p>
+            <h2>Alertas de vencimento</h2>
+          </div>
+        </div>
+        <div class="toolbar">
+          <div>
+            <label for="selDias">Janela (próximos <span id="diasAlerta">5</span> dias)</label>
+            <select id="selDias" class="control" onchange="carregarAlertas()">
+              <option value="2">2 dias</option>
+              <option value="5" selected>5 dias</option>
+              <option value="7">7 dias</option>
+            </select>
+          </div>
+        </div>
+        <table class="data">
+          <thead><tr><th>ID</th><th>Lote</th><th>Tipo</th><th>Hemocomp.</th><th>Vence em</th><th>Dias</th><th>Urgência</th></tr></thead>
+          <tbody id="tbAlertas"><tr><td class="empty" colspan="7">Carregando…</td></tr></tbody>
+        </table>
+      </section>
+
+      <section class="card" style="margin-top:1rem">
+        <h3>Bolsas em trânsito</h3>
+        <table class="data">
+          <thead><tr><th>ID</th><th>Lote</th><th>Tipo</th><th>Hemocomp.</th><th>Validade</th><th>Local atual</th></tr></thead>
+          <tbody id="tbTransito"><tr><td class="empty" colspan="6">Carregando…</td></tr></tbody>
+        </table>
+      </section>
+
+      <section class="card" style="margin-top:1rem">
+        <h3>Registrar entrada</h3>
+        <div class="toolbar form-row">
+          <select id="entTipo" class="control">
+            <option value="O_NEG">O−</option>
+            <option value="O_POS">O+</option>
+            <option value="A_POS">A+</option>
+            <option value="A_NEG">A−</option>
+            <option value="B_POS">B+</option>
+            <option value="B_NEG">B−</option>
+            <option value="AB_POS">AB+</option>
+            <option value="AB_NEG">AB−</option>
+          </select>
+          <select id="entHemo" class="control">
+            <option value="HEMACIAS">Hemácias</option>
+            <option value="PLAQUETAS">Plaquetas</option>
+            <option value="PLASMA">Plasma</option>
+            <option value="CRIOPRECIPITADO">Crioprecipitado</option>
+          </select>
+          <input id="entLote" class="control" placeholder="Lote (ex: L-020)" style="width:140px">
+          <input id="entColeta" class="control" type="date" title="Data coleta">
+          <input id="entValidade" class="control" type="date" title="Data validade">
+          <select id="entNoRede" class="control" title="Localização"><option value="1">Carregando nós…</option></select>
+          <button class="btn btn-teal" type="button" onclick="registrarEntrada()">Registrar</button>
+        </div>
+        <div class="msg" id="msgEntrada" style="color:var(--ok)"></div>
+      </section>
+
+      <section class="card" style="margin-top:1rem">
+        <h3>Estoque completo</h3>
+        <div class="toolbar">
+          <div>
+            <label for="filtroStatus">Filtrar status</label>
+            <select id="filtroStatus" class="control" onchange="carregarBolsas()">
+              <option value="">Todos</option>
+              <option value="DISPONIVEL">Disponível</option>
+              <option value="ALOCADA">Alocada</option>
+              <option value="EM_TRANSITO">Em trânsito</option>
+              <option value="ENTREGUE">Entregue</option>
+              <option value="DESCARTADA">Descartada</option>
+            </select>
+          </div>
+          <button class="btn btn-ghost" type="button" onclick="carregarBolsas()">Atualizar</button>
+        </div>
+        <table class="data">
+          <thead><tr><th>ID</th><th>Lote</th><th>Tipo</th><th>Hemocomp.</th><th>Coleta</th><th>Validade</th><th>Status</th><th>Ações</th></tr></thead>
+          <tbody id="tbBolsas"><tr><td class="empty" colspan="8">Carregando…</td></tr></tbody>
+        </table>
+      </section>
+    </div>
   </div>
-
-  <!-- Contadores -->
-  <div id="contadores">
-    <div class="contador"><div class="num" id="cntDisp">—</div><div class="label">Disponíveis</div></div>
-    <div class="contador"><div class="num" id="cntTransito">—</div><div class="label">Em Trânsito</div></div>
-    <div class="contador"><div class="num" id="cntAlertas">—</div><div class="label">Alertas Venc.</div></div>
-    <div class="contador"><div class="num" id="cntEntregues">—</div><div class="label">Entregues</div></div>
-    <div class="contador"><div class="num" id="cntDescartadas">—</div><div class="label">Descartadas</div></div>
-  </div>
-
-  <!-- ALERTAS DE VENCIMENTO -->
-  <section>
-    <h2>⚠️ Alertas de Vencimento <small style="font-weight:normal;color:#666">(próximos <span id="diasAlerta">5</span> dias)</small></h2>
-    <div style="margin-bottom:10px">
-      <label style="font-size:.85rem">Janela: </label>
-      <select id="selDias" onchange="carregarAlertas()" style="padding:4px 8px;border:1px solid #ccc;border-radius:4px">
-        <option value="2">2 dias</option>
-        <option value="5" selected>5 dias</option>
-        <option value="7">7 dias</option>
-      </select>
-    </div>
-    <table>
-      <thead><tr><th>ID</th><th>Lote</th><th>Tipo</th><th>Hemocomp.</th><th>Vence em</th><th>Dias restantes</th><th>Urgência</th></tr></thead>
-      <tbody id="tbAlertas"><tr><td colspan="7">Carregando...</td></tr></tbody>
-    </table>
-  </section>
-
-  <!-- EM TRÂNSITO -->
-  <section>
-    <h2>🚚 Bolsas em Trânsito</h2>
-    <table>
-      <thead><tr><th>ID</th><th>Lote</th><th>Tipo</th><th>Hemocomp.</th><th>Validade</th><th>Local Atual</th></tr></thead>
-      <tbody id="tbTransito"><tr><td colspan="6">Carregando...</td></tr></tbody>
-    </table>
-  </section>
-
-  <!-- REGISTRO DE ENTRADA -->
-  <section>
-    <h2>📥 Registrar Entrada de Bolsa</h2>
-    <div class="form-row">
-      <select id="entTipo"><option>O_NEG</option><option>O_POS</option><option>A_POS</option><option>A_NEG</option><option>B_POS</option><option>B_NEG</option><option>AB_POS</option><option>AB_NEG</option></select>
-      <select id="entHemo"><option>HEMACIAS</option><option>PLAQUETAS</option><option>PLASMA</option><option>CRIOPRECIPITADO</option></select>
-      <input id="entLote" placeholder="Lote (ex: L-020)" style="width:130px">
-      <input id="entColeta" type="date" title="Data coleta">
-      <input id="entValidade" type="date" title="Data validade">
-      <select id="entNoRede" title="Localização (Nó de Rede)"><option value="1">Carregando nós...</option></select>
-      <button onclick="registrarEntrada()">Registrar</button>
-    </div>
-    <div class="msg" id="msgEntrada"></div>
-  </section>
-
-  <!-- CRUD BOLSAS -->
-  <section>
-    <h2>🗃️ Estoque Completo</h2>
-    <div style="margin-bottom:10px;display:flex;gap:8px;align-items:center">
-      <label style="font-size:.85rem">Filtrar: </label>
-      <select id="filtroStatus" onchange="carregarBolsas()" style="padding:4px 8px;border:1px solid #ccc;border-radius:4px">
-        <option value="">Todos</option>
-        <option value="DISPONIVEL">Disponível</option>
-        <option value="ALOCADA">Alocada</option>
-        <option value="EM_TRANSITO">Em Trânsito</option>
-        <option value="ENTREGUE">Entregue</option>
-        <option value="DESCARTADA">Descartada</option>
-      </select>
-      <button onclick="carregarBolsas()" style="padding:5px 12px;background:#555;color:white;border:none;border-radius:4px;cursor:pointer">Atualizar</button>
-    </div>
-    <table>
-      <thead><tr><th>ID</th><th>Lote</th><th>Tipo</th><th>Hemocomp.</th><th>Coleta</th><th>Validade</th><th>Status</th><th>Ações</th></tr></thead>
-      <tbody id="tbBolsas"><tr><td colspan="8">Carregando...</td></tr></tbody>
-    </table>
-  </section>
 </div>
-
+<script src="/js/hemoflow.js"></script>
 <script>
-// Verificar sessão
 fetch('/api/v1/auth/sessao').then(r=>r.json()).then(s => {
   if (!s.logado || s.role !== 'ADMIN') { window.location.href='/login-admin'; return; }
-  document.getElementById('nomeAdmin').textContent = s.nome;
-});
+  document.getElementById('nomeAdmin').textContent = s.nome || 'Admin';
+}).catch(() => { window.location.href='/login-admin'; });
 
 function logout() {
   fetch('/api/v1/auth/logout',{method:'POST'}).then(()=>window.location.href='/login-admin');
@@ -139,11 +143,11 @@ function carregarAlertas() {
     document.getElementById('cntAlertas').textContent = lista.length;
     const tb = document.getElementById('tbAlertas');
     tb.innerHTML = lista.length === 0
-      ? '<tr><td colspan="7" style="color:green">✅ Nenhuma bolsa próxima do vencimento!</td></tr>'
-      : lista.map(b => `<tr class="${b.urgencia}">
-          <td>${b.id}</td><td>${b.lote}</td><td>${b.tipoSanguineo}</td><td>${b.hemocomponente}</td>
-          <td>${b.dataValidade}</td><td><b>${b.diasRestantes}</b> dia(s)</td>
-          <td><span class="badge ${b.urgencia}">${b.urgencia}</span></td>
+      ? '<tr><td class="empty" colspan="7">Nenhuma bolsa próxima do vencimento.</td></tr>'
+      : lista.map(b => `<tr>
+          <td>${b.id}</td><td>${b.lote}</td><td>${HF.abo(b.tipoSanguineo)}</td><td>${HF.hemo(b.hemocomponente)}</td>
+          <td>${b.dataValidade}</td><td><b>${b.diasRestantes}</b></td>
+          <td><span class="chip chip-${b.urgencia}">${HF.urgencia(b.urgencia)}</span></td>
         </tr>`).join('');
   });
 }
@@ -153,11 +157,11 @@ function carregarTransito() {
     document.getElementById('cntTransito').textContent = lista.length;
     const tb = document.getElementById('tbTransito');
     tb.innerHTML = lista.length === 0
-      ? '<tr><td colspan="6">Nenhuma bolsa em trânsito.</td></tr>'
+      ? '<tr><td class="empty" colspan="6">Nenhuma bolsa em trânsito.</td></tr>'
       : lista.map(b => `<tr>
-          <td>${b.id}</td><td>${b.lote}</td><td>${b.tipoSanguineo}</td>
-          <td>${b.hemocomponente}</td><td>${b.dataValidade}</td>
-          <td><span class="badge EM_TRANSITO">→ ${b.local}</span></td>
+          <td>${b.id}</td><td>${b.lote}</td><td>${HF.abo(b.tipoSanguineo)}</td>
+          <td>${HF.hemo(b.hemocomponente)}</td><td>${b.dataValidade}</td>
+          <td><span class="chip chip-EM_TRANSITO">${b.local}</span></td>
         </tr>`).join('');
   });
 }
@@ -172,12 +176,12 @@ function carregarBolsas() {
     const descartadas = lista.filter(b=>b.status==='DESCARTADA').length;
     if(!s){ document.getElementById('cntDisp').textContent=disp; document.getElementById('cntEntregues').textContent=entregues; document.getElementById('cntDescartadas').textContent=descartadas; }
     document.getElementById('tbBolsas').innerHTML = lista.map(b => `<tr>
-      <td>${b.id}</td><td>${b.lote||''}</td><td>${b.tipoSanguineo||''}</td>
-      <td>${b.hemocomponente||''}</td><td>${b.dataColeta||''}</td><td>${b.dataValidade||''}</td>
-      <td>${b.status||''}</td>
+      <td>${b.id}</td><td>${b.lote||''}</td><td>${HF.abo(b.tipoSanguineo)}</td>
+      <td>${HF.hemo(b.hemocomponente)}</td><td>${b.dataColeta||''}</td><td>${b.dataValidade||''}</td>
+      <td><span class="chip chip-teal">${HF.status(b.status)}</span></td>
       <td>${b.status==='DISPONIVEL'
-        ? `<button onclick="saida(${b.id},'TRANSFUSAO')" style="margin-right:4px;padding:3px 8px;cursor:pointer">Transfusão</button>
-           <button onclick="saida(${b.id},'DESCARTE')" style="padding:3px 8px;cursor:pointer;background:#e74c3c;color:white;border:none">Descartar</button>`
+        ? `<button class="btn btn-sm btn-teal" onclick="saida(${b.id},'TRANSFUSAO')">Transfusão</button>
+           <button class="btn btn-sm btn-danger" onclick="saida(${b.id},'DESCARTE')">Descartar</button>`
         : '—'}</td>
     </tr>`).join('');
   });
@@ -201,20 +205,11 @@ function registrarEntrada() {
   };
   fetch('/api/v1/bolsas/entrada',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)})
     .then(r=>r.json()).then(d=>{
-      document.getElementById('msgEntrada').textContent = '✅ Bolsa #'+d.id+' ('+d.lote+') registrada com sucesso!';
+      document.getElementById('msgEntrada').textContent = 'Bolsa #'+d.id+' ('+d.lote+') registrada.';
       carregarBolsas(); carregarAlertas();
     });
 }
 
-// Verificar sessão de Admin
-fetch('/api/v1/auth/sessao').then(r=>r.json()).then(s => {
-  if (!s.logado || s.role !== 'ADMIN') { window.location.href='/login-admin'; return; }
-  document.getElementById('nomeAdmin').textContent = s.nome || 'Admin';
-}).catch(() => {
-  window.location.href='/login-admin';
-});
-
-// Carregar nós da rede para o dropdown de entrada
 fetch('/api/v1/nos-rede').then(r=>r.json()).then(nos => {
   const sel = document.getElementById('entNoRede');
   if (Array.isArray(nos) && nos.length > 0) {
@@ -222,9 +217,9 @@ fetch('/api/v1/nos-rede').then(r=>r.json()).then(nos => {
   }
 });
 
-// Inicializar dados
 carregarAlertas();
 carregarTransito();
 carregarBolsas();
 </script>
-</body></html>
+</body>
+</html>

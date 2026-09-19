@@ -1,34 +1,46 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
-<head><meta charset="UTF-8"><title>Login Doador - HemoFlow</title>
-<style>
-body{font-family:sans-serif;display:flex;justify-content:center;align-items:center;height:100vh;margin:0;background:#f0f0f0}
-.box{background:white;padding:40px;border-radius:8px;box-shadow:0 2px 10px rgba(0,0,0,.15);width:320px}
-h1{margin:0 0 8px;font-size:1.4rem;color:#c0392b}
-p{margin:0 0 24px;color:#666;font-size:.9rem}
-label{display:block;margin-bottom:4px;font-size:.85rem;font-weight:600;color:#333}
-input{width:100%;padding:9px;margin-bottom:16px;border:1px solid #ccc;border-radius:4px;box-sizing:border-box;font-size:.95rem}
-button{width:100%;padding:10px;background:#c0392b;color:white;border:none;border-radius:4px;cursor:pointer;font-size:1rem}
-button:hover{background:#a93226}
-#erro{color:#c0392b;font-size:.85rem;margin-top:12px;display:none}
-.links{margin-top:16px;text-align:center;font-size:.85rem}
-.links a{color:#c0392b;text-decoration:none;display:block;margin-bottom:4px}
-</style>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Entrada do doador — HemoFlow</title>
+  <link rel="stylesheet" href="/css/hemoflow.css">
 </head>
 <body>
-<div class="box">
-  <h1>🩸 HemoFlow</h1>
-  <p>Área do Doador — entre com seu cadastro</p>
-  <label>Email</label>
-  <input id="email" type="email" placeholder="seu@email.com" autocomplete="email">
-  <label>Senha</label>
-  <input id="senha" type="password" autocomplete="current-password">
-  <button onclick="login()">Entrar</button>
-  <div id="erro">Email ou senha inválidos.</div>
-  <div class="links">
-    <a href="/doe-agora">Ainda não tem conta? Cadastre-se →</a>
-    <a href="/login-admin">Área do Administrador →</a>
-  </div>
+<div class="auth-shell">
+  <aside class="auth-story">
+    <a class="brand" href="/" style="color:#fff">
+      <span class="mark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3c-1.8 3.2-6 6.4-6 10.2A6 6 0 0 0 12 21a6 6 0 0 0 6-7.8C18 9.4 13.8 6.2 12 3Z"/><path d="M12 11v6M9 14h6"/></svg></span>
+      <span><strong>HemoFlow</strong><em style="color:#9db5b3">Portal do doador</em></span>
+    </a>
+    <div>
+      <p class="quote">Doar é um gesto <em>quieto</em> e extraordinário.</p>
+      <small>Sua presença aqui já é cuidado. Entremos com calma, como se fosse o corredor de um hospital ao amanhecer.</small>
+    </div>
+    <small>Ambiente seguro · sessão exclusiva do doador</small>
+  </aside>
+  <main class="auth-form">
+    <div class="auth-card">
+      <p class="kicker">Acesso pessoal</p>
+      <h1>Bem-vindo de volta</h1>
+      <p class="sub">Entre com o cadastro usado na doação.</p>
+      <div class="field">
+        <label for="email">Email</label>
+        <input id="email" type="email" placeholder="seu@email.com" autocomplete="email">
+      </div>
+      <div class="field">
+        <label for="senha">Senha</label>
+        <input id="senha" type="password" autocomplete="current-password">
+      </div>
+      <button class="btn btn-primary btn-full" type="button" onclick="login()">Entrar com serenidade</button>
+      <div id="erro" class="alert">Email ou senha não reconhecidos. Tente novamente, sem pressa.</div>
+      <div class="auth-links">
+        <a href="/doe-agora">Ainda não tenho cadastro</a>
+        <a href="/login-admin">Sou da equipe clínica</a>
+        <a href="/">Voltar à central</a>
+      </div>
+    </div>
+  </main>
 </div>
 <script>
 async function login() {
@@ -38,8 +50,9 @@ async function login() {
   });
   const d = await res.json();
   if (d.ok) window.location.href = d.redirect;
-  else { document.getElementById('erro').style.display='block'; }
+  else document.getElementById('erro').classList.add('show');
 }
 document.addEventListener('keydown', e => { if(e.key==='Enter') login(); });
 </script>
-</body></html>
+</body>
+</html>

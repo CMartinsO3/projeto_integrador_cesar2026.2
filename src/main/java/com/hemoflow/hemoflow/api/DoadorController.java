@@ -2,9 +2,11 @@ package com.hemoflow.hemoflow.api;
 
 import com.hemoflow.hemoflow.dominio.*;
 import com.hemoflow.hemoflow.persistencia.*;
+import jakarta.servlet.http.HttpSession;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import java.time.LocalDate;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -20,7 +22,7 @@ public class DoadorController {
     }
 
     @PostMapping
-    public ResponseEntity<?> cadastrar(@RequestBody Map<String, String> body) {
+    public ResponseEntity<?> cadastrar(@RequestBody Map<String, String> body, HttpSession session) {
         if (doadorRepo.findByEmail(body.get("email")).isPresent())
             return ResponseEntity.badRequest().body(Map.of("erro", "Email ja cadastrado"));
         Doador d = new Doador(
@@ -28,7 +30,16 @@ public class DoadorController {
             TipoSanguineo.valueOf(body.get("tipoSanguineo")),
             LocalDate.parse(body.get("dataNascimento"))
         );
-        return ResponseEntity.ok(toMap(doadorRepo.save(d)));
+        Doador salvo = doadorRepo.save(d);
+        session.setAttribute("doadorId", salvo.getId());
+        session.setAttribute("doadorNome", salvo.getNome());
+        session.setAttribute("role", "DOADOR");
+        session.removeAttribute("adminId");
+        session.removeAttribute("adminNome");
+        Map<String, Object> resposta = new LinkedHashMap<>(toMap(salvo));
+        resposta.put("ok", true);
+        resposta.put("redirect", "/mapa");
+        return ResponseEntity.ok(resposta);
     }
 
     @GetMapping
@@ -64,13 +75,17 @@ public class DoadorController {
         return doadorRepo.findById(id).map(d -> {
             List<Map<String, Object>> hospitais = hospitalRepo.findAll().stream()
                 .filter(Hospital::isAtivo)
-                .map(h -> Map.<String, Object>of(
-                    "id", h.getId(),
-                    "nome", h.getNome(),
-                    "latitude", h.getLatitude() != null ? h.getLatitude() : 0.0,
-                    "longitude", h.getLongitude() != null ? h.getLongitude() : 0.0,
-                    "tipoSanguineoDoador", d.getTipoSanguineo().name()
-                ))
+                .map(h -> {
+                    Map<String, Object> m = new LinkedHashMap<>();
+                    m.put("id", h.getId());
+                    m.put("nome", h.getNome());
+                    m.put("latitude", h.getLatitude() != null ? h.getLatitude() : 0.0);
+                    m.put("longitude", h.getLongitude() != null ? h.getLongitude() : 0.0);
+                    m.put("tipoSanguineoDoador", d.getTipoSanguineo().name());
+                    m.put("codigoNo", h.getLocalizacao() != null ? h.getLocalizacao().getCodigo() : "");
+                    m.put("ponto", h.getLocalizacao() != null ? h.getLocalizacao().getNome() : h.getNome());
+                    return m;
+                })
                 .toList();
             return ResponseEntity.ok(hospitais);
         }).orElse(ResponseEntity.notFound().build());

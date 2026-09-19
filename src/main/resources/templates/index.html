@@ -2,249 +2,184 @@
 <html xmlns:th="http://www.thymeleaf.org" lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <title>HemoFlow — Painel de Indicadores</title>
-    <style>
-        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
-        body {
-            font-family: 'Segoe UI', Arial, sans-serif;
-            background: #f5f0f2;
-            color: #1a1a2e;
-            padding: 2rem;
-        }
-
-        header {
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-            margin-bottom: 2rem;
-        }
-        header h1 { color: #8b1e3f; font-size: 1.8rem; }
-        header span { font-size: 0.9rem; color: #666; }
-
-        h2 {
-            font-size: 1rem;
-            text-transform: uppercase;
-            letter-spacing: .05em;
-            color: #8b1e3f;
-            margin: 2rem 0 .75rem;
-            border-bottom: 2px solid #e0c8d0;
-            padding-bottom: .25rem;
-        }
-
-        /* Cards de indicadores */
-        .cards {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 1rem;
-        }
-        .card {
-            background: #fff;
-            border-radius: 10px;
-            padding: 1.2rem 1.5rem;
-            min-width: 140px;
-            flex: 1;
-            border-left: 5px solid #8b1e3f;
-            box-shadow: 0 2px 6px rgba(0,0,0,.08);
-        }
-        .card.verde  { border-color: #2e7d32; }
-        .card.azul   { border-color: #1565c0; }
-        .card.laranja{ border-color: #e65100; }
-        .card.cinza  { border-color: #546e7a; }
-        .card.alerta { border-color: #f57f17; }
-        .card.perigo { border-color: #c62828; }
-
-        .card-label { font-size: .75rem; color: #666; margin-bottom: .3rem; text-transform: uppercase; letter-spacing: .04em; }
-        .card-value { font-size: 2rem; font-weight: 700; color: #1a1a2e; }
-        .card-sub   { font-size: .75rem; color: #999; margin-top: .2rem; }
-
-        /* Tabelas */
-        table {
-            width: 100%;
-            max-width: 720px;
-            border-collapse: collapse;
-            background: #fff;
-            border-radius: 8px;
-            overflow: hidden;
-            box-shadow: 0 2px 6px rgba(0,0,0,.06);
-            margin-bottom: 1.5rem;
-        }
-        th, td { padding: .55rem .9rem; text-align: left; font-size: .88rem; }
-        th { background: #f4e6ea; color: #8b1e3f; font-weight: 600; text-transform: uppercase; font-size: .75rem; letter-spacing: .05em; }
-        tr:nth-child(even) { background: #faf5f7; }
-        td.numero { text-align: right; font-variant-numeric: tabular-nums; font-weight: 600; }
-
-        /* Barra de progresso simples */
-        .barra-wrap { background: #e8e0e4; border-radius: 4px; height: 8px; margin-top: .4rem; }
-        .barra { background: #8b1e3f; border-radius: 4px; height: 8px; }
-
-        /* Links de API */
-        .api-links { display: flex; flex-wrap: wrap; gap: .5rem; margin-bottom: 1.5rem; }
-        .api-link {
-            background: #fff;
-            border: 1px solid #ccc;
-            border-radius: 6px;
-            padding: .35rem .75rem;
-            font-size: .8rem;
-            text-decoration: none;
-            color: #8b1e3f;
-        }
-        .api-link:hover { background: #f4e6ea; }
-
-        .badge {
-            display: inline-block;
-            font-size: .7rem;
-            padding: .15rem .4rem;
-            border-radius: 4px;
-            font-weight: 700;
-            color: #fff;
-            margin-left: .3rem;
-        }
-        .badge-get    { background: #1565c0; }
-        .badge-patch  { background: #e65100; }
-        .badge-post   { background: #2e7d32; }
-    </style>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>HemoFlow — Central de Operações</title>
+    <link rel="stylesheet" href="/css/hemoflow.css">
 </head>
 <body>
-
-<header>
-    <h1>🩸 HemoFlow</h1>
-    <span>Painel de Indicadores — Unidade 1</span>
+<a class="skip" href="#conteudo">Ir ao conteúdo</a>
+<header class="topbar">
+    <a class="brand" href="/">
+        <span class="mark" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3c-1.8 3.2-6 6.4-6 10.2A6 6 0 0 0 12 21a6 6 0 0 0 6-7.8C18 9.4 13.8 6.2 12 3Z"/><path d="M12 11v6M9 14h6"/></svg>
+        </span>
+        <span><strong>HemoFlow</strong><em>Hemorrede clínica</em></span>
+    </a>
+    <nav>
+        <a class="is-active" href="/">Operações</a>
+        <a href="/mapa">Onde doar</a>
+        <a href="/bolsas-painel">Estoque</a>
+        <a href="/docs">API</a>
+        <a class="btn btn-ghost" href="/login-admin">Equipe clínica</a>
+        <span data-auth-nav><a class="btn btn-primary" href="/login-usuario">Área do doador</a></span>
+    </nav>
 </header>
 
-<nav style="display:flex;gap:.6rem;flex-wrap:wrap;margin-bottom:1.5rem">
-    <a class="api-link" style="background:#8b1e3f;color:#fff;font-weight:600" href="/dashboard-admin">🔐 Painel Admin</a>
-    <a class="api-link" style="background:#1565c0;color:#fff;font-weight:600" href="/login-usuario">👤 Área do Doador</a>
-    <a class="api-link" href="/bolsas-painel">💉 Gestão de Bolsas</a>
-    <a class="api-link" href="/mapa">🗺️ Mapa de Doação</a>
-    <a class="api-link" href="/doe-agora">❤️ Doe Agora</a>
-    <a class="api-link" href="/docs">📄 Swagger Docs</a>
-    <a class="api-link" href="/h2-console">💾 Console H2</a>
-</nav>
-
-<!-- ── ESTOQUE ─────────────────────────────────────── -->
-<h2>Estoque de Bolsas</h2>
-
-<div class="cards">
-    <div class="card">
-        <div class="card-label">Total cadastrado</div>
-        <div class="card-value" th:text="${estoque.totalBolsas}">0</div>
-        <div class="card-sub">todas as bolsas</div>
-    </div>
-    <div class="card verde">
-        <div class="card-label">Disponíveis</div>
-        <div class="card-value" th:text="${estoque.totalDisponivel}">0</div>
-        <div class="card-sub">prontas para alocar</div>
-    </div>
-    <div class="card azul">
-        <div class="card-label">Alocadas</div>
-        <div class="card-value" th:text="${estoque.totalAlocada}">0</div>
-    </div>
-    <div class="card cinza">
-        <div class="card-label">Em trânsito</div>
-        <div class="card-value" th:text="${estoque.totalEmTransito}">0</div>
-    </div>
-    <div class="card alerta">
-        <div class="card-label">Quase vencendo</div>
-        <div class="card-value" th:text="${estoque.bolsasQuaseVencidas}">0</div>
-        <div class="card-sub">vence em ≤ 7 dias</div>
-    </div>
-    <div class="card perigo">
-        <div class="card-label">Vencidas</div>
-        <div class="card-value" th:text="${estoque.bolsasVencidas}">0</div>
-        <div class="card-sub">validade expirada</div>
-    </div>
-</div>
-
-<h2>Distribuição do Estoque Disponível</h2>
-
-<table>
-    <thead>
-        <tr><th>Hemocomponente</th><th>Qtd. Disponível</th></tr>
-    </thead>
-    <tbody>
-        <tr th:each="entry : ${estoque.distribuicaoPorHemocomponente}">
-            <td th:text="${entry.key}">HEMACIAS</td>
-            <td class="numero" th:text="${entry.value}">0</td>
-        </tr>
-    </tbody>
-</table>
-
-<table>
-    <thead>
-        <tr><th>Tipo Sanguíneo</th><th>Qtd. Disponível</th></tr>
-    </thead>
-    <tbody>
-        <tr th:each="entry : ${estoque.distribuicaoPorTipoSanguineo}">
-            <td th:text="${entry.key}">O_NEG</td>
-            <td class="numero" th:text="${entry.value}">0</td>
-        </tr>
-    </tbody>
-</table>
-
-<!-- ── REQUISIÇÕES ─────────────────────────────────── -->
-<h2>Requisições Hospitalares</h2>
-
-<div class="cards">
-    <div class="card">
-        <div class="card-label">Total</div>
-        <div class="card-value" th:text="${requisicoes.totalRequisicoes}">0</div>
-    </div>
-    <div class="card alerta">
-        <div class="card-label">Pendentes</div>
-        <div class="card-value" th:text="${requisicoes.totalPendentes}">0</div>
-    </div>
-    <div class="card laranja">
-        <div class="card-label">Aguard. Estoque</div>
-        <div class="card-value" th:text="${requisicoes.totalAguardandoEstoque}">0</div>
-    </div>
-    <div class="card azul">
-        <div class="card-label">Alocadas</div>
-        <div class="card-value" th:text="${requisicoes.totalAlocadas}">0</div>
-    </div>
-    <div class="card verde">
-        <div class="card-label">Taxa Atendimento</div>
-        <div class="card-value" th:text="${requisicoes.taxaAtendimentoPercent} + '%'">0%</div>
-        <div class="barra-wrap">
-            <div class="barra" th:style="'width:' + ${requisicoes.taxaAtendimentoPercent} + '%'"></div>
+<section class="hero">
+    <div>
+        <p class="kicker">Cadeia fria · FEFO · Compatibilidade ABO/Rh</p>
+        <h1>O sangue certo, no tempo certo, <em>com o devido respeito.</em></h1>
+        <p class="lede">Uma central silenciosa para a malha de hemocomponentes: estoque, requisições hospitalares e vigilância de validade — com a serenidade de um ambiente de cuidado.</p>
+        <div class="hero-actions">
+            <a class="btn btn-primary" href="/doe-agora">Quero doar</a>
+            <a class="btn btn-ghost" href="/dashboard-admin">Painel da equipe</a>
         </div>
     </div>
-    <div class="card cinza">
-        <div class="card-label">Média por req.</div>
-        <div class="card-value" th:text="${requisicoes.mediaQuantidadeSolicitada}">0</div>
-        <div class="card-sub">unidades solicitadas</div>
+    <aside class="hero-panel" aria-label="Resumo da unidade">
+        <h2>Unidade 1 · Recife</h2>
+        <p>Monitoramento sintético da rede. Dados didáticos, conduta de hospital.</p>
+        <div class="pulse-row">
+            <div class="pulse"><b th:text="${estoque.totalDisponivel}">0</b><span>Bolsas prontas</span></div>
+            <div class="pulse"><b th:text="${estoque.bolsasQuaseVencidas}">0</b><span>Quase vencendo</span></div>
+            <div class="pulse"><b th:text="${requisicoes.totalPendentes}">0</b><span>Req. pendentes</span></div>
+            <div class="pulse"><b th:text="${requisicoes.taxaAtendimentoPercent} + '%'">0%</b><span>Atendimento</span></div>
+        </div>
+    </aside>
+</section>
+
+<main class="wrap" id="conteudo">
+    <div class="section-head">
+        <div>
+            <p class="kicker">Estoque vivo</p>
+            <h2>Bolsas sob cuidado</h2>
+        </div>
+        <p>Prioridade FEFO: o que vence primeiro sai primeiro.</p>
     </div>
-</div>
 
-<!-- ── ENDPOINTS DE API ────────────────────────────── -->
-<h2>Endpoints disponíveis</h2>
+    <div class="grid grid-6">
+        <article class="kpi teal">
+            <div class="label">Total cadastrado</div>
+            <div class="value" th:text="${estoque.totalBolsas}">0</div>
+            <div class="hint">todas as bolsas</div>
+        </article>
+        <article class="kpi ok">
+            <div class="label">Disponíveis</div>
+            <div class="value" th:text="${estoque.totalDisponivel}">0</div>
+            <div class="hint">prontas para alocar</div>
+        </article>
+        <article class="kpi info">
+            <div class="label">Alocadas</div>
+            <div class="value" th:text="${estoque.totalAlocada}">0</div>
+            <div class="hint">em destino clínico</div>
+        </article>
+        <article class="kpi mute">
+            <div class="label">Em trânsito</div>
+            <div class="value" th:text="${estoque.totalEmTransito}">0</div>
+            <div class="hint">cadeia fria ativa</div>
+        </article>
+        <article class="kpi warn">
+            <div class="label">Quase vencendo</div>
+            <div class="value" th:text="${estoque.bolsasQuaseVencidas}">0</div>
+            <div class="hint">vence em ≤ 7 dias</div>
+        </article>
+        <article class="kpi danger">
+            <div class="label">Vencidas</div>
+            <div class="value" th:text="${estoque.bolsasVencidas}">0</div>
+            <div class="hint">validade expirada</div>
+        </article>
+    </div>
 
-<div class="api-links">
-    <a class="api-link" href="/api/v1/estatisticas/estoque">
-        <span class="badge badge-get">GET</span> /estatisticas/estoque
-    </a>
-    <a class="api-link" href="/api/v1/estatisticas/requisicoes">
-        <span class="badge badge-get">GET</span> /estatisticas/requisicoes
-    </a>
-    <a class="api-link" href="/api/v1/bolsas">
-        <span class="badge badge-get">GET</span> /bolsas
-    </a>
-    <a class="api-link" href="/api/v1/requisicoes">
-        <span class="badge badge-get">GET</span> /requisicoes
-    </a>
-    <a class="api-link" href="/api/v1/hospitais">
-        <span class="badge badge-get">GET</span> /hospitais
-    </a>
-    <a class="api-link" href="#">
-        <span class="badge badge-patch">PATCH</span> /bolsas/{id}/status
-    </a>
-    <a class="api-link" href="#">
-        <span class="badge badge-patch">PATCH</span> /requisicoes/{id}/status
-    </a>
-    <a class="api-link" href="/h2-console">
-        H2 Console
-    </a>
-</div>
+    <div class="grid grid-2" style="margin-top:1rem">
+        <section class="card">
+            <h3>Por hemocomponente</h3>
+            <table class="data">
+                <thead>
+                    <tr><th>Componente</th><th class="num">Disponível</th></tr>
+                </thead>
+                <tbody>
+                    <tr th:each="entry : ${estoque.distribuicaoPorHemocomponente}">
+                        <td th:text="${T(com.hemoflow.hemoflow.dominio.Hemocomponente).rotuloDe(entry.key)}">Hemácias</td>
+                        <td class="num" th:text="${entry.value}">0</td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+        <section class="card">
+            <h3>Por tipo sanguíneo</h3>
+            <table class="data">
+                <thead>
+                    <tr><th>Tipo</th><th class="num">Disponível</th></tr>
+                </thead>
+                <tbody>
+                    <tr th:each="entry : ${estoque.distribuicaoPorTipoSanguineo}">
+                        <td><span class="abo" th:text="${T(com.hemoflow.hemoflow.dominio.TipoSanguineo).rotuloDe(entry.key)}">O−</span></td>
+                        <td class="num" th:text="${entry.value}">0</td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+    </div>
 
+    <div class="section-head">
+        <div>
+            <p class="kicker">Hospitais</p>
+            <h2>Requisições da rede</h2>
+        </div>
+    </div>
+
+    <div class="grid grid-6">
+        <article class="kpi teal">
+            <div class="label">Total</div>
+            <div class="value" th:text="${requisicoes.totalRequisicoes}">0</div>
+        </article>
+        <article class="kpi warn">
+            <div class="label">Pendentes</div>
+            <div class="value" th:text="${requisicoes.totalPendentes}">0</div>
+        </article>
+        <article class="kpi mute">
+            <div class="label">Aguard. estoque</div>
+            <div class="value" th:text="${requisicoes.totalAguardandoEstoque}">0</div>
+        </article>
+        <article class="kpi info">
+            <div class="label">Alocadas</div>
+            <div class="value" th:text="${requisicoes.totalAlocadas}">0</div>
+        </article>
+        <article class="kpi ok">
+            <div class="label">Taxa de atendimento</div>
+            <div class="value" th:text="${requisicoes.taxaAtendimentoPercent} + '%'">0%</div>
+            <div class="bar"><i th:style="'width:' + ${requisicoes.taxaAtendimentoPercent} + '%'"></i></div>
+        </article>
+        <article class="kpi mute">
+            <div class="label">Média por req.</div>
+            <div class="value" th:text="${requisicoes.mediaQuantidadeSolicitada}">0</div>
+            <div class="hint">unidades solicitadas</div>
+        </article>
+    </div>
+
+    <div class="section-head">
+        <div>
+            <p class="kicker">Integração</p>
+            <h2>Portas da plataforma</h2>
+        </div>
+        <p>Acesso técnico à malha — com o mesmo cuidado da enfermagem.</p>
+    </div>
+    <div class="api-grid">
+        <a class="api-link" href="/api/v1/estatisticas/estoque"><span class="chip chip-get">GET</span> /estatisticas/estoque</a>
+        <a class="api-link" href="/api/v1/estatisticas/requisicoes"><span class="chip chip-get">GET</span> /estatisticas/requisicoes</a>
+        <a class="api-link" href="/api/v1/bolsas"><span class="chip chip-get">GET</span> /bolsas</a>
+        <a class="api-link" href="/api/v1/requisicoes"><span class="chip chip-get">GET</span> /requisicoes</a>
+        <a class="api-link" href="/api/v1/hospitais"><span class="chip chip-get">GET</span> /hospitais</a>
+        <a class="api-link" href="#"><span class="chip chip-patch">PATCH</span> /bolsas/{id}/status</a>
+        <a class="api-link" href="#"><span class="chip chip-patch">PATCH</span> /requisicoes/{id}/status</a>
+        <a class="api-link" href="/h2-console">Console H2</a>
+        <a class="api-link" href="/docs">Swagger</a>
+    </div>
+</main>
+
+<footer class="site-footer">
+    <span>HemoFlow · CESAR School · dados sintéticos, respeito clínico.</span>
+    <span>Cadeia fria monitorada · Recife</span>
+</footer>
+<script src="/js/hemoflow.js"></script>
 </body>
 </html>
