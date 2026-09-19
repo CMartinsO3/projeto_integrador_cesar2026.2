@@ -1,0 +1,53 @@
+﻿<!DOCTYPE html>
+<html lang="pt-BR">
+<head><meta charset="UTF-8"><title>Mapa de Doacao - HemoFlow</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<style>body{font-family:sans-serif;margin:0}#mapa{height:70vh}#info{padding:15px;background:#f9f9f9}h1{margin:10px 15px}a{color:#c0392b}</style>
+</head>
+<body>
+<h1>&#x1F5FA;&#xFE0F; Onde Doar em Recife</h1>
+<div id="mapa"></div>
+<div id="info"><h3>Campanhas Ativas</h3><ul id="campanhas"><li>Carregando...</li></ul></div>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+const params = new URLSearchParams(window.location.search);
+const doadorId = params.get('doadorId');
+const mapa = L.map('mapa').setView([-8.0476, -34.8770], 13);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {attribution: 'OpenStreetMap'}).addTo(mapa);
+
+if (doadorId) {
+  fetch('/api/v1/doadores/' + doadorId + '/hospitais-recomendados')
+    .then(r => r.json()).then(hospitais => {
+      hospitais.forEach(h => {
+        if (h.latitude && h.longitude) {
+          const marker = L.marker([h.latitude, h.longitude]).addTo(mapa);
+          marker.bindPopup('<b>' + h.nome + '</b><br>Tipo doador: ' + h.tipoSanguineoDoador + '<br><button onclick="verEstoque(' + h.id + ', this)">Ver Estoque</button><div id="est-' + h.id + '"></div>');
+        }
+      });
+    });
+} else {
+  fetch('/api/v1/hospitais').then(r => r.json()).then(hospitais => {
+    if (!Array.isArray(hospitais)) return;
+    hospitais.forEach(h => {
+      if (h.latitude && h.longitude) {
+        L.marker([h.latitude, h.longitude]).addTo(mapa).bindPopup('<b>' + h.nome + '</b>');
+      }
+    });
+  });
+}
+
+function verEstoque(id, btn) {
+  fetch('/api/v1/bolsas/hospital/' + id + '/estoque-mock').then(r => r.json()).then(d => {
+    let html = '<ul>';
+    Object.entries(d.estoque).forEach(([tipo, qtd]) => { html += '<li>' + tipo + ': ' + qtd + '</li>'; });
+    html += '</ul>';
+    document.getElementById('est-' + id).innerHTML = html;
+  });
+}
+
+fetch('/api/v1/campanhas').then(r => r.json()).then(cs => {
+  const ul = document.getElementById('campanhas');
+  ul.innerHTML = cs.length ? cs.map(c => '<li><b>' + c.titulo + '</b> - ' + c.hospital + ' (' + c.dataFim + ') - Tipos: ' + c.tiposSanguineos + '</li>').join('') : '<li>Nenhuma campanha ativa.</li>';
+});
+</script>
+</body></html>

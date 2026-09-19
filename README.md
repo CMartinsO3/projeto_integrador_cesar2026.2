@@ -91,22 +91,49 @@ Para garantir um escopo controlado e seguro, o projeto adota os seguintes limite
 
 ## ⚙️ Como Executar o Projeto
 
-> A explicação detalhada de execução passa a ser necessária a partir da Entrega 02, quando houver código funcional integrado. A seção abaixo será expandida progressivamente a cada entrega.
-
 ### Pré-requisitos
-* **Java JDK** (versão 17 ou superior)
-* **Maven** (ou wrapper `./mvnw` do projeto)
+* **Java JDK** 17 ou superior
+* **Maven** (ou o wrapper `mvnw` / `mvnw.cmd` do projeto)
 * **Git**
+* **Docker** (opcional, para o deploy inicial)
 
-### Instalação e Execução
+### Instalação e execução local
 
 ```bash
-# 1. Clonar o repositório
-$ git clone https://github.com/CMartinsO3/projeto_integrador_cesar2026.2
+git clone https://github.com/CMartinsO3/projeto_integrador_cesar2026.2
+cd projeto_integrador_cesar2026.2
+./mvnw spring-boot:run
+```
 
-# 2. Entrar na pasta do projeto
-$ cd hemoflow
+No Windows: `.\mvnw.cmd spring-boot:run`
 
-# 3. Compilar e executar com Maven
-$ ./mvnw spring-boot:run
+A aplicação sobe em [http://localhost:8080](http://localhost:8080) com dados sintéticos (topologia da malha, bolsas e uma requisição).
+
+### Pipeline / deploy inicial
+
+* **CI:** GitHub Actions em `.github/workflows/ci.yml` — `./mvnw -B verify` em push/PR.
+* **Container:**
+
+```bash
+docker compose up --build
+```
+
+### Endpoints da etapa 3–4
+
+| Recurso | Método | Rota |
+|---|---|---|
+| Painel | GET | `/` |
+| Topologia (nós + ligações) | GET | `/api/v1/topologia` |
+| Nós da malha | GET/POST | `/api/v1/nos-rede` |
+| Caminho mínimo (Dijkstra) | GET | `/api/v1/rotas/caminho-minimo?origemId=&destinoId=` |
+| Bolsas | GET/POST | `/api/v1/bolsas` |
+| Próxima bolsa (FEFO) | GET | `/api/v1/estoque/proxima-bolsa` |
+| Requisições | GET/POST | `/api/v1/requisicoes` |
+| Alocação FEFO + ABO/Rh | POST | `/api/v1/requisicoes/{id}/alocar` |
+| H2 Console | GET | `/h2-console` (JDBC: `jdbc:h2:mem:hemoflow`) |
+
+Exemplo de rota Hemocentro → Hospital C (via nó intermediário, 35 min):
+
+```bash
+curl "http://localhost:8080/api/v1/rotas/caminho-minimo?origemId=1&destinoId=4"
 ```
