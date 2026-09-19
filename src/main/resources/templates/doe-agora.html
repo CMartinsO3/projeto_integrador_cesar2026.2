@@ -1,0 +1,97 @@
+﻿<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Cadastrar doador — HemoFlow</title>
+  <link rel="stylesheet" href="/css/hemoflow.css">
+</head>
+<body>
+<header class="topbar">
+  <a class="brand" href="/">
+    <span class="mark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3c-1.8 3.2-6 6.4-6 10.2A6 6 0 0 0 12 21a6 6 0 0 0 6-7.8C18 9.4 13.8 6.2 12 3Z"/><path d="M12 11v6M9 14h6"/></svg></span>
+    <span><strong>HemoFlow</strong><em>Primeira doação</em></span>
+  </a>
+  <nav>
+    <a href="/">Operações</a>
+    <a href="/mapa">Onde doar</a>
+    <span data-auth-nav><a class="btn btn-ghost" href="/login-usuario">Já tenho cadastro</a></span>
+  </nav>
+</header>
+
+<div class="split-page">
+  <aside class="aside-copy">
+    <p class="kicker">Recife · hemorrede</p>
+    <h1>Um cadastro breve. Um gesto que permanece.</h1>
+    <p class="lede">Preencha com a mesma atenção de um prontuário. Em seguida, mostramos hospitais e campanhas perto de você.</p>
+    <ul class="checklist">
+      <li><b>16 a 69 anos</b> Peso acima de 50 kg e boa saúde no dia.</li>
+      <li><b>Sem jejum</b> Hidrate-se. Evite apenas excessos nas horas anteriores.</li>
+      <li><b>Intervalo seguro</b> Homens até 4 vezes/ano · mulheres até 3.</li>
+    </ul>
+  </aside>
+  <main class="form-panel">
+    <div class="card" style="max-width:520px">
+      <h3>Ficha do doador</h3>
+      <div id="msg" class="msg"></div>
+      <form id="form">
+        <div class="field">
+          <label for="nome">Nome completo</label>
+          <input id="nome" required>
+        </div>
+        <div class="row-2">
+          <div class="field">
+            <label for="email">Email</label>
+            <input id="email" type="email" required>
+          </div>
+          <div class="field">
+            <label for="senha">Senha</label>
+            <input id="senha" type="password" required>
+          </div>
+        </div>
+        <div class="row-2">
+          <div class="field">
+            <label for="nascimento">Data de nascimento</label>
+            <input id="nascimento" type="date" required>
+          </div>
+          <div class="field">
+            <label for="tipo">Tipo sanguíneo</label>
+            <select id="tipo">
+              <option value="A_POS">A+</option>
+              <option value="A_NEG">A−</option>
+              <option value="B_POS">B+</option>
+              <option value="B_NEG">B−</option>
+              <option value="AB_POS">AB+</option>
+              <option value="AB_NEG">AB−</option>
+              <option value="O_POS">O+</option>
+              <option value="O_NEG">O−</option>
+            </select>
+          </div>
+        </div>
+        <button class="btn btn-primary" type="submit">Cadastrar e continuar</button>
+      </form>
+    </div>
+  </main>
+</div>
+<script src="/js/hemoflow.js"></script>
+<script>
+document.getElementById('form').addEventListener('submit', async e => {
+  e.preventDefault();
+  const res = await fetch('/api/v1/doadores', {
+    method: 'POST', headers:{'Content-Type':'application/json'}, credentials:'same-origin',
+    body: JSON.stringify({
+      nome: document.getElementById('nome').value,
+      email: document.getElementById('email').value,
+      senha: document.getElementById('senha').value,
+      dataNascimento: document.getElementById('nascimento').value,
+      tipoSanguineo: document.getElementById('tipo').value
+    })
+  });
+  const data = await res.json();
+  const msg = document.getElementById('msg');
+  if (data.erro) { msg.style.color='#b42318'; msg.textContent = data.erro; }
+  else { window.location.href = data.redirect || '/mapa'; }
+});
+</script>
+</body>
+</html>

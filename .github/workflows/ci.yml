@@ -1,0 +1,20 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master, semana0304]
+  pull_request:
+    branches: [main, master, semana0304]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+          cache: maven
+      - name: Compilar e testar
+        run: ./mvnw -B verify
