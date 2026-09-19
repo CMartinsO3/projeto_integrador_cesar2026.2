@@ -1,0 +1,42 @@
+﻿<!DOCTYPE html>
+<html lang="pt-BR">
+<head><meta charset="UTF-8"><title>Doe Agora - HemoFlow</title>
+<style>body{font-family:sans-serif;max-width:600px;margin:40px auto;padding:0 20px}input,select{width:100%;padding:8px;margin:6px 0 14px;box-sizing:border-box}button{padding:10px 20px;background:#c0392b;color:white;border:none;cursor:pointer}a{color:#c0392b}</style>
+</head>
+<body>
+<h1>&#x1F9B8; Doe Agora</h1>
+<p>Cadastre-se para ver onde e como voce pode doar sangue em Recife.</p>
+<div id="msg" style="color:green"></div>
+<form id="form">
+  <label>Nome completo</label><input id="nome" required>
+  <label>Email</label><input id="email" type="email" required>
+  <label>Senha</label><input id="senha" type="password" required>
+  <label>Data de Nascimento</label><input id="nascimento" type="date" required>
+  <label>Tipo Sanguineo</label>
+  <select id="tipo">
+    <option>A_POS</option><option>A_NEG</option>
+    <option>B_POS</option><option>B_NEG</option>
+    <option>AB_POS</option><option>AB_NEG</option>
+    <option>O_POS</option><option>O_NEG</option>
+  </select>
+  <button type="submit">Cadastrar e Ver Hospitais</button>
+</form>
+<script>
+document.getElementById('form').addEventListener('submit', async e => {
+  e.preventDefault();
+  const res = await fetch('/api/v1/doadores', {
+    method: 'POST', headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({
+      nome: document.getElementById('nome').value,
+      email: document.getElementById('email').value,
+      senha: document.getElementById('senha').value,
+      dataNascimento: document.getElementById('nascimento').value,
+      tipoSanguineo: document.getElementById('tipo').value
+    })
+  });
+  const data = await res.json();
+  if (data.erro) { document.getElementById('msg').style.color='red'; document.getElementById('msg').textContent = data.erro; }
+  else { window.location.href = '/mapa?doadorId=' + data.id; }
+});
+</script>
+</body></html>

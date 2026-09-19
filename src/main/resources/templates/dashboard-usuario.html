@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head><meta charset="UTF-8"><title>Área do Doador - HemoFlow</title>
+<style>
+*{box-sizing:border-box}
+body{font-family:sans-serif;margin:0;background:#f5f5f5}
+header{background:#c0392b;color:white;padding:12px 20px;display:flex;justify-content:space-between;align-items:center}
+header h1{margin:0;font-size:1.2rem}
+header button{background:rgba(255,255,255,.2);border:none;color:white;padding:6px 14px;cursor:pointer;border-radius:4px}
+.container{max-width:860px;margin:0 auto;padding:20px}
+.boas-vindas{background:white;border-radius:6px;padding:20px;margin-bottom:16px;border-left:4px solid #c0392b}
+.boas-vindas h2{margin:0 0 4px;color:#c0392b}
+.boas-vindas p{margin:0;color:#555}
+.stats{display:flex;gap:12px;margin-bottom:16px;flex-wrap:wrap}
+.stat{background:white;border-radius:6px;padding:16px 24px;text-align:center;flex:1;min-width:120px;border:1px solid #e0e0e0}
+.stat .num{font-size:2rem;font-weight:700;color:#c0392b}
+.stat .label{font-size:.8rem;color:#666}
+section{background:white;border-radius:6px;padding:16px;margin-bottom:16px;border:1px solid #e0e0e0}
+section h2{margin:0 0 12px;font-size:1rem;color:#333}
+table{width:100%;border-collapse:collapse;font-size:.85rem}
+th{background:#c0392b;color:white;padding:8px;text-align:left}
+td{padding:7px 8px;border-bottom:1px solid #eee}
+.info-card{background:#fff8f8;border-left:3px solid #c0392b;padding:12px 16px;margin-bottom:10px;border-radius:0 4px 4px 0}
+.info-card h3{margin:0 0 6px;font-size:.95rem;color:#c0392b}
+.info-card p{margin:0;font-size:.85rem;color:#555;line-height:1.5}
+.btn-primary{display:inline-block;padding:10px 24px;background:#c0392b;color:white;border:none;border-radius:4px;cursor:pointer;text-decoration:none;font-size:.95rem;margin-top:8px}
+.btn-primary:hover{background:#a93226}
+</style>
+</head>
+<body>
+<header>
+  <h1>🩸 HemoFlow — Área do Doador</h1>
+  <span id="nomeDoador" style="font-size:.9rem;opacity:.85"></span>
+  <button onclick="logout()">Sair</button>
+</header>
+<div class="container">
+
+  <div class="boas-vindas">
+    <h2 id="saudacao">Olá, Doador!</h2>
+    <p id="tipo-sanguineo">Tipo sanguíneo: —</p>
+  </div>
+
+  <!-- Estatísticas do doador -->
+  <div class="stats">
+    <div class="stat"><div class="num" id="statDoacoes">—</div><div class="label">Doações realizadas</div></div>
+    <div class="stat"><div class="num" id="statVidas">—</div><div class="label">Vidas que você pode ter salvado*</div></div>
+    <div class="stat"><div class="num" id="statVol">—</div><div class="label">ml doados (total)</div></div>
+  </div>
+
+  <!-- Histórico de doações -->
+  <section>
+    <h2>📋 Histórico de Doações</h2>
+    <table>
+      <thead><tr><th>Data</th><th>Hospital</th><th>Volume (ml)</th></tr></thead>
+      <tbody id="tbHistorico"><tr><td colspan="3">Carregando...</td></tr></tbody>
+    </table>
+  </section>
+
+  <!-- Agendamentos -->
+  <section>
+    <h2>📅 Meus Agendamentos</h2>
+    <table>
+      <thead><tr><th>Data/Hora</th><th>Hospital</th><th>Status</th></tr></thead>
+      <tbody id="tbAgendamentos"><tr><td colspan="3">Carregando...</td></tr></tbody>
+    </table>
+    <a class="btn-primary" href="/mapa" id="linkMapa">Ver mapa e agendar nova doação →</a>
+  </section>
+
+  <!-- Por que doar -->
+  <section>
+    <h2>❤️ Por que doar sangue?</h2>
+    <div class="info-card">
+      <h3>🩸 Uma doação, até 4 vidas salvas</h3>
+      <p>Cada bolsa de sangue doada pode ser separada em até 4 hemocomponentes diferentes (hemácias, plaquetas, plasma e crioprecipitado), beneficiando múltiplos pacientes.</p>
+    </div>
+    <div class="info-card">
+      <h3>⏰ O sangue não pode ser fabricado</h3>
+      <p>Não existe substituto artificial para o sangue humano. Cirurgias, acidentes, partos de risco e tratamentos de leucemia dependem inteiramente de doadores voluntários como você.</p>
+    </div>
+    <div class="info-card">
+      <h3>📅 Você pode doar a cada 2 a 4 meses</h3>
+      <p>Mulheres podem doar até 3 vezes por ano e homens até 4. O processo leva cerca de 30 minutos e o corpo repõe o volume em menos de 24 horas.</p>
+    </div>
+    <div class="info-card">
+      <h3>💉 Quem mais precisa do seu sangue?</h3>
+      <p>Pacientes com anemia falciforme, leucemia, vítimas de acidentes graves, recém-nascidos prematuros e mulheres com complicações no parto. O estoque de Recife depende de você!</p>
+    </div>
+    <div class="info-card">
+      <h3>✅ Requisitos básicos para doar</h3>
+      <p>Ter entre 16 e 69 anos · Pesar mais de 50kg · Estar em bom estado de saúde · Não ter feito tatuagem nos últimos 6 meses · Não estar em jejum.</p>
+    </div>
+  </section>
+</div>
+
+<script>
+let doadorIdAtual = null;
+
+fetch('/api/v1/auth/sessao').then(r=>r.json()).then(s => {
+  if (!s.logado || s.role !== 'DOADOR') { window.location.href='/login-usuario'; return; }
+  doadorIdAtual = s.id;
+  document.getElementById('nomeDoador').textContent = s.nome;
+  document.getElementById('saudacao').textContent = 'Olá, ' + s.nome.split(' ')[0] + '! 👋';
+
+  // Buscar dados do doador
+  fetch('/api/v1/doadores/' + s.id).then(r=>r.json()).then(d => {
+    const tipos = {'O_NEG':'O−','O_POS':'O+','A_POS':'A+','A_NEG':'A−','B_POS':'B+','B_NEG':'B−','AB_POS':'AB+','AB_NEG':'AB−'};
+    document.getElementById('tipo-sanguineo').textContent = 'Tipo sanguíneo: ' + (tipos[d.tipoSanguineo]||d.tipoSanguineo);
+  });
+
+  // Histórico de doações
+  fetch('/api/v1/doadores/' + s.id + '/doacoes').then(r=>r.json()).then(lista => {
+    const tb = document.getElementById('tbHistorico');
+    if (!Array.isArray(lista) || lista.length === 0) {
+      tb.innerHTML = '<tr><td colspan="3" style="color:#888">Nenhuma doação registrada ainda. Que tal ser o primeiro?</td></tr>';
+      document.getElementById('statDoacoes').textContent = '0';
+      document.getElementById('statVidas').textContent = '0';
+      document.getElementById('statVol').textContent = '0';
+      return;
+    }
+    const totalVol = lista.reduce((s,d)=>s+(d.volumeMl||0),0);
+    document.getElementById('statDoacoes').textContent = lista.length;
+    document.getElementById('statVidas').textContent = (lista.length * 4) + '*';
+    document.getElementById('statVol').textContent = totalVol;
+    tb.innerHTML = lista.map(d=>`<tr><td>${d.dataDoacao}</td><td>${d.hospital}</td><td>${d.volumeMl}</td></tr>`).join('');
+  }).catch(()=>{
+    document.getElementById('tbHistorico').innerHTML='<tr><td colspan="3" style="color:#888">Sem doações ainda.</td></tr>';
+    document.getElementById('statDoacoes').textContent='0';
+    document.getElementById('statVidas').textContent='0';
+    document.getElementById('statVol').textContent='0';
+  });
+
+  // Agendamentos
+  fetch('/api/v1/agendamentos/doador/' + s.id).then(r=>r.json()).then(lista => {
+    const tb = document.getElementById('tbAgendamentos');
+    tb.innerHTML = !Array.isArray(lista)||lista.length===0
+      ? '<tr><td colspan="3" style="color:#888">Nenhum agendamento.</td></tr>'
+      : lista.map(a=>`<tr><td>${a.dataHora.replace('T',' ').substring(0,16)}</td><td>${a.hospital}</td><td>${a.status}</td></tr>`).join('');
+  });
+
+  document.getElementById('linkMapa').href = '/mapa?doadorId=' + s.id;
+});
+
+function logout() {
+  fetch('/api/v1/auth/logout',{method:'POST'}).then(()=>window.location.href='/login-usuario');
+}
+</script>
+</body></html>

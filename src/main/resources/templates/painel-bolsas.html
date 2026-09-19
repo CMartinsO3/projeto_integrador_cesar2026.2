@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head><meta charset="UTF-8"><title>Painel de Bolsas - HemoFlow</title>
+<style>body{font-family:sans-serif;max-width:900px;margin:30px auto;padding:0 15px}table{width:100%;border-collapse:collapse}td,th{border:1px solid #ddd;padding:8px;text-align:left}th{background:#c0392b;color:white}button{padding:5px 10px;cursor:pointer}input,select{padding:6px;margin:4px;border:1px solid #ccc}a{color:#c0392b}</style>
+</head>
+<body>
+<h1>&#x1F489; Painel de Bolsas de Sangue</h1>
+<p><a href="/">Voltar</a> | <a href="/doe-agora">Doe Agora</a> | <a href="/mapa">Mapa</a></p>
+<h2>Registrar Entrada de Bolsa</h2>
+<form id="formEntrada">
+  <select id="tipoSanguineo"><option>O_NEG</option><option>O_POS</option><option>A_POS</option><option>A_NEG</option><option>B_POS</option><option>B_NEG</option><option>AB_POS</option><option>AB_NEG</option></select>
+  <select id="hemo"><option>HEMACIAS</option><option>PLAQUETAS</option><option>PLASMA</option><option>CRIOPRECIPITADO</option></select>
+  <input id="lote" placeholder="Lote (ex: L-010)">
+  <input id="coleta" type="date"><input id="validade" type="date">
+  <select id="noRedeId"><option value="1">Carregando locais...</option></select>
+  <button type="submit">Registrar Entrada</button>
+</form>
+<div id="msgEntrada" style="margin:8px 0;color:green"></div>
+<h2>Bolsas em Estoque</h2>
+<button onclick="carregarBolsas()">Atualizar Lista</button>
+<table><thead><tr><th>ID</th><th>Tipo</th><th>Hemocomp.</th><th>Lote</th><th>Validade</th><th>Status</th><th>Acao</th></tr></thead>
+<tbody id="tabelaBolsas"></tbody></table>
+<script>
+fetch('/api/v1/nos-rede').then(r=>r.json()).then(nos => {
+  const sel = document.getElementById('noRedeId');
+  if (Array.isArray(nos) && nos.length > 0) {
+    sel.innerHTML = nos.map(n => `<option value="${n.id}">${n.codigo} — ${n.nome}</option>`).join('');
+  }
+});
+
+function carregarBolsas() {
+  fetch('/api/v1/bolsas').then(r => r.json()).then(bolsas => {
+    if (!Array.isArray(bolsas)) { document.getElementById('tabelaBolsas').innerHTML = '<tr><td colspan=7>Nenhuma bolsa.</td></tr>'; return; }
+    document.getElementById('tabelaBolsas').innerHTML = bolsas.map(b =>
+      '<tr><td>' + b.id + '</td><td>' + (b.tipoSanguineo||'') + '</td><td>' + (b.hemocomponente||'') + '</td><td>' + (b.lote||'') + '</td><td>' + (b.dataValidade||'') + '</td><td>' + (b.status||'') + '</td>'
+      + '<td>' + (b.status === 'DISPONIVEL' ? '<button onclick="darBaixa(' + b.id + ', \'TRANSFUSAO\')">Transfusao</button> <button onclick="darBaixa(' + b.id + ', \'DESCARTE\')">Descartar</button>' : '-') + '</td></tr>'
+    ).join('');
+  });
+}
+function darBaixa(id, motivo) {
+  fetch('/api/v1/bolsas/' + id + '/saida', {
+    method: 'POST', headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({motivo})
+  }).then(() => carregarBolsas());
+}
+document.getElementById('formEntrada').addEventListener('submit', async e => {
+  e.preventDefault();
+  const res = await fetch('/api/v1/bolsas/entrada', {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({
+      tipoSanguineo: document.getElementById('tipoSanguineo').value,
+      hemocomponente: document.getElementById('hemo').value,
+      lote: document.getElementById('lote').value,
+      dataColeta: document.getElementById('coleta').value,
+      dataValidade: document.getElementById('validade').value,
+      noRedeId: document.getElementById('noRedeId').value
+    })
+  });
+  const d = await res.json();
+  document.getElementById('msgEntrada').textContent = 'Bolsa #' + d.id + ' registrada! Lote: ' + d.lote;
+  carregarBolsas();
+});
+carregarBolsas();
+</script>
+</body></html>
