@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+﻿﻿<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8">
@@ -38,6 +38,8 @@ const params = new URLSearchParams(window.location.search);
 const mapa = L.map('mapa').setView([-8.0476, -34.8770], 13);
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {attribution: 'OpenStreetMap'}).addTo(mapa);
 
+let doadorIdAtual = null;
+
 function carregarHospitais(doadorId) {
   if (doadorId) {
     fetch('/api/v1/doadores/' + doadorId + '/hospitais-recomendados')
@@ -45,7 +47,13 @@ function carregarHospitais(doadorId) {
         hospitais.forEach(h => {
           if (h.latitude && h.longitude) {
             const marker = L.marker([h.latitude, h.longitude]).addTo(mapa);
-            marker.bindPopup('<b>' + h.nome + '</b><br>Seu tipo: ' + HF.abo(h.tipoSanguineoDoador) + '<br><button class="btn btn-sm btn-teal" style="margin-top:8px" onclick="verEstoque(' + h.id + ')">Ver estoque</button><div id="est-' + h.id + '"></div>');
+            marker.bindPopup(
+              '<b>' + h.nome + '</b><br>Seu tipo: ' + HF.abo(h.tipoSanguineoDoador) +
+              '<br><button class="btn btn-sm btn-teal" style="margin-top:8px" onclick="verEstoque(' + h.id + ')">Ver estoque</button>' +
+              ' <button class="btn btn-sm btn-primary" style="margin-top:8px" onclick="abrirFormAgendamento(' + h.id + ')">Agendar doação</button>' +
+              '<div id="est-' + h.id + '"></div>' +
+              '<div id="agenda-' + h.id + '"></div>'
+            );
           }
         });
       });
@@ -54,7 +62,9 @@ function carregarHospitais(doadorId) {
       if (!Array.isArray(hospitais)) return;
       hospitais.forEach(h => {
         if (h.latitude && h.longitude) {
-          L.marker([h.latitude, h.longitude]).addTo(mapa).bindPopup('<b>' + h.nome + '</b>');
+          L.marker([h.latitude, h.longitude]).addTo(mapa).bindPopup(
+            '<b>' + h.nome + '</b><br><a href="/login-usuario">Entre para agendar sua doação</a>'
+          );
         }
       });
     });
@@ -63,8 +73,12 @@ function carregarHospitais(doadorId) {
 
 fetch('/api/v1/auth/sessao').then(r => r.json()).then(s => {
   const id = params.get('doadorId') || (s.logado && s.role === 'DOADOR' ? s.id : null);
+  doadorIdAtual = id;
   carregarHospitais(id);
-}).catch(() => carregarHospitais(params.get('doadorId')));
+}).catch(() => {
+  doadorIdAtual = params.get('doadorId');
+  carregarHospitais(doadorIdAtual);
+});
 
 function verEstoque(id) {
   fetch('/api/v1/bolsas/hospital/' + id + '/estoque-mock').then(r => r.json()).then(d => {
@@ -72,6 +86,49 @@ function verEstoque(id) {
     Object.entries(d.estoque).forEach(([tipo, qtd]) => { html += '<li>' + HF.tipo(tipo) + ': ' + qtd + '</li>'; });
     html += '</ul>';
     document.getElementById('est-' + id).innerHTML = html;
+  });
+}
+
+function abrirFormAgendamento(hospitalId) {
+  if (!doadorIdAtual) { window.location.href = '/login-usuario'; return; }
+  const box = document.getElementById('agenda-' + hospitalId);
+  box.innerHTML =
+    '<div style="margin-top:10px;padding-top:10px;border-top:1px solid #eee">' +
+      '<label style="display:block;font-size:.78rem;margin-bottom:4px">Data e hora</label>' +
+      '<input type="datetime-local" id="dataHora-' + hospitalId + '" style="width:100%;padding:6px;font-size:.85rem;border:1px solid #ccc;border-radius:6px">' +
+      '<button class="btn btn-sm btn-primary" style="margin-top:8px" onclick="confirmarAgendamento(' + hospitalId + ')">Confirmar</button>' +
+      '<div id="agenda-msg-' + hospitalId + '" class="msg" style="margin-top:6px"></div>' +
+    '</div>';
+}
+
+function confirmarAgendamento(hospitalId) {
+  const input = document.getElementById('dataHora-' + hospitalId);
+  const msg = document.getElementById('agenda-msg-' + hospitalId);
+  if (!input.value) {
+    msg.style.color = '#b42318';
+    msg.textContent = 'Escolha uma data e hora.';
+    return;
+  }
+  msg.style.color = '';
+  msg.textContent = 'Agendando…';
+  fetch('/api/v1/agendamentos', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'same-origin',
+    body: JSON.stringify({
+      doadorId: doadorIdAtual,
+      hospitalId: hospitalId,
+      dataHora: input.value
+    })
+  }).then(async r => {
+    if (!r.ok) { throw new Error('Falha ao agendar'); }
+    return r.json();
+  }).then(() => {
+    msg.style.color = '#067647';
+    msg.textContent = 'Agendamento confirmado! Você pode acompanhar em "Meu cuidado".';
+  }).catch(() => {
+    msg.style.color = '#b42318';
+    msg.textContent = 'Não foi possível agendar. Tente novamente.';
   });
 }
 
