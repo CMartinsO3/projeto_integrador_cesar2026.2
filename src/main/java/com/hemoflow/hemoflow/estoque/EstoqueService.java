@@ -112,8 +112,13 @@ public class EstoqueService {
     /**
      * Aloca bolsas disponíveis para uma requisição pendente.
      *
-     * <p>U1: seleção por ordem de cadastro (sem FEFO nem compatibilidade ABO/Rh).
-     * Essas regras serão incorporadas na Unidade 2.</p>
+     * <p>A seleção segue duas regras, nessa ordem:</p>
+     * <ol>
+     *   <li><strong>Compatibilidade ABO/Rh</strong> — apenas bolsas compatíveis com o
+     *       tipo sanguíneo solicitado são consideradas (ver {@link CompatibilidadeAboRh}).</li>
+     *   <li><strong>FEFO</strong> (First Expired, First Out) — entre as bolsas compatíveis,
+     *       as de validade mais próxima são sempre priorizadas (ver {@link FilaFEFO}).</li>
+     * </ol>
      */
     @Transactional(noRollbackFor = RegraNegocioException.class)
     public List<Bolsa> alocar(Long requisicaoId) {
@@ -124,28 +129,33 @@ public class EstoqueService {
             throw new RegraNegocioException("Requisição em status " + requisicao.getStatus() + " não pode ser alocada");
         }
 
-        // U1: filtra apenas por hemocomponente e status DISPONIVEL
-        // Compatibilidade ABO/Rh será aplicada na Unidade 2 (CompatibilidadeAboRh)
+        // Filtra por hemocomponente + disponibilidade, remove bolsas vencidas
+        // e mantém apenas bolsas ABO/Rh compatíveis com o tipo solicitado.
         List<Bolsa> candidatas = bolsaRepository.findByStatusAndHemocomponente(
                         StatusBolsa.DISPONIVEL,
                         requisicao.getHemocomponente()
                 ).stream()
                 .filter(b -> !b.isVencida())
+                .filter(b -> CompatibilidadeAboRh.compativel(b.getTipoSanguineo(), requisicao.getTipoSanguineo()))
                 .toList();
 
         if (candidatas.size() < requisicao.getQuantidade()) {
             requisicao.setStatus(StatusRequisicao.AGUARDANDO_ESTOQUE);
             requisicaoRepository.save(requisicao);
             throw new RegraNegocioException(
-                    "Estoque insuficiente: necessários " + requisicao.getQuantidade()
-                            + ", disponíveis " + candidatas.size()
+                    "Estoque insuficiente ou incompatível: necessários " + requisicao.getQuantidade()
+                            + ", disponíveis e compatíveis " + candidatas.size()
             );
         }
 
-        // U1: seleção simples (as primeiras N bolsas da lista)
+        // FEFO: entre as candidatas compatíveis, a fila de prioridade sempre
+        // entrega primeiro a bolsa com validade mais próxima.
+        FilaFEFO filaFEFO = new FilaFEFO();
+        filaFEFO.adicionarTodas(candidatas);
+
         List<Bolsa> alocadas = new ArrayList<>();
         for (int i = 0; i < requisicao.getQuantidade(); i++) {
-            Bolsa bolsa = candidatas.get(i);
+            Bolsa bolsa = filaFEFO.proxima();
             bolsa.setStatus(StatusBolsa.ALOCADA);
             alocadas.add(bolsa);
         }
