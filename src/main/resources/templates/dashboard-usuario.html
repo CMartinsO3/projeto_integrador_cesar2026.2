@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Área do doador — HemoFlow</title>
+  <link rel="stylesheet" href="/css/hemoflow.css">
+</head>
+<body>
+<div class="app">
+  <aside class="side">
+    <a class="brand" href="/" style="color:#fff">
+      <span class="mark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3c-1.8 3.2-6 6.4-6 10.2A6 6 0 0 0 12 21a6 6 0 0 0 6-7.8C18 9.4 13.8 6.2 12 3Z"/><path d="M12 11v6M9 14h6"/></svg></span>
+      <span><strong>HemoFlow</strong><em>Doador</em></span>
+    </a>
+    <nav>
+      <a class="is-active" href="/dashboard-usuario">Meu cuidado</a>
+      <a href="/mapa" id="navMapa">Agendar doação</a>
+      <a href="/">Central pública</a>
+    </nav>
+    <div class="who">
+      <b id="nomeDoador">—</b>
+      Sessão protegida
+      <button class="btn btn-ghost btn-sm" style="margin-top:.7rem;color:#fff;border-color:rgba(255,255,255,.2)" onclick="logout()">Encerrar</button>
+    </div>
+  </aside>
+  <div class="main">
+    <div class="main-bar">
+      <div>
+        <h1>Seu espaço de doação</h1>
+        <p>Histórico, agenda e o sentido do gesto — com clareza de prontuário.</p>
+      </div>
+    </div>
+    <div class="main-body">
+      <section class="welcome">
+        <p class="kicker" id="tipo-sanguineo">Tipo sanguíneo: —</p>
+        <h2 id="saudacao">Olá</h2>
+        <p>Obrigado por estar nesta cadeia. Cada registro abaixo é uma vida que passou por mãos cuidadosas.</p>
+      </section>
+
+      <div class="grid grid-3">
+        <article class="kpi teal"><div class="label">Doações</div><div class="value" id="statDoacoes">—</div><div class="hint">realizadas</div></article>
+        <article class="kpi ok"><div class="label">Alcance estimado</div><div class="value" id="statVidas">—</div><div class="hint">vidas que você pode ter ajudado*</div></article>
+        <article class="kpi mute"><div class="label">Volume</div><div class="value" id="statVol">—</div><div class="hint">ml doados no total</div></article>
+      </div>
+
+      <div class="grid grid-2" style="margin-top:1rem">
+        <section class="card">
+          <h3>Histórico de doações</h3>
+          <table class="data">
+            <thead><tr><th>Data</th><th>Hospital</th><th class="num">Volume (ml)</th></tr></thead>
+            <tbody id="tbHistorico"><tr><td class="empty" colspan="3">Carregando…</td></tr></tbody>
+          </table>
+        </section>
+        <section class="card">
+          <h3>Agendamentos</h3>
+          <table class="data">
+            <thead><tr><th>Data/hora</th><th>Hospital</th><th>Status</th></tr></thead>
+            <tbody id="tbAgendamentos"><tr><td class="empty" colspan="3">Carregando…</td></tr></tbody>
+          </table>
+          <a class="btn btn-primary" style="margin-top:1rem" href="/mapa" id="linkMapa">Ver mapa e agendar</a>
+        </section>
+      </div>
+
+      <div class="section-head">
+        <div>
+          <p class="kicker">Por que doar</p>
+          <h2>O que o sangue faz quando chega</h2>
+        </div>
+      </div>
+      <div class="info-grid grid-2">
+        <article class="info-item">
+          <h3>Uma doação, até quatro destinos</h3>
+          <p>Hemácias, plaquetas, plasma e crioprecipitado. Uma bolsa se multiplica em cuidado.</p>
+        </article>
+        <article class="info-item">
+          <h3>Não se fabrica — se recebe</h3>
+          <p>Cirurgias, acidentes, partos e tratamentos oncológicos dependem de doadores voluntários.</p>
+        </article>
+        <article class="info-item">
+          <h3>Intervalo de 2 a 4 meses</h3>
+          <p>O volume se repõe em menos de 24 horas. O processo leva cerca de meia hora.</p>
+        </article>
+        <article class="info-item">
+          <h3>Quem espera em Recife</h3>
+          <p>Anemia falciforme, leucemia, prematuros e vítimas de trauma. O estoque da cidade passa por você.</p>
+        </article>
+      </div>
+    </div>
+  </div>
+</div>
+<script src="/js/hemoflow.js"></script>
+<script>
+let doadorIdAtual = null;
+
+fetch('/api/v1/auth/sessao').then(r=>r.json()).then(s => {
+  if (!s.logado || s.role !== 'DOADOR') { window.location.href='/login-usuario'; return; }
+  doadorIdAtual = s.id;
+  document.getElementById('nomeDoador').textContent = s.nome;
+  document.getElementById('saudacao').textContent = 'Olá, ' + s.nome.split(' ')[0] + '.';
+
+  fetch('/api/v1/doadores/' + s.id).then(r=>r.json()).then(d => {
+    document.getElementById('tipo-sanguineo').innerHTML = 'Tipo sanguíneo ' + HF.abo(d.tipoSanguineo);
+  });
+
+  fetch('/api/v1/doadores/' + s.id + '/doacoes').then(r=>r.json()).then(lista => {
+    const tb = document.getElementById('tbHistorico');
+    if (!Array.isArray(lista) || lista.length === 0) {
+      tb.innerHTML = '<tr><td class="empty" colspan="3">Nenhuma doação registrada ainda. Quando quiser, o mapa espera você.</td></tr>';
+      document.getElementById('statDoacoes').textContent = '0';
+      document.getElementById('statVidas').textContent = '0';
+      document.getElementById('statVol').textContent = '0';
+      return;
+    }
+    const totalVol = lista.reduce((sum,d)=>sum+(d.volumeMl||0),0);
+    document.getElementById('statDoacoes').textContent = lista.length;
+    document.getElementById('statVidas').textContent = (lista.length * 4) + '*';
+    document.getElementById('statVol').textContent = totalVol;
+    tb.innerHTML = lista.map(d=>`<tr><td>${d.dataDoacao}</td><td>${d.hospital}</td><td class="num">${d.volumeMl}</td></tr>`).join('');
+  }).catch(()=>{
+    document.getElementById('tbHistorico').innerHTML='<tr><td class="empty" colspan="3">Sem doações ainda.</td></tr>';
+    document.getElementById('statDoacoes').textContent='0';
+    document.getElementById('statVidas').textContent='0';
+    document.getElementById('statVol').textContent='0';
+  });
+
+  fetch('/api/v1/agendamentos/doador/' + s.id).then(r=>r.json()).then(lista => {
+    const tb = document.getElementById('tbAgendamentos');
+    tb.innerHTML = !Array.isArray(lista)||lista.length===0
+      ? '<tr><td class="empty" colspan="3">Nenhum agendamento no momento.</td></tr>'
+      : lista.map(a=>`<tr><td>${a.dataHora.replace('T',' ').substring(0,16)}</td><td>${a.hospital}</td><td><span class="chip chip-teal">${HF.status(a.status)}</span></td></tr>`).join('');
+  }).catch(() => {
+    document.getElementById('tbAgendamentos').innerHTML = '<tr><td class="empty" colspan="3">Nenhum agendamento no momento.</td></tr>';
+  });
+
+  document.getElementById('linkMapa').href = '/mapa';
+  document.getElementById('navMapa').href = '/mapa';
+});
+
+function logout() {
+  fetch('/api/v1/auth/logout',{method:'POST'}).then(()=>window.location.href='/login-usuario');
+}
+</script>
+</body>
+</html>
