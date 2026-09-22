@@ -81,6 +81,33 @@ Para garantir um escopo controlado e seguro, o projeto adota os seguintes limite
 * **Screencast de apresentação do protótipo**:
   🎥 [Vídeo no YouTube](https://youtu.be/CSTc0O8W5v8)
 
+
+## 🎥 Vídeos Demonstrativos
+
+### 📋 Histórias de Usuário Implementadas
+
+> **História 1: Cálculo de Rota Otimizada (Caminho Mínimo)**
+> * *Como* administrador logístico da Hemorrede
+> * *Eu quero* calcular a rota mais rápida (Dijkstra) entre a origem e o destino
+> * *Para que* as bolsas de sangue sejam entregues dentro do tempo limite da cadeia fria, garantindo a viabilidade do hemocomponente.
+
+> **História 2: Alocação Inteligente de Estoque (FEFO)**
+> * *Como* gestor de estoque do banco de sangue
+> * *Eu quero* que o sistema aloque automaticamente as bolsas compatíveis mais próximas da data de vencimento (FEFO) para atender a uma requisição
+> * *Para que* possamos minimizar o descarte de sangue por validade expirada e otimizar o uso do estoque.
+
+### Demonstração de uso (histórias implementadas)
+
+Screencast mostrando a aplicação Spring Boot em execução, demonstrando o funcionamento das histórias de usuário implementadas nesta etapa.
+
+📺 **Assista no YouTube:** [Link do vídeo](https://youtu.be/-sY4YpXX600)
+
+### Explicação do código
+
+Screencast com a explicação do código da aplicação Spring Boot, cobrindo a implementação das histórias de usuário desenvolvidas.
+
+📺 **Assista no YouTube:** [Link do vídeo](https://www.youtube.com/watch?v=TkPm2lFM_Es)
+
 <!--
 ### 🚀 Entrega 02
 * Artefato 1: [link]
