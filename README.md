@@ -81,6 +81,21 @@ Para garantir um escopo controlado e seguro, o projeto adota os seguintes limite
 * **Screencast de apresentação do protótipo**:
   🎥 [Vídeo no YouTube](https://youtu.be/CSTc0O8W5v8)
 
+
+## 🎥 Vídeos Demonstrativos
+
+### Demonstração de uso (histórias implementadas)
+
+Screencast mostrando a aplicação Spring Boot em execução, demonstrando o funcionamento das histórias de usuário implementadas nesta etapa.
+
+📺 **Assista no YouTube:** [Link do vídeo](https://youtu.be/-sY4YpXX600)
+
+### Explicação do código
+
+Screencast com a explicação do código da aplicação Spring Boot, cobrindo a implementação das histórias de usuário desenvolvidas.
+
+📺 **Assista no YouTube:** [Link do vídeo](https://www.youtube.com/watch?v=TkPm2lFM_Es)
+
 <!--
 ### 🚀 Entrega 02
 * Artefato 1: [link]
