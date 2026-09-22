@@ -1,0 +1,141 @@
+﻿<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Onde doar — HemoFlow</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+  <link rel="stylesheet" href="/css/hemoflow.css">
+</head>
+<body>
+<div class="map-page">
+  <header class="topbar">
+    <a class="brand" href="/">
+      <span class="mark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3c-1.8 3.2-6 6.4-6 10.2A6 6 0 0 0 12 21a6 6 0 0 0 6-7.8C18 9.4 13.8 6.2 12 3Z"/><path d="M12 11v6M9 14h6"/></svg></span>
+      <span><strong>HemoFlow</strong><em>Mapa de doação</em></span>
+    </a>
+    <nav>
+      <a href="/">Operações</a>
+      <a class="is-active" href="/mapa">Onde doar</a>
+      <a href="/doe-agora">Cadastrar-se</a>
+      <span data-auth-nav><a class="btn btn-primary" href="/login-usuario">Área do doador</a></span>
+    </nav>
+  </header>
+  <div class="map-stage">
+    <aside class="map-sheet">
+      <p class="kicker">Recife</p>
+      <h2>Pontos de coleta</h2>
+      <p style="color:var(--ink-soft);font-size:.9rem">Campanhas ativas e hospitais da malha. Toque no mapa para o estoque local.</p>
+      <ul id="campanhas"><li>Carregando a programação…</li></ul>
+    </aside>
+    <div id="mapa"></div>
+  </div>
+</div>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="/js/hemoflow.js"></script>
+<script>
+const params = new URLSearchParams(window.location.search);
+const mapa = L.map('mapa').setView([-8.0476, -34.8770], 13);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {attribution: 'OpenStreetMap'}).addTo(mapa);
+
+let doadorIdAtual = null;
+
+function carregarHospitais(doadorId) {
+  if (doadorId) {
+    fetch('/api/v1/doadores/' + doadorId + '/hospitais-recomendados')
+      .then(r => r.json()).then(hospitais => {
+        hospitais.forEach(h => {
+          if (h.latitude && h.longitude) {
+            const marker = L.marker([h.latitude, h.longitude]).addTo(mapa);
+            marker.bindPopup(
+              '<b>' + h.nome + '</b><br>Seu tipo: ' + HF.abo(h.tipoSanguineoDoador) +
+              '<br><button class="btn btn-sm btn-teal" style="margin-top:8px" onclick="verEstoque(' + h.id + ')">Ver estoque</button>' +
+              ' <button class="btn btn-sm btn-primary" style="margin-top:8px" onclick="abrirFormAgendamento(' + h.id + ')">Agendar doação</button>' +
+              '<div id="est-' + h.id + '"></div>' +
+              '<div id="agenda-' + h.id + '"></div>'
+            );
+          }
+        });
+      });
+  } else {
+    fetch('/api/v1/hospitais').then(r => r.json()).then(hospitais => {
+      if (!Array.isArray(hospitais)) return;
+      hospitais.forEach(h => {
+        if (h.latitude && h.longitude) {
+          L.marker([h.latitude, h.longitude]).addTo(mapa).bindPopup(
+            '<b>' + h.nome + '</b><br><a href="/login-usuario">Entre para agendar sua doação</a>'
+          );
+        }
+      });
+    });
+  }
+}
+
+fetch('/api/v1/auth/sessao').then(r => r.json()).then(s => {
+  const id = params.get('doadorId') || (s.logado && s.role === 'DOADOR' ? s.id : null);
+  doadorIdAtual = id;
+  carregarHospitais(id);
+}).catch(() => {
+  doadorIdAtual = params.get('doadorId');
+  carregarHospitais(doadorIdAtual);
+});
+
+function verEstoque(id) {
+  fetch('/api/v1/bolsas/hospital/' + id + '/estoque-mock').then(r => r.json()).then(d => {
+    let html = '<ul style="margin-top:8px;padding-left:16px">';
+    Object.entries(d.estoque).forEach(([tipo, qtd]) => { html += '<li>' + HF.tipo(tipo) + ': ' + qtd + '</li>'; });
+    html += '</ul>';
+    document.getElementById('est-' + id).innerHTML = html;
+  });
+}
+
+function abrirFormAgendamento(hospitalId) {
+  if (!doadorIdAtual) { window.location.href = '/login-usuario'; return; }
+  const box = document.getElementById('agenda-' + hospitalId);
+  box.innerHTML =
+    '<div style="margin-top:10px;padding-top:10px;border-top:1px solid #eee">' +
+      '<label style="display:block;font-size:.78rem;margin-bottom:4px">Data e hora</label>' +
+      '<input type="datetime-local" id="dataHora-' + hospitalId + '" style="width:100%;padding:6px;font-size:.85rem;border:1px solid #ccc;border-radius:6px">' +
+      '<button class="btn btn-sm btn-primary" style="margin-top:8px" onclick="confirmarAgendamento(' + hospitalId + ')">Confirmar</button>' +
+      '<div id="agenda-msg-' + hospitalId + '" class="msg" style="margin-top:6px"></div>' +
+    '</div>';
+}
+
+function confirmarAgendamento(hospitalId) {
+  const input = document.getElementById('dataHora-' + hospitalId);
+  const msg = document.getElementById('agenda-msg-' + hospitalId);
+  if (!input.value) {
+    msg.style.color = '#b42318';
+    msg.textContent = 'Escolha uma data e hora.';
+    return;
+  }
+  msg.style.color = '';
+  msg.textContent = 'Agendando…';
+  fetch('/api/v1/agendamentos', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'same-origin',
+    body: JSON.stringify({
+      doadorId: doadorIdAtual,
+      hospitalId: hospitalId,
+      dataHora: input.value
+    })
+  }).then(async r => {
+    if (!r.ok) { throw new Error('Falha ao agendar'); }
+    return r.json();
+  }).then(() => {
+    msg.style.color = '#067647';
+    msg.textContent = 'Agendamento confirmado! Você pode acompanhar em "Meu cuidado".';
+  }).catch(() => {
+    msg.style.color = '#b42318';
+    msg.textContent = 'Não foi possível agendar. Tente novamente.';
+  });
+}
+
+fetch('/api/v1/campanhas').then(r => r.json()).then(cs => {
+  const ul = document.getElementById('campanhas');
+  ul.innerHTML = cs.length ? cs.map(c => '<li><b>' + c.titulo + '</b><br>' + c.hospital + ' · até ' + c.dataFim + '<br>Tipos: ' + HF.tiposLista(c.tiposSanguineos) + '</li>').join('') : '<li>Nenhuma campanha ativa neste momento.</li>';
+});
+</script>
+</body>
+</html>
