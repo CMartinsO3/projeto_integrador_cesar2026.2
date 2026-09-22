@@ -1,0 +1,442 @@
+{
+  "info": {
+    "name": "HemoFlow API",
+    "description": "Coleção completa de endpoints da API HemoFlow",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Hospitais",
+      "item": [
+        {
+          "name": "Criar Hospital",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nome\": \"Hospital Barão de Lucena\",\n  \"localizacao\": \"Recife - PE\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/hospitais",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "hospitais"]
+            }
+          }
+        },
+        {
+          "name": "Listar Hospitais",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/hospitais",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "hospitais"]
+            }
+          }
+        },
+        {
+          "name": "Buscar Hospital por ID",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/hospitais/{{hospitalId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "hospitais", "{{hospitalId}}"]
+            }
+          }
+        },
+        {
+          "name": "Atualizar Hospital",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nome\": \"Hospital Barão de Lucena - Atualizado\",\n  \"localizacao\": \"Recife - PE, Centro\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/hospitais/{{hospitalId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "hospitais", "{{hospitalId}}"]
+            }
+          }
+        },
+        {
+          "name": "Inativar Hospital",
+          "request": {
+            "method": "DELETE",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/hospitais/{{hospitalId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "hospitais", "{{hospitalId}}"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Doações",
+      "item": [
+        {
+          "name": "Registrar Doação",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tipoAbo\": \"O\",\n  \"fatorRh\": \"NEGATIVO\",\n  \"dataColeta\": \"2026-09-17\",\n  \"volumeColetadoMl\": 450,\n  \"centroColetaId\": 1,\n  \"centroColetaNome\": \"Centro de Coleta Norte\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/doacoes",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "doacoes"]
+            }
+          }
+        },
+        {
+          "name": "Listar Doações",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/doacoes",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "doacoes"]
+            }
+          }
+        },
+        {
+          "name": "Buscar Doação por ID",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/doacoes/{{doacaoId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "doacoes", "{{doacaoId}}"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Bolsas",
+      "item": [
+        {
+          "name": "Criar Bolsa",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"doacaoId\": 1,\n  \"tipoComponente\": \"CONCENTRADO_HEMACIAS\",\n  \"tipoAbo\": \"O\",\n  \"fatorRh\": \"NEGATIVO\",\n  \"volumeMl\": 350,\n  \"dataProducao\": \"2026-09-17\",\n  \"localizacaoAtualId\": 2\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/bolsas",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "bolsas"]
+            }
+          }
+        },
+        {
+          "name": "Listar Bolsas",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/bolsas",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "bolsas"]
+            }
+          }
+        },
+        {
+          "name": "Listar Bolsas Disponíveis",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/bolsas?status=DISPONIVEL",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "bolsas"],
+              "query": [
+                {
+                  "key": "status",
+                  "value": "DISPONIVEL"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Buscar Bolsa por ID",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/bolsas/{{bolsaId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "bolsas", "{{bolsaId}}"]
+            }
+          }
+        },
+        {
+          "name": "Atualizar Status - ALOCADA",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"ALOCADA\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/bolsas/{{bolsaId}}/status",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "bolsas", "{{bolsaId}}", "status"]
+            }
+          }
+        },
+        {
+          "name": "Atualizar Status - EM_TRANSITO",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"EM_TRANSITO\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/bolsas/{{bolsaId}}/status",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "bolsas", "{{bolsaId}}", "status"]
+            }
+          }
+        },
+        {
+          "name": "Atualizar Status - ENTREGUE",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"ENTREGUE\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/bolsas/{{bolsaId}}/status",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "bolsas", "{{bolsaId}}", "status"]
+            }
+          }
+        },
+        {
+          "name": "Remover Bolsa",
+          "request": {
+            "method": "DELETE",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/bolsas/{{bolsaId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "bolsas", "{{bolsaId}}"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Requisições",
+      "item": [
+        {
+          "name": "Criar Requisição",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"hospitalId\": 1,\n  \"tipoAbo\": \"A\",\n  \"fatorRh\": \"POSITIVO\",\n  \"tipoComponente\": \"CONCENTRADO_PLAQUETAS\",\n  \"quantidade\": 2,\n  \"urgencia\": \"URGENTE\",\n  \"prazoLimite\": \"2026-09-17T18:00:00\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/requisicoes",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "requisicoes"]
+            }
+          }
+        },
+        {
+          "name": "Listar Requisições",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/requisicoes",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "requisicoes"]
+            }
+          }
+        },
+        {
+          "name": "Listar Requisições Pendentes",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/requisicoes?status=PENDENTE",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "requisicoes"],
+              "query": [
+                {
+                  "key": "status",
+                  "value": "PENDENTE"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Buscar Requisição por ID",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/requisicoes/{{requisicaoId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "requisicoes", "{{requisicaoId}}"]
+            }
+          }
+        },
+        {
+          "name": "Atualizar Status - ALOCADA",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"ALOCADA\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/requisicoes/{{requisicaoId}}/status",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "requisicoes", "{{requisicaoId}}", "status"]
+            }
+          }
+        },
+        {
+          "name": "Atualizar Status - EM_TRANSITO",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"EM_TRANSITO\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/requisicoes/{{requisicaoId}}/status",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "requisicoes", "{{requisicaoId}}", "status"]
+            }
+          }
+        },
+        {
+          "name": "Atualizar Status - ATENDIDA",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"ATENDIDA\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/requisicoes/{{requisicaoId}}/status",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "requisicoes", "{{requisicaoId}}", "status"]
+            }
+          }
+        },
+        {
+          "name": "Cancelar Requisição",
+          "request": {
+            "method": "DELETE",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/requisicoes/{{requisicaoId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "requisicoes", "{{requisicaoId}}"]
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8080",
+      "type": "string"
+    },
+    {
+      "key": "hospitalId",
+      "value": "1",
+      "type": "string"
+    },
+    {
+      "key": "doacaoId",
+      "value": "1",
+      "type": "string"
+    },
+    {
+      "key": "bolsaId",
+      "value": "1",
+      "type": "string"
+    },
+    {
+      "key": "requisicaoId",
+      "value": "1",
+      "type": "string"
+    }
+  ]
+}

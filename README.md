@@ -81,6 +81,33 @@ Para garantir um escopo controlado e seguro, o projeto adota os seguintes limite
 * **Screencast de apresentação do protótipo**:
   🎥 [Vídeo no YouTube](https://youtu.be/CSTc0O8W5v8)
 
+
+## 🎥 Vídeos Demonstrativos
+
+### 📋 Histórias de Usuário Implementadas
+
+> **História 1: Cálculo de Rota Otimizada (Caminho Mínimo)**
+> * *Como* administrador logístico da Hemorrede
+> * *Eu quero* calcular a rota mais rápida (Dijkstra) entre a origem e o destino
+> * *Para que* as bolsas de sangue sejam entregues dentro do tempo limite da cadeia fria, garantindo a viabilidade do hemocomponente.
+
+> **História 2: Alocação Inteligente de Estoque (FEFO)**
+> * *Como* gestor de estoque do banco de sangue
+> * *Eu quero* que o sistema aloque automaticamente as bolsas compatíveis mais próximas da data de vencimento (FEFO) para atender a uma requisição
+> * *Para que* possamos minimizar o descarte de sangue por validade expirada e otimizar o uso do estoque.
+
+### Demonstração de uso (histórias implementadas)
+
+Screencast mostrando a aplicação Spring Boot em execução, demonstrando o funcionamento das histórias de usuário implementadas nesta etapa.
+
+📺 **Assista no YouTube:** [Link do vídeo](https://youtu.be/-sY4YpXX600)
+
+### Explicação do código
+
+Screencast com a explicação do código da aplicação Spring Boot, cobrindo a implementação das histórias de usuário desenvolvidas.
+
+📺 **Assista no YouTube:** [Link do vídeo](https://www.youtube.com/watch?v=TkPm2lFM_Es)
+
 <!--
 ### 🚀 Entrega 02
 * Artefato 1: [link]
@@ -119,6 +146,8 @@ docker compose up --build
 ```
 
 ### Endpoints da etapa 3–4
+# 2. Entrar na pasta do projeto
+$ cd projeto_integrador_cesar2026.2
 
 | Recurso | Método | Rota |
 |---|---|---|
@@ -137,3 +166,123 @@ Exemplo de rota Hemocentro → Hospital C (via nó intermediário, 35 min):
 ```bash
 curl "http://localhost:8080/api/v1/rotas/caminho-minimo?origemId=1&destinoId=4"
 ```
+
+A aplicação estará disponível em:
+- **API REST:** http://localhost:8080/api/v1
+- **Documentação Swagger:** http://localhost:8080/docs
+- **H2 Console:** http://localhost:8080/h2-console
+
+---
+
+## 📡 Documentação da API
+
+### Base Path
+Todos os endpoints da API seguem o padrão: `/api/v1`
+
+### Recursos Disponíveis
+
+#### 🏥 Hospitais (`/api/v1/hospitais`)
+| Método | Endpoint | Descrição |
+|--------|----------|-----------|
+| `POST` | `/hospitais` | Cadastrar novo hospital |
+| `GET` | `/hospitais` | Listar todos os hospitais |
+| `GET` | `/hospitais/{id}` | Buscar hospital por ID |
+| `PUT` | `/hospitais/{id}` | Atualizar hospital |
+| `DELETE` | `/hospitais/{id}` | Inativar hospital (soft delete) |
+
+#### 🩸 Doações (`/api/v1/doacoes`)
+| Método | Endpoint | Descrição |
+|--------|----------|-----------|
+| `POST` | `/doacoes` | Registrar nova doação |
+| `GET` | `/doacoes` | Listar todas as doações |
+| `GET` | `/doacoes/{id}` | Buscar doação por ID |
+
+#### 💉 Bolsas/Componentes (`/api/v1/bolsas`)
+| Método | Endpoint | Descrição |
+|--------|----------|-----------|
+| `POST` | `/bolsas` | Criar nova bolsa/componente |
+| `GET` | `/bolsas?status=` | Listar bolsas (filtro opcional por status) |
+| `GET` | `/bolsas/{id}` | Buscar bolsa por ID |
+| `PATCH` | `/bolsas/{id}/status` | Atualizar status da bolsa |
+| `DELETE` | `/bolsas/{id}` | Remover bolsa |
+
+#### 📋 Requisições (`/api/v1/requisicoes`)
+| Método | Endpoint | Descrição |
+|--------|----------|-----------|
+| `POST` | `/requisicoes` | Criar requisição hospitalar |
+| `GET` | `/requisicoes?status=` | Listar requisições (filtro opcional por status) |
+| `GET` | `/requisicoes/{id}` | Buscar requisição por ID |
+| `PATCH` | `/requisicoes/{id}/status` | Atualizar status da requisição |
+| `DELETE` | `/requisicoes/{id}` | Cancelar requisição |
+
+### Documentação Interativa
+
+Acesse a documentação completa com exemplos e testes interativos em:
+**http://localhost:8080/docs**
+
+A documentação Swagger/OpenAPI permite:
+- Visualizar todos os endpoints disponíveis
+- Testar requisições diretamente no navegador
+- Ver schemas de entrada e saída
+- Consultar códigos de status HTTP e mensagens de erro
+
+### Exemplos de Requisições
+
+#### Criar Hospital
+```bash
+POST /api/v1/hospitais
+Content-Type: application/json
+
+{
+  "nome": "Hospital Barão de Lucena",
+  "localizacao": "Recife - PE"
+}
+```
+
+#### Criar Bolsa de Sangue
+```bash
+POST /api/v1/bolsas
+Content-Type: application/json
+
+{
+  "doacaoId": 1,
+  "tipoComponente": "CONCENTRADO_HEMACIAS",
+  "tipoAbo": "O",
+  "fatorRh": "NEGATIVO",
+  "volumeMl": 350,
+  "dataProducao": "2026-09-10",
+  "localizacaoAtualId": 2
+}
+```
+
+#### Criar Requisição Hospitalar
+```bash
+POST /api/v1/requisicoes
+Content-Type: application/json
+
+{
+  "hospitalId": 1,
+  "tipoAbo": "A",
+  "fatorRh": "POSITIVO",
+  "tipoComponente": "CONCENTRADO_PLAQUETAS",
+  "quantidade": 2,
+  "urgencia": "URGENTE",
+  "prazoLimite": "2026-09-15T14:00:00"
+}
+```
+
+Para mais detalhes sobre os contratos de API, consulte: 📄 [Contrato de API](./docs/contrato-api.md)
+
+---
+
+## 📊 Arquitetura e Diagramas
+
+### Diagrama de Arquitetura
+O diagrama completo de arquitetura de rede, componentes e topologia está disponível em:
+- **Fonte PlantUML:** [docs/diagrama-arquitetura.puml](./docs/diagrama-arquitetura.puml)
+- **Instruções de Exportação:** [docs/instrucoes-diagrama.md](./docs/instrucoes-diagrama.md)
+
+### Documentação Técnica Adicional
+- 📄 [Modelo de Domínio](./docs/modelo-dominio.md) - Entidades, atributos e relacionamentos
+- 📄 [Escopo do Grafo](./docs/escopo-grafo.md) - Topologia de roteirização e algoritmo Dijkstra
+- 📄 [Histórias de Usuário](./docs/historia-usuarios.md) - Requisitos funcionais em formato BDD

@@ -1,0 +1,187 @@
+@startuml HemoFlow - Diagrama de Arquitetura de Rede e Componentes
+
+!define AWSPUML https://raw.githubusercontent.com/awslabs/aws-icons-for-plantuml/v14.0/dist
+!include AWSPUML/AWSCommon.puml
+!include AWSPUML/ApplicationIntegration/APIGateway.puml
+!include AWSPUML/Compute/EC2.puml
+!include AWSPUML/Database/Database.puml
+!include AWSPUML/NetworkingContentDelivery/VPC.puml
+
+' ========================================
+' TÍTULO E LEGENDA
+' ========================================
+
+title Diagrama de Arquitetura de Rede - HemoFlow\nRota Vital (Branch semana0304)
+
+legend right
+  **Legenda:**
+  * Nós da Rede: Hospitais, Hemocentro, Centros de Coleta
+  * API REST: Contratos de comunicação entre componentes
+  * Grafo: Topologia de roteirização (Dijkstra)
+  * Tempo médio de transporte representado em minutos
+endlegend
+
+' ========================================
+' CAMADAS DA ARQUITETURA
+' ========================================
+
+package "Camada de Apresentação" {
+    [Frontend Web] as frontend #LightBlue
+    [Painel de Indicadores] as dashboard #LightBlue
+}
+
+package "Camada de API (REST)" <<Cloud>> {
+    [API Gateway\n/api/v1] as apigateway #Orange
+    
+    component "Controllers" {
+        [HospitalController] as hctrl
+        [BolsaController] as bctrl
+        [RequisicaoController] as rctrl
+        [DoacaoController] as dctrl
+    }
+    
+    note right of apigateway
+        **Base Path:** /api/v1
+        **Formato:** JSON
+        **Documentação:** /docs (Swagger UI)
+    end note
+}
+
+package "Camada de Negócio" {
+    component "Services" {
+        [HospitalService] as hsvc
+        [BolsaComponenteService] as bsvc
+        [RequisicaoService] as rsvc
+        [DoacaoService] as dsvc
+        [GrafoService] as gsvc
+    }
+    
+    component "Algoritmos (AED)" {
+        [Dijkstra\nCaminho Mínimo] as dijkstra
+        [FilaFEFO\nPriorização Estoque] as fefo
+    }
+}
+
+package "Camada de Persistência" {
+    database "H2 Database\n(In-Memory)" as h2db {
+        [Hospitais] as hosp_table
+        [Bolsas] as bolsa_table
+        [Requisições] as req_table
+        [Doações] as doacao_table
+    }
+    
+    component "Repositories (JPA)" {
+        [HospitalRepository] as hrepo
+        [BolsaRepository] as brepo
+        [RequisicaoRepository] as rrepo
+        [DoacaoRepository] as drepo
+    }
+}
+
+' ========================================
+' TOPOLOGIA DE REDE (GRAFO)
+' ========================================
+
+package "Topologia de Rede - Distribuição" <<Frame>> {
+    node "Hemocentro Central" as hemocentro #Red {
+        [Estoque Principal]
+        [Processamento]
+    }
+    
+    node "Hospital A" as hospitalA #Green
+    node "Hospital B" as hospitalB #Green
+    node "Hospital C" as hospitalC #Green
+    node "Hospital D" as hospitalD #Green
+    node "Hospital E" as hospitalE #Green
+    
+    node "Nó Intermediário" as noInt #LightGray
+    
+    ' Arestas com pesos (tempo em minutos)
+    hemocentro -down-> hospitalA : 25 min
+    hemocentro -down-> hospitalB : 40 min
+    hemocentro -right-> noInt : 15 min
+    noInt -down-> hospitalC : 20 min
+    hemocentro -down-> hospitalD : 60 min
+    hemocentro -down-> hospitalE : 35 min
+    
+    note bottom of hemocentro
+        **Algoritmo:** Dijkstra
+        **Restrição:** Cadeia Fria
+        **Limite:** 120 minutos (Hemácias)
+    end note
+}
+
+' ========================================
+' RELACIONAMENTOS ENTRE CAMADAS
+' ========================================
+
+' Frontend -> API
+frontend --> apigateway : HTTP/REST
+dashboard --> apigateway : HTTP/REST
+
+' API Gateway -> Controllers
+apigateway --> hctrl
+apigateway --> bctrl
+apigateway --> rctrl
+apigateway --> dctrl
+
+' Controllers -> Services
+hctrl --> hsvc
+bctrl --> bsvc
+rctrl --> rsvc
+dctrl --> dsvc
+
+' Services -> Algoritmos
+bsvc --> fefo : Priorização\nFEFO
+rsvc --> gsvc : Cálculo\nde Rota
+gsvc --> dijkstra : Caminho\nMínimo
+
+' Services -> Repositories
+hsvc --> hrepo
+bsvc --> brepo
+rsvc --> rrepo
+dsvc --> drepo
+
+' Repositories -> Database
+hrepo --> hosp_table
+brepo --> bolsa_table
+rrepo --> req_table
+drepo --> doacao_table
+
+' Grafo Service -> Topologia
+gsvc ..> hemocentro : Consulta\nTopologia
+gsvc ..> hospitalA : Calcula\nRota
+gsvc ..> hospitalB
+gsvc ..> hospitalC
+gsvc ..> hospitalD
+gsvc ..> hospitalE
+
+' ========================================
+' FLUXO DE DADOS PRINCIPAIS
+' ========================================
+
+note as N1
+**Fluxo 1: Criação de Requisição**
+1. Hospital envia POST /api/v1/requisicoes
+2. RequisicaoController valida dados
+3. RequisicaoService verifica hospital ativo
+4. Grava no banco com status PENDENTE
+end note
+
+note as N2
+**Fluxo 2: Alocação de Bolsa**
+1. Operador consulta GET /api/v1/bolsas?status=DISPONIVEL
+2. FilaFEFO prioriza por validade
+3. Sistema verifica compatibilidade ABO/Rh
+4. PATCH /api/v1/bolsas/{id}/status → ALOCADA
+end note
+
+note as N3
+**Fluxo 3: Cálculo de Rota**
+1. GET /api/v1/rotas/caminho-minimo?origem=X&destino=Y
+2. GrafoService aplica Dijkstra
+3. Valida tempo < limite cadeia fria
+4. Retorna caminho e custo total
+end note
+
+@enduml
