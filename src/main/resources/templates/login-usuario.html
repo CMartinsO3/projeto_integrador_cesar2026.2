@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Entrada do doador — HemoFlow</title>
+  <link rel="stylesheet" href="/css/hemoflow.css">
+</head>
+<body>
+<div class="auth-shell">
+  <aside class="auth-story">
+    <a class="brand" href="/" style="color:#fff">
+      <span class="mark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3c-1.8 3.2-6 6.4-6 10.2A6 6 0 0 0 12 21a6 6 0 0 0 6-7.8C18 9.4 13.8 6.2 12 3Z"/><path d="M12 11v6M9 14h6"/></svg></span>
+      <span><strong>HemoFlow</strong><em style="color:#9db5b3">Portal do doador</em></span>
+    </a>
+    <div>
+      <p class="quote">Doar é um gesto <em>quieto</em> e extraordinário.</p>
+      <small>Sua presença aqui já é cuidado. Entremos com calma, como se fosse o corredor de um hospital ao amanhecer.</small>
+    </div>
+    <small>Ambiente seguro · sessão exclusiva do doador</small>
+  </aside>
+  <main class="auth-form">
+    <div class="auth-card">
+      <p class="kicker">Acesso pessoal</p>
+      <h1>Bem-vindo de volta</h1>
+      <p class="sub">Entre com o cadastro usado na doação.</p>
+      <div class="field">
+        <label for="email">Email</label>
+        <input id="email" type="email" placeholder="seu@email.com" autocomplete="email">
+      </div>
+      <div class="field">
+        <label for="senha">Senha</label>
+        <input id="senha" type="password" autocomplete="current-password">
+      </div>
+      <button class="btn btn-primary btn-full" type="button" onclick="login()">Entrar com serenidade</button>
+      <div id="erro" class="alert">Email ou senha não reconhecidos. Tente novamente, sem pressa.</div>
+      <div class="auth-links">
+        <a href="/doe-agora">Ainda não tenho cadastro</a>
+        <a href="/login-admin">Sou da equipe clínica</a>
+        <a href="/">Voltar à central</a>
+      </div>
+    </div>
+  </main>
+</div>
+<script>
+async function login() {
+  const res = await fetch('/api/v1/auth/login-doador', {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({email: document.getElementById('email').value, senha: document.getElementById('senha').value})
+  });
+  const d = await res.json();
+  if (d.ok) window.location.href = d.redirect;
+  else document.getElementById('erro').classList.add('show');
+}
+document.addEventListener('keydown', e => { if(e.key==='Enter') login(); });
+</script>
+</body>
+</html>
