@@ -1,10 +1,4 @@
 # Equivalência entre as versões C/C++ e Java — Estruturas de Dados (Unidade 1)
-
-> Documento exigido pela entrega do Projeto Integrador — Unidade 1 (AED). Explica,
-> estrutura por estrutura, por que a reimplementação em Java (pacote
-> `com.hemoflow.hemoflow.estruturas`) corresponde à lógica da versão em C
-> (pasta `c_structures/`), apontando as equivalências reais entre os dois códigos.
-
 ---
 
 ## 1. Lista Encadeada (Estoque)
