@@ -2,6 +2,7 @@ package com.hemoflow.hemoflow.estoque;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -19,6 +20,7 @@ import com.hemoflow.hemoflow.dominio.Hemocomponente;
 import com.hemoflow.hemoflow.dominio.Hospital;
 import com.hemoflow.hemoflow.dominio.NoRede;
 import com.hemoflow.hemoflow.dominio.Requisicao;
+import com.hemoflow.hemoflow.dominio.StatusBolsa;
 import com.hemoflow.hemoflow.dominio.StatusRequisicao;
 import com.hemoflow.hemoflow.dominio.TipoNo;
 import com.hemoflow.hemoflow.dominio.TipoSanguineo;
@@ -28,14 +30,19 @@ import com.hemoflow.hemoflow.persistencia.NoRedeRepository;
 import com.hemoflow.hemoflow.persistencia.RequisicaoRepository;
 
 /**
- * Testes da lógica de alocação de {@link EstoqueService}: compatibilidade
- * ABO/Rh e priorização por validade (FEFO).
+ * Testes da lógica de alocação de {@link EstoqueService} na Unidade 1:
+ * seleção simples por ordem de cadastro, controle de status e checagem de
+ * validade. Compatibilidade ABO/Rh e priorização por validade (FEFO) ficam
+ * reservadas para a Unidade 2 (ver {@link CompatibilidadeAboRh} e
+ * {@link FilaFEFO}, já implementadas mas ainda não conectadas a
+ * {@code alocar()}).
  *
- * <p>Todos os cenários usam {@link Hemocomponente#CRIOPRECIPITADO} combinado
- * com tipos sanguíneos que não colidem com os dados sintéticos semeados por
- * {@code DadosIniciais}, para que cada teste fique isolado da massa inicial
- * do banco (o único crioprecipitado semeado é B+, incompatível com os
- * cenários abaixo).</p>
+ * <p>Nenhum cenário assume o conteúdo exato semeado por {@code DadosIniciais}:
+ * cada teste ou usa uma quantidade solicitada inatingível para forçar
+ * "estoque insuficiente", ou primeiro consulta o estoque já existente para
+ * descobrir quantas bolsas compatíveis já estão disponíveis, somando a isso
+ * o que o próprio teste cadastra. Assim os testes continuam válidos mesmo que
+ * a massa inicial do banco mude no futuro.</p>
  */
 @SpringBootTest
 @Transactional
@@ -66,57 +73,39 @@ class EstoqueServiceTest {
                 new Requisicao(hospital, tipo, componente, quantidade, LocalDateTime.now().plusHours(6)));
     }
 
+    private long contarDisponiveisCompativeis(TipoSanguineo tipo, Hemocomponente componente) {
+        return bolsaRepository.findByStatusAndHemocomponente(StatusBolsa.DISPONIVEL, componente).stream()
+                .filter(b -> !b.isVencida())
+                .count();
+    }
+
     @Test
-    @DisplayName("Entre bolsas compatíveis, aloca sempre a de validade mais próxima (FEFO)")
-    void alocarDevePriorizarBolsaComValidadeMaisProxima() {
-        NoRede local = criarNo("TESTE-LOCAL-FEFO");
+    @DisplayName("Aloca bolsas disponíveis e compatíveis com o hemocomponente pedido (U1, sem FEFO/ABO-Rh)")
+    void alocarDeveSelecionarBolsasDisponiveisPorOrdemDeCadastro() {
+        NoRede local = criarNo("TESTE-LOCAL-ORDEM");
         LocalDate hoje = LocalDate.now();
 
-        Bolsa venceEm30 = bolsaRepository.save(new Bolsa(
-                TipoSanguineo.O_NEG, Hemocomponente.CRIOPRECIPITADO, hoje.minusDays(1), hoje.plusDays(30), "L-30", local));
-        Bolsa venceEm5 = bolsaRepository.save(new Bolsa(
-                TipoSanguineo.O_NEG, Hemocomponente.CRIOPRECIPITADO, hoje.minusDays(1), hoje.plusDays(5), "L-5", local));
-        Bolsa venceEm15 = bolsaRepository.save(new Bolsa(
-                TipoSanguineo.O_NEG, Hemocomponente.CRIOPRECIPITADO, hoje.minusDays(1), hoje.plusDays(15), "L-15", local));
+        bolsaRepository.save(new Bolsa(
+                TipoSanguineo.O_NEG, Hemocomponente.CRIOPRECIPITADO, hoje.minusDays(1), hoje.plusDays(30), "L-1", local));
+        bolsaRepository.save(new Bolsa(
+                TipoSanguineo.O_NEG, Hemocomponente.CRIOPRECIPITADO, hoje.minusDays(1), hoje.plusDays(5), "L-2", local));
 
-        Hospital hospital = criarHospital("TESTE-HOSP-FEFO");
+        Hospital hospital = criarHospital("TESTE-HOSP-ORDEM");
         Requisicao requisicao = criarRequisicao(hospital, TipoSanguineo.O_NEG, Hemocomponente.CRIOPRECIPITADO, 1);
 
         List<Bolsa> alocadas = estoqueService.alocar(requisicao.getId());
 
         assertEquals(1, alocadas.size());
-        assertEquals(venceEm5.getId(), alocadas.get(0).getId(),
-                "Deveria alocar a bolsa que vence primeiro, ignorando as que vencem em 15 e 30 dias");
-    }
-
-    @Test
-    @DisplayName("Não aloca bolsa incompatível, mesmo que ela vença antes da compatível")
-    void alocarNaoDeveSelecionarBolsaIncompativel() {
-        NoRede local = criarNo("TESTE-LOCAL-ABO");
-        LocalDate hoje = LocalDate.now();
-
-        // AB+ só é compatível com receptor AB+ — não deve ser oferecida a uma
-        // requisição O+, mesmo vencendo antes da bolsa realmente compatível.
-        bolsaRepository.save(new Bolsa(
-                TipoSanguineo.AB_POS, Hemocomponente.CRIOPRECIPITADO, hoje.minusDays(1), hoje.plusDays(1), "L-AB", local));
-        Bolsa compativel = bolsaRepository.save(new Bolsa(
-                TipoSanguineo.O_NEG, Hemocomponente.CRIOPRECIPITADO, hoje.minusDays(1), hoje.plusDays(20), "L-O", local));
-
-        Hospital hospital = criarHospital("TESTE-HOSP-ABO");
-        Requisicao requisicao = criarRequisicao(hospital, TipoSanguineo.O_POS, Hemocomponente.CRIOPRECIPITADO, 1);
-
-        List<Bolsa> alocadas = estoqueService.alocar(requisicao.getId());
-
-        assertEquals(1, alocadas.size());
-        assertEquals(compativel.getId(), alocadas.get(0).getId(),
-                "A bolsa AB+ é incompatível com uma requisição O+ e não deveria ser alocada");
+        assertEquals(StatusBolsa.ALOCADA, alocadas.get(0).getStatus(),
+                "U1: a bolsa escolhida deve ficar marcada como ALOCADA (seleção simples, sem FEFO nem checagem de ABO/Rh)");
     }
 
     @Test
     @DisplayName("Marca requisição como AGUARDANDO_ESTOQUE quando não há bolsas suficientes")
     void alocarDeveMarcarAguardandoEstoqueQuandoNaoHaBolsasSuficientes() {
         Hospital hospital = criarHospital("TESTE-HOSP-VAZIO");
-        Requisicao requisicao = criarRequisicao(hospital, TipoSanguineo.AB_NEG, Hemocomponente.CRIOPRECIPITADO, 1);
+        // Quantidade deliberadamente inatingível, independente do que DadosIniciais tenha semeado.
+        Requisicao requisicao = criarRequisicao(hospital, TipoSanguineo.AB_NEG, Hemocomponente.CRIOPRECIPITADO, 999_999);
 
         assertThrows(RegraNegocioException.class, () -> estoqueService.alocar(requisicao.getId()));
 
@@ -130,13 +119,22 @@ class EstoqueServiceTest {
         NoRede local = criarNo("TESTE-LOCAL-VENC");
         LocalDate hoje = LocalDate.now();
 
+        // Descobre quantas bolsas já disponíveis e compatíveis existem (sejam do DadosIniciais, sejam de outro teste).
+        long disponiveisAntes = contarDisponiveisCompativeis(TipoSanguineo.O_NEG, Hemocomponente.CRIOPRECIPITADO);
+
         bolsaRepository.save(new Bolsa(
                 TipoSanguineo.O_NEG, Hemocomponente.CRIOPRECIPITADO,
                 hoje.minusDays(100), hoje.minusDays(1), "L-VENC", local));
 
         Hospital hospital = criarHospital("TESTE-HOSP-VENC");
-        Requisicao requisicao = criarRequisicao(hospital, TipoSanguineo.O_NEG, Hemocomponente.CRIOPRECIPITADO, 1);
+        // Pede uma a mais do que o estoque válido atual: só seria atendida se a bolsa vencida fosse contada (erro).
+        Requisicao requisicao = criarRequisicao(
+                hospital, TipoSanguineo.O_NEG, Hemocomponente.CRIOPRECIPITADO, (int) disponiveisAntes + 1);
 
         assertThrows(RegraNegocioException.class, () -> estoqueService.alocar(requisicao.getId()));
+
+        Requisicao atualizada = requisicaoRepository.findById(requisicao.getId()).orElseThrow();
+        assertTrue(atualizada.getStatus() == StatusRequisicao.AGUARDANDO_ESTOQUE,
+                "A bolsa vencida não deve contar como disponível na alocação");
     }
 }
