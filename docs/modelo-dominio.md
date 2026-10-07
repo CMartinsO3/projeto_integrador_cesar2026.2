@@ -170,3 +170,4 @@ classDiagram
 
 - Este modelo cobre apenas as entidades essenciais para o fluxo principal (Semana 2). Atributos e relações adicionais (ex.: histórico de alocações, usuários/permissões) podem ser incorporados em entregas futuras, conforme o backlog de histórias de usuário.
 - Dados sintéticos apenas — nenhuma entidade armazena informações reais de doadores ou pacientes (LGPD).
+- As estruturas de dados escolhidas para cada entidade (lista encadeada para o estoque de bolsas, fila para requisições e pilha para o histórico de operações) estão documentadas em [Estruturas de Dados da Unidade 1](./estruturas-u1.md).
