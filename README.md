@@ -27,8 +27,10 @@ O HemoFlow unifica em uma única plataforma web:
 * **Backend / Aplicação Web:** Java, Spring Boot
 * **Estruturas de Dados & Algoritmos:**
   * **Grafos e Caminhos Mínimos:** Roteirização e logística de entregas
-  * **Filas de Prioridade & Tabela Hash:** Ordenação por validade (FEFO) e rápida busca por tipo/compatibilidade
-  * **Matching de Compatibilidade:** Validação de regras ABO/Rh
+  * **Lista, Fila e Pilha (Unidade 1):* estoque de bolsas, requisições em ordem de chegada e histórico de operações — [detalhes](./docs/estruturas-u1.md)
+  * **Planejado para a Unidade 2:* Filas de Prioridade & Tabela Hash (FEFO) e matching de compatibilidade ABO/Rh
+  Na tabela de endpoints, troque a linha:
+  | Alocação FEFO + ABO/Rh | POST | /api/v1/requisicoes/{id}/alocar |  
 * **Análise & Estatística:** Estatística descritiva e probabilidade aplicadas ao estoque/demanda
 * **Infraestrutura & Redes:** Concorrência, CI/CD, Nuvem e Simulação de Telemetria/Comunicação de Rede
 
@@ -156,9 +158,8 @@ $ cd hemoflow
 | Nós da malha | GET/POST | `/api/v1/nos-rede` |
 | Caminho mínimo (Dijkstra) | GET | `/api/v1/rotas/caminho-minimo?origemId=&destinoId=` |
 | Bolsas | GET/POST | `/api/v1/bolsas` |
-| Próxima bolsa (FEFO) | GET | `/api/v1/estoque/proxima-bolsa` |
 | Requisições | GET/POST | `/api/v1/requisicoes` |
-| Alocação FEFO + ABO/Rh | POST | `/api/v1/requisicoes/{id}/alocar` |
+| Alocação (U1: ordem de cadastro) | POST | /api/v1/requisicoes/{id}/alocar |
 | H2 Console | GET | `/h2-console` (JDBC: `jdbc:h2:mem:hemoflow`) |
 
 Exemplo de rota Hemocentro → Hospital C (via nó intermediário, 35 min):
