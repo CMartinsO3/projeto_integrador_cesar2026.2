@@ -29,8 +29,6 @@ O HemoFlow unifica em uma única plataforma web:
   * **Grafos e Caminhos Mínimos:** Roteirização e logística de entregas
   * **Lista, Fila e Pilha (Unidade 1):** estoque de bolsas, requisições em ordem de chegada e histórico de operações — [detalhes](./docs/estruturas-u1.md)
   * **Planejado para a Unidade 2:** Filas de Prioridade & Tabela Hash (FEFO) e matching de compatibilidade ABO/Rh
-  Na tabela de endpoints, troque a linha:
-  | Alocação FEFO + ABO/Rh | POST | /api/v1/requisicoes/{id}/alocar |  
 * **Análise & Estatística:** Estatística descritiva e probabilidade aplicadas ao estoque/demanda
 * **Infraestrutura & Redes:** Concorrência, CI/CD, Nuvem e Simulação de Telemetria/Comunicação de Rede
 
