@@ -1,48 +1,56 @@
 package com.hemoflow.hemoflow.estoque;
 
-import java.util.EnumMap;
-import java.util.EnumSet;
-import java.util.Map;
-import java.util.Set;
-
 import com.hemoflow.hemoflow.dominio.TipoSanguineo;
 
+/**
+ * Compatibilidade ABO/Rh por matriz 8x8 (Unidade 2).
+ *
+ * <p>Versao C/C++ equivalente: {@code c_structures/compat_abo_rh.cpp}.
+ * A matriz e indexada por {@link TipoSanguineo#ordinal()}, que corresponde ao
+ * valor numerico do enum {@code TipoSanguineo} da versao C (mesma ordem).
+ * Por isso a ORDEM das constantes do enum nao pode mudar sem atualizar a
+ * matriz (ha um teste que protege isso).</p>
+ *
+ * <p>Complexidade: {@link #compativel} faz duas verificacoes de {@code null} e
+ * uma unica leitura de matriz: tempo O(1) e espaco O(1) (64 celulas fixas,
+ * que nao crescem com o tamanho do estoque).</p>
+ */
 public final class CompatibilidadeAboRh {
 
-    private static final Map<TipoSanguineo, Set<TipoSanguineo>> DOADOR_PARA_RECEPTORES =
-            new EnumMap<>(TipoSanguineo.class);
+    /**
+     * {@code MATRIZ[doador][receptor]} e {@code true} quando a doacao e compativel.
+     * Linhas = doador; colunas = receptor, na ordem do enum {@link TipoSanguineo}.
+     */
+    private static final boolean[][] MATRIZ = {
+        //              A+     A-     B+     B-     AB+    AB-    O+     O-    <- receptor
+        /* A+  */ { true , false, false, false, true , false, false, false },
+        /* A-  */ { true , true , false, false, true , true , false, false },
+        /* B+  */ { false, false, true , false, true , false, false, false },
+        /* B-  */ { false, false, true , true , true , true , false, false },
+        /* AB+ */ { false, false, false, false, true , false, false, false },
+        /* AB- */ { false, false, false, false, true , true , false, false },
+        /* O+  */ { true , false, true , false, true , false, true , false },
+        /* O-  */ { true , true , true , true , true , true , true , true  }
+    };
 
     static {
-        DOADOR_PARA_RECEPTORES.put(TipoSanguineo.O_NEG, EnumSet.allOf(TipoSanguineo.class));
-
-        DOADOR_PARA_RECEPTORES.put(TipoSanguineo.O_POS, EnumSet.of(
-                TipoSanguineo.O_POS, TipoSanguineo.A_POS, TipoSanguineo.B_POS, TipoSanguineo.AB_POS));
-
-        DOADOR_PARA_RECEPTORES.put(TipoSanguineo.A_NEG, EnumSet.of(
-                TipoSanguineo.A_NEG, TipoSanguineo.A_POS, TipoSanguineo.AB_NEG, TipoSanguineo.AB_POS));
-
-        DOADOR_PARA_RECEPTORES.put(TipoSanguineo.A_POS, EnumSet.of(
-                TipoSanguineo.A_POS, TipoSanguineo.AB_POS));
-
-        DOADOR_PARA_RECEPTORES.put(TipoSanguineo.B_NEG, EnumSet.of(
-                TipoSanguineo.B_NEG, TipoSanguineo.B_POS, TipoSanguineo.AB_NEG, TipoSanguineo.AB_POS));
-
-        DOADOR_PARA_RECEPTORES.put(TipoSanguineo.B_POS, EnumSet.of(
-                TipoSanguineo.B_POS, TipoSanguineo.AB_POS));
-
-        DOADOR_PARA_RECEPTORES.put(TipoSanguineo.AB_NEG, EnumSet.of(
-                TipoSanguineo.AB_NEG, TipoSanguineo.AB_POS));
-
-        DOADOR_PARA_RECEPTORES.put(TipoSanguineo.AB_POS, EnumSet.of(TipoSanguineo.AB_POS));
+        if (MATRIZ.length != TipoSanguineo.values().length) {
+            throw new IllegalStateException(
+                    "A matriz ABO/Rh precisa ter uma linha por constante de TipoSanguineo");
+        }
     }
 
     private CompatibilidadeAboRh() {
     }
 
+    /**
+     * Indica se uma bolsa do tipo {@code doador} pode ser dada a um paciente
+     * do tipo {@code receptorSolicitado}. Retorna {@code false} se algum for nulo.
+     */
     public static boolean compativel(TipoSanguineo doador, TipoSanguineo receptorSolicitado) {
         if (doador == null || receptorSolicitado == null) {
             return false;
         }
-        return DOADOR_PARA_RECEPTORES.getOrDefault(doador, Set.of()).contains(receptorSolicitado);
+        return MATRIZ[doador.ordinal()][receptorSolicitado.ordinal()];
     }
 }

@@ -93,3 +93,16 @@ A tradução entre as duas versões preserva, em todos os três casos, o mesmo
 algoritmo e a mesma complexidade assintótica — a diferença está apenas em
 como cada linguagem gerencia memória (manual em C, automática em Java) e em
 como cada uma sinaliza casos de borda (valor sentinela vs. exceção).
+
+## 5. Compatibilidade ABO/Rh (matriz 8×8)
+
+**C:** `c_structures/compat_abo_rh.cpp` — `static const int MATRIZ[8][8]` e a função `int compat_compativel(int doador, int receptor)`.
+**Java:** `estoque/CompatibilidadeAboRh.java` — `private static final boolean[][] MATRIZ` e o método `static boolean compativel(TipoSanguineo doador, TipoSanguineo receptorSolicitado)`.
+
+As duas versões usam a mesma ideia: uma tabela de 8 linhas (tipo do doador) por 8 colunas (tipo do receptor), onde cada célula indica se a doação é compatível. Em C, a matriz é um `int[8][8]` com 0 e 1, e os tipos são as constantes do `enum TipoSanguineo` (`TS_A_POS = 0` … `TS_O_NEG = 7`), que servem direto como índice. Em Java, a matriz é um `boolean[8][8]` e o índice vem de `TipoSanguineo.ordinal()`. Como as duas versões listam os tipos na mesma ordem (A+, A−, B+, B−, AB+, AB−, O+, O−), a linha `MATRIZ[doador][receptor]` é a mesma nas duas linguagens. A diferença está nas verificações: em C, `compat_compativel` devolve 0 se um índice estiver fora de 0–7; em Java, `compativel` devolve `false` se algum dos tipos for `null`. Antes, a versão Java usava um `EnumMap<TipoSanguineo, Set<TipoSanguineo>>`; a troca pela matriz manteve a assinatura pública, então `EstoqueService` e os testes antigos continuam funcionando sem mudança.
+
+**Complexidade (justificada pelo código):**
+- **Tempo O(1):** `compativel` faz duas comparações com `null` e uma única leitura `MATRIZ[i][j]`. Não há laço nem busca, então o tempo não depende do número de bolsas no estoque. (O `EnumMap` anterior também era O(1); a matriz deixa o acesso direto por índice, igual ao C.)
+- **Espaço O(1):** a matriz tem 8 × 8 = 64 células fixas, que não crescem com o estoque.
+
+**Testes:** `CompatibilidadeAboRhTest` (Java) e `teste_compat.cpp` (C) conferem as 64 combinações contra a regra dos antígenos (A, B e Rh: o doador não pode ter nenhum antígeno que o receptor não tenha), verificam que existem exatamente 27 pares compatíveis, os casos de compatibilidade (O− doa para todos, AB+ recebe de todos, mesmo tipo) e de incompatibilidade (A+→B−, A+→A−, Rh+→Rh−), e protegem a ordem do enum.
