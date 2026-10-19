@@ -114,6 +114,12 @@ Screencast com a explicação do código da aplicação Spring Boot, cobrindo a 
 
 📺 **Assista no YouTube:** [Link do vídeo](https://www.youtube.com/watch?v=TkPm2lFM_Es)
 
+### Explicação do código: Requisição Hospitalar e Consulta de Status
+
+Screencast com a explicação do código das histórias de criação de requisição e consulta de status, passando por Controller, DTOs, Service, entidade, Repository e tratamento de erros.
+
+📺 **Assista no YouTube:** [Link do vídeo](https://youtu.be/O2WbMlvpl-Q)
+
 <!--
 ### 🚀 Entrega 02
 * Artefato 1: [link]
