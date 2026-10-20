@@ -80,24 +80,43 @@ class EstoqueServiceTest {
     }
 
     @Test
-    @DisplayName("Aloca bolsas disponíveis e compatíveis com o hemocomponente pedido (U1, sem FEFO/ABO-Rh)")
-    void alocarDeveSelecionarBolsasDisponiveisPorOrdemDeCadastro() {
+    @DisplayName("Aloca primeiro a bolsa compatível com vencimento mais próximo (FEFO)")
+    void alocarDeveSelecionarBolsaComVencimentoMaisProximo() {
         NoRede local = criarNo("TESTE-LOCAL-ORDEM");
         LocalDate hoje = LocalDate.now();
 
         bolsaRepository.save(new Bolsa(
                 TipoSanguineo.O_NEG, Hemocomponente.CRIOPRECIPITADO, hoje.minusDays(1), hoje.plusDays(30), "L-1", local));
-        bolsaRepository.save(new Bolsa(
+        Bolsa bolsaMaisProxima = bolsaRepository.save(new Bolsa(
                 TipoSanguineo.O_NEG, Hemocomponente.CRIOPRECIPITADO, hoje.minusDays(1), hoje.plusDays(5), "L-2", local));
 
         Hospital hospital = criarHospital("TESTE-HOSP-ORDEM");
-        Requisicao requisicao = criarRequisicao(hospital, TipoSanguineo.O_NEG, Hemocomponente.CRIOPRECIPITADO, 1);
+        Requisicao requisicao = criarRequisicao(hospital, TipoSanguineo.B_POS, Hemocomponente.CRIOPRECIPITADO, 1);
 
         List<Bolsa> alocadas = estoqueService.alocar(requisicao.getId());
 
         assertEquals(1, alocadas.size());
         assertEquals(StatusBolsa.ALOCADA, alocadas.get(0).getStatus(),
-                "U1: a bolsa escolhida deve ficar marcada como ALOCADA (seleção simples, sem FEFO nem checagem de ABO/Rh)");
+                "A bolsa selecionada deve ficar marcada como ALOCADA");
+        assertEquals(bolsaMaisProxima.getId(), alocadas.get(0).getId(),
+                "FEFO deve selecionar a bolsa com vencimento mais próximo");
+    }
+
+    @Test
+    @DisplayName("Não aloca bolsa incompatível com o tipo sanguíneo solicitado")
+    void alocarDeveIgnorarBolsaIncompativel() {
+        NoRede local = criarNo("TESTE-LOCAL-ABO");
+        bolsaRepository.save(new Bolsa(
+                TipoSanguineo.AB_POS, Hemocomponente.CRIOPRECIPITADO,
+                LocalDate.now().minusDays(1), LocalDate.now().plusDays(30), "L-AB", local));
+
+        Hospital hospital = criarHospital("TESTE-HOSP-ABO");
+        Requisicao requisicao = criarRequisicao(
+                hospital, TipoSanguineo.O_NEG, Hemocomponente.CRIOPRECIPITADO, 1);
+
+        assertThrows(RegraNegocioException.class, () -> estoqueService.alocar(requisicao.getId()));
+        assertEquals(StatusRequisicao.AGUARDANDO_ESTOQUE,
+                requisicaoRepository.findById(requisicao.getId()).orElseThrow().getStatus());
     }
 
     @Test

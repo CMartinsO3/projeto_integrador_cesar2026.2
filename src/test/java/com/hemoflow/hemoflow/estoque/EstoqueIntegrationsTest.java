@@ -44,7 +44,7 @@ class EstoquePersistenceIntegrationTest {
     }
 
     @Test
-    void devePersistirStatusAguardandoEstoqueQuandoNaoHouverBolsasSuficientesNoBanco() {
+    void devePersistirStatusAguardandoEstoqueQuandoSoHouverBolsaIncompativelNoBanco() {
         NoRede hospitalNo = noRedeRepository.save(
                 new NoRede("INT-HOSP", "Hospital Integracao", TipoNo.HOSPITAL));
         Hospital hospital = hospitalRepository.save(new Hospital("Hospital Integracao", hospitalNo));
@@ -63,7 +63,7 @@ class EstoquePersistenceIntegrationTest {
                 hospital,
                 TipoSanguineo.O_NEG,
                 Hemocomponente.HEMACIAS,
-                999_999,
+                1,
                 LocalDateTime.now().plusHours(6)));
 
         Long reqId = req.getId();
