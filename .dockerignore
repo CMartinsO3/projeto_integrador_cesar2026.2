@@ -1,5 +1,13 @@
-target
-.git
-.idea
-.vscode
+target/
+.git/
+.github/
+.idea/
+.vscode/
 *.iml
+.env
+.env.*
+!.env.example
+c_structures/
+docs/
+*.md
+mapa-doacao.html

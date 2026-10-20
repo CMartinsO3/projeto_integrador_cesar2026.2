@@ -1,0 +1,59 @@
+services:
+  db:
+    image: postgres:16.4-alpine
+    container_name: hemoflow-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-hemoflow}
+      POSTGRES_USER: ${POSTGRES_USER:-hemoflow}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-hemoflow_local_dev}
+    volumes:
+      - hemoflow_pgdata:/var/lib/postgresql/data
+    networks:
+      - hemoflow-net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        GIT_SHA: ${GIT_SHA:-local-compose}
+        APP_VERSION: ${APP_VERSION:-0.0.1-SNAPSHOT}
+    container_name: hemoflow-api
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "${PORT:-8080}:${PORT:-8080}"
+    environment:
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-postgres}
+      PORT: ${PORT:-8080}
+      SPRING_DATASOURCE_URL: ${SPRING_DATASOURCE_URL:-jdbc:postgresql://db:5432/hemoflow}
+      SPRING_DATASOURCE_USERNAME: ${SPRING_DATASOURCE_USERNAME:-hemoflow}
+      SPRING_DATASOURCE_PASSWORD: ${SPRING_DATASOURCE_PASSWORD:-hemoflow_local_dev}
+      HEMOFLOW_ADMIN_PASSWORD: ${HEMOFLOW_ADMIN_PASSWORD:-admin}
+      GIT_SHA: ${GIT_SHA:-local-compose}
+    networks:
+      - hemoflow-net
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:$${PORT:-8080}/actuator/health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 40s
+
+volumes:
+  hemoflow_pgdata:
+    name: hemoflow_pgdata
+
+networks:
+  hemoflow-net:
+    name: hemoflow-net
+    driver: bridge

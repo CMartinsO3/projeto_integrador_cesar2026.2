@@ -4,6 +4,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 import org.springframework.boot.CommandLineRunner;
+import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -11,6 +12,7 @@ import com.hemoflow.hemoflow.dominio.*;
 import com.hemoflow.hemoflow.persistencia.*;
 
 @Component
+@Profile("!test")
 public class DadosIniciais implements CommandLineRunner {
 
     private final NoRedeRepository noRedeRepository;
