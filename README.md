@@ -102,17 +102,17 @@ Screencast mostrando a aplicação Spring Boot em execução, demonstrando o fun
 
 📺 **Assista no YouTube:** [Link do vídeo](https://youtu.be/-sY4YpXX600)
 
-### Demonstração: Requisição Hospitalar e Consulta de Status
-
-Screencast mostrando, pelo Swagger (`/docs`), a criação de uma requisição hospitalar, a consulta do seu status e a alocação de bolsas para o pedido.
-
-📺 **Assista no YouTube:** [Link do vídeo](https://youtu.be/TbLK2uS_g5k)
-
 ### Explicação do código
 
 Screencast com a explicação do código da aplicação Spring Boot, cobrindo a implementação das histórias de usuário desenvolvidas.
 
 📺 **Assista no YouTube:** [Link do vídeo](https://www.youtube.com/watch?v=TkPm2lFM_Es)
+
+### Demonstração: Requisição Hospitalar e Consulta de Status
+
+Screencast mostrando, pelo Swagger (`/docs`), a criação de uma requisição hospitalar, a consulta do seu status e a alocação de bolsas para o pedido.
+
+📺 **Assista no YouTube:** [Link do vídeo](https://youtu.be/TbLK2uS_g5k)
 
 ### Explicação do código: Requisição Hospitalar e Consulta de Status
 
