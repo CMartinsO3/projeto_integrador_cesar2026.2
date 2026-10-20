@@ -81,6 +81,7 @@ Para garantir um escopo controlado e seguro, o projeto adota os seguintes limite
 * **Screencast de apresentação do protótipo**:
   🎥 [Vídeo no YouTube](https://youtu.be/CSTc0O8W5v8)
 
+### 🚀 Entrega 02
 
 ## 🎥 Vídeos Demonstrativos
 
@@ -108,18 +109,31 @@ Screencast com a explicação do código da aplicação Spring Boot, cobrindo a 
 
 📺 **Assista no YouTube:** [Link do vídeo](https://www.youtube.com/watch?v=TkPm2lFM_Es)
 
-### Demonstração: Requisição Hospitalar e Consulta de Status
+## 🚀 Entrega 3
 
-Screencast mostrando, pelo Swagger (`/docs`), a criação de uma requisição hospitalar, a consulta do seu status e a alocação de bolsas para o pedido.
+### 📋 Histórias de Usuário Implementadas
+
+> **História: Criação de Requisição Hospitalar**
+> * *Como* responsável hospitalar
+> * *Eu quero* criar uma requisição informando tipo sanguíneo, componente, quantidade necessária e janela de entrega
+> * *Para que* o hemocentro saiba o que preciso e possa atendê-la.
+
+> **História: Consulta de Status da Requisição**
+> * *Como* responsável hospitalar
+> * *Eu quero* consultar o status da minha requisição (pendente, alocada, em trânsito, entregue)
+> * *Para que* eu saiba quando o componente vai chegar sem precisar ligar para o hemocentro.
+
+### Demonstração de uso (histórias implementadas)
+
+Screencast mostrando, pelo Swagger (`/docs`), a aplicação Spring Boot em execução: criação de uma requisição hospitalar, validação de campos obrigatórios, consulta por lista, por ID e por status, e a alocação de bolsas para o pedido.
 
 📺 **Assista no YouTube:** [Link do vídeo](https://youtu.be/TbLK2uS_g5k)
 
-### Explicação do código: Requisição Hospitalar e Consulta de Status
+### Explicação do código
 
-Screencast com a explicação do código das histórias de criação de requisição e consulta de status, passando por Controller, DTOs, Service, entidade, Repository e tratamento de erros.
+Screencast com a explicação do código da aplicação Spring Boot, cobrindo a implementação das histórias de criação de requisição e consulta de status: Controller, DTOs, Service, entidade, Repository, tratamento de erros e regras de transição de status.
 
 📺 **Assista no YouTube:** [Link do vídeo](https://youtu.be/O2WbMlvpl-Q)
-
 <!--
 ### 🚀 Entrega 02
 * Artefato 1: [link]
