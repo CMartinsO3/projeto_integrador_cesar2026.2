@@ -1,19 +1,32 @@
 package com.hemoflow.hemoflow.grafo;
 
 public class Aresta {
-    private String destino;
-    private int peso; // tempo estimado em minutos
 
-    public Aresta(String destino, int peso) {
-        this.destino = destino;
-        this.peso = peso;
+    private final Long destinoId;
+    private final int pesoMinutos;
+
+    public Aresta(Long destinoId, int pesoMinutos) {
+        this.destinoId = destinoId;
+        this.pesoMinutos = pesoMinutos;
     }
 
-    public String getDestino() {
-        return destino;
+    public Long getDestinoId() {
+        return destinoId;
+    }
+
+    public Long getDestino() {
+        return destinoId;
+    }
+
+    public int getPesoMinutos() {
+        return pesoMinutos;
+    }
+
+    public int getTempoMinutos() {
+        return pesoMinutos;
     }
 
     public int getPeso() {
-        return peso;
+        return pesoMinutos;
     }
 }
