@@ -1,2 +1,4 @@
+/actuator/health
 {"status":"UP"}
+/actuator/info
 {"app":{"name":"HemoFlow - Gestao e Distribuicao de Hemocomponentes","version":"0.0.1-SNAPSHOT","git-sha":"local-compose"}}

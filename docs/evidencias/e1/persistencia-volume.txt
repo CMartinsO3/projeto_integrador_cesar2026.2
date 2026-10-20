@@ -1,0 +1,3 @@
+docker compose down: volume hemoflow_pgdata exists = True
+docker compose up -d: API status = healthy
+docker compose down -v: volume hemoflow_pgdata exists = False

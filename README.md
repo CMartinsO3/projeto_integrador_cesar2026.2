@@ -28,7 +28,7 @@ O HemoFlow unifica em uma única plataforma web:
 * **Estruturas de Dados & Algoritmos:**
   * **Grafos e Caminhos Mínimos:** Roteirização e logística de entregas
   * **Lista, Fila e Pilha (Unidade 1):** estoque de bolsas, requisições em ordem de chegada e histórico de operações — [detalhes](./docs/estruturas-u1.md)
-  * **Planejado para a Unidade 2:** Filas de Prioridade & Tabela Hash (FEFO) e matching de compatibilidade ABO/Rh
+  * **Unidade 2:** compatibilidade ABO/Rh, alocação FEFO e cálculo de caminhos mínimos com Dijkstra
 * **Análise & Estatística:** Estatística descritiva e probabilidade aplicadas ao estoque/demanda
 * **Infraestrutura & Redes:** Concorrência, CI/CD, Nuvem e Simulação de Telemetria/Comunicação de Rede
 
@@ -134,12 +134,6 @@ Screencast mostrando, pelo Swagger (`/docs`), a aplicação Spring Boot em execu
 Screencast com a explicação do código da aplicação Spring Boot, cobrindo a implementação das histórias de criação de requisição e consulta de status: Controller, DTOs, Service, entidade, Repository, tratamento de erros e regras de transição de status.
 
 📺 **Assista no YouTube:** [Link do vídeo](https://youtu.be/O2WbMlvpl-Q)
-<!--
-### 🚀 Entrega 02
-* Artefato 1: [link]
-* Artefato 2: [link]
--->
-
 ---
 
 ## ⚙️ Como Executar o Projeto
@@ -162,28 +156,52 @@ No Windows: `.\mvnw.cmd spring-boot:run`
 
 A aplicação sobe em [http://localhost:8080](http://localhost:8080) com dados sintéticos (topologia da malha, bolsas e uma requisição).
 
-### Pipeline / deploy inicial
-
-* **CI:** GitHub Actions em `.github/workflows/ci.yml` — `./mvnw -B verify` em push/PR.
-* **Container:**
+### Execução com Docker Compose
 
 ```bash
 docker compose up --build
 ```
 
-### Endpoints da etapa 3–4
-# 2. Entrar na pasta do projeto
-$ cd hemoflow
+No Windows:
+
+```powershell
+docker compose up --build
+```
+
+A API fica disponível em [http://localhost:8080](http://localhost:8080) e o
+PostgreSQL em um serviço interno do Compose. Para encerrar:
+
+```bash
+docker compose down
+```
+
+Para remover também o volume persistente do PostgreSQL:
+
+```bash
+docker compose down -v
+```
+
+### Pipeline e deploy
+
+* **CI:** GitHub Actions em `.github/workflows/ci.yml` — `./mvnw -B verify` em push/PR.
+* **CD:** GitHub Actions em `.github/workflows/deploy.yml`, com publicação no GHCR, deploy no Render e suporte a rollback via `workflow_dispatch`.
+
+As evidências reproduzíveis de testes, containers, smoke tests e persistência
+estão no [índice de evidências](./docs/evidencias/README.md).
+
+### Endpoints da aplicação
 
 | Recurso | Método | Rota |
 |---|---|---|
 | Painel | GET | `/` |
+| Health check | GET | `/actuator/health` |
+| Informações da aplicação | GET | `/actuator/info` |
 | Topologia (nós + ligações) | GET | `/api/v1/topologia` |
 | Nós da malha | GET/POST | `/api/v1/nos-rede` |
 | Caminho mínimo (Dijkstra) | GET | `/api/v1/rotas/caminho-minimo?origemId=&destinoId=` |
 | Bolsas | GET/POST | `/api/v1/bolsas` |
 | Requisições | GET/POST | `/api/v1/requisicoes` |
-| Alocação (U1: ordem de cadastro) | POST | `/api/v1/requisicoes/{id}/alocar` |
+| Alocação (ABO/Rh + FEFO) | POST | `/api/v1/requisicoes/{id}/alocar` |
 | H2 Console | GET | `/h2-console` (JDBC: `jdbc:h2:mem:hemoflow`) |
 
 Exemplo de rota Hemocentro → Hospital C (via nó intermediário, 35 min):
@@ -191,3 +209,19 @@ Exemplo de rota Hemocentro → Hospital C (via nó intermediário, 35 min):
 ```bash
 curl "http://localhost:8080/api/v1/rotas/caminho-minimo?origemId=1&destinoId=4"
 ```
+
+## ✅ Estado atual da implementação
+
+As regras principais da Unidade 2 estão implementadas e cobertas por testes:
+
+- compatibilidade ABO/Rh por matriz 8x8;
+- descarte lógico de bolsas vencidas;
+- alocação FEFO, com desempate determinístico por ID;
+- caminho mínimo em grafo ponderado com Dijkstra;
+- integração Spring/JPA para persistência do status
+  `AGUARDANDO_ESTOQUE`;
+- cenários de aceitação Cucumber;
+- pipeline CI/CD e evidências de execução local.
+
+> A compatibilidade ABO/Rh deste projeto é didática e não substitui protocolos
+> clínicos ou decisões transfusionais reais.

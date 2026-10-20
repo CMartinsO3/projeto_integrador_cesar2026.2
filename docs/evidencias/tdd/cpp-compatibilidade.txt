@@ -1,0 +1,13 @@
+Matriz de compatibilidade (linha = doador, coluna = receptor)
+      A+  A-  B+  B-  AB+ AB- O+  O-  
+A+    sim .   .   .   sim .   .   .   
+A-    sim sim .   .   sim sim .   .   
+B+    .   .   sim .   sim .   .   .   
+B-    .   .   sim sim sim sim .   .   
+AB+   .   .   .   .   sim .   .   .   
+AB-   .   .   .   .   sim sim .   .   
+O+    sim .   sim .   sim .   sim .   
+O-    sim sim sim sim sim sim sim sim 
+
+Pares compativeis: 27 (esperado: 27)
+Falhas: 0

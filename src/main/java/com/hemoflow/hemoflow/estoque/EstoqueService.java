@@ -2,6 +2,7 @@ package com.hemoflow.hemoflow.estoque;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -124,13 +125,17 @@ public class EstoqueService {
             throw new RegraNegocioException("Requisição em status " + requisicao.getStatus() + " não pode ser alocada");
         }
 
-        // U1: filtra apenas por hemocomponente e status DISPONIVEL
-        // Compatibilidade ABO/Rh será aplicada na Unidade 2 (CompatibilidadeAboRh)
+        // Filtra por hemocomponente, compatibilidade ABO/Rh, validade e status.
         List<Bolsa> candidatas = bolsaRepository.findByStatusAndHemocomponente(
                         StatusBolsa.DISPONIVEL,
                         requisicao.getHemocomponente()
                 ).stream()
+                .filter(b -> CompatibilidadeAboRh.compativel(
+                        b.getTipoSanguineo(), requisicao.getTipoSanguineo()))
                 .filter(b -> !b.isVencida())
+                .sorted(Comparator
+                        .comparing(Bolsa::getDataValidade)
+                        .thenComparing(Bolsa::getId))
                 .toList();
 
         if (candidatas.size() < requisicao.getQuantidade()) {
@@ -142,7 +147,7 @@ public class EstoqueService {
             );
         }
 
-        // U1: seleção simples (as primeiras N bolsas da lista)
+        // FEFO: as candidatas já estão ordenadas pela validade mais próxima.
         List<Bolsa> alocadas = new ArrayList<>();
         for (int i = 0; i < requisicao.getQuantidade(); i++) {
             Bolsa bolsa = candidatas.get(i);
@@ -301,4 +306,3 @@ public class EstoqueService {
         }).toList();
     }
 }
-
