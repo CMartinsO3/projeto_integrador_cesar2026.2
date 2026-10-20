@@ -1,0 +1,130 @@
+name: CD - Build, Publicacao de Imagem e Deploy
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+    inputs:
+      target_sha:
+        description: "Commit SHA para deploy ou rollback (vazio = HEAD atual da main)"
+        required: false
+        default: ""
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: test
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout do codigo na revisao alvo
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.target_sha || github.sha }}
+
+      - name: Configurar Java 17 (Temurin) e Cache Maven
+        uses: actions/setup-java@v4
+        with:
+          java-version: "17"
+          distribution: "temurin"
+          cache: "maven"
+
+      - name: Executar testes obrigatorios (Gate de Deploy)
+        run: chmod +x mvnw && ./mvnw -B verify
+
+  publish-image:
+    name: publish-image
+    runs-on: ubuntu-24.04
+    needs: test
+    permissions:
+      contents: read
+      packages: write
+    outputs:
+      deployed_sha: ${{ steps.meta.outputs.sha }}
+    steps:
+      - name: Checkout do codigo na revisao alvo
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.target_sha || github.sha }}
+
+      - name: Definir SHA efetivo
+        id: meta
+        run: |
+          EFFECTIVE_SHA="${{ inputs.target_sha != '' && inputs.target_sha || github.sha }}"
+          IMAGE_LOWER=$(echo "ghcr.io/${{ github.repository }}" | tr '[:upper:]' '[:lower:]')
+          echo "sha=${EFFECTIVE_SHA}" >> $GITHUB_OUTPUT
+          echo "image=${IMAGE_LOWER}" >> $GITHUB_OUTPUT
+
+      - name: Login no GitHub Container Registry (GHCR)
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build e Push da imagem Docker (tags SHA e latest)
+        run: |
+          docker build \
+            --build-arg GIT_SHA=${{ steps.meta.outputs.sha }} \
+            --build-arg APP_VERSION=1.0.0 \
+            -t ${{ steps.meta.outputs.image }}:${{ steps.meta.outputs.sha }} \
+            -t ${{ steps.meta.outputs.image }}:latest .
+          docker push ${{ steps.meta.outputs.image }}:${{ steps.meta.outputs.sha }}
+          docker push ${{ steps.meta.outputs.image }}:latest
+
+  deploy:
+    name: deploy
+    runs-on: ubuntu-24.04
+    needs: publish-image
+    environment: production
+    steps:
+      - name: Validar presenca dos segredos obrigatorios (Sem modo simulado)
+        env:
+          RENDER_DEPLOY_HOOK_URL: ${{ secrets.RENDER_DEPLOY_HOOK_URL }}
+          PUBLIC_APP_URL: ${{ secrets.PUBLIC_APP_URL }}
+        run: |
+          if [ -z "$RENDER_DEPLOY_HOOK_URL" ]; then
+            echo "::error::Secret RENDER_DEPLOY_HOOK_URL nao configurado no environment 'production'."
+            exit 1
+          fi
+          if [ -z "$PUBLIC_APP_URL" ]; then
+            echo "::error::Secret PUBLIC_APP_URL nao configurado no environment 'production'."
+            exit 1
+          fi
+
+      - name: Disparar Deploy no Render
+        env:
+          RENDER_DEPLOY_HOOK_URL: ${{ secrets.RENDER_DEPLOY_HOOK_URL }}
+          TARGET_SHA: ${{ needs.publish-image.outputs.deployed_sha }}
+        run: |
+          SEPARATOR="?"
+          case "$RENDER_DEPLOY_HOOK_URL" in
+            *\?*) SEPARATOR="&" ;;
+          esac
+          HTTP_CODE=$(curl -sS -o /tmp/render_resp.json -w "%{http_code}" -X POST "${RENDER_DEPLOY_HOOK_URL}${SEPARATOR}ref=${TARGET_SHA}")
+          cat /tmp/render_resp.json
+          if [ "$HTTP_CODE" != "200" ] && [ "$HTTP_CODE" != "202" ]; then
+            echo "::error::Falha ao acionar Render Deploy Hook (HTTP $HTTP_CODE)"
+            exit 1
+          fi
+
+      - name: Verificar saude (/actuator/health) e versao (/actuator/info)
+        env:
+          PUBLIC_APP_URL: ${{ secrets.PUBLIC_APP_URL }}
+          EXPECTED_SHA: ${{ needs.publish-image.outputs.deployed_sha }}
+        run: |
+          BASE_URL="${PUBLIC_APP_URL%/}"
+          for i in $(seq 1 36); do
+            HEALTH=$(curl -fsS "${BASE_URL}/actuator/health" 2>/dev/null || true)
+            INFO=$(curl -fsS "${BASE_URL}/actuator/info" 2>/dev/null || true)
+            echo "Tentativa $i/36 | Health: $HEALTH | Info: $INFO"
+            if echo "$HEALTH" | grep -q '"status":"UP"' && echo "$INFO" | grep -q "$EXPECTED_SHA"; then
+              echo "Deploy confirmado com sucesso! SHA: ${EXPECTED_SHA}"
+              exit 0
+            fi
+            sleep 10
+          done
+          echo "::error::Timeout aguardando a versao ${EXPECTED_SHA} responder em ${BASE_URL}"
+          exit 1
