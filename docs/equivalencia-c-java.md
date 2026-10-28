@@ -106,3 +106,19 @@ As duas versões usam a mesma ideia: uma tabela de 8 linhas (tipo do doador) por
 - **Espaço O(1):** a matriz tem 8 × 8 = 64 células fixas, que não crescem com o estoque.
 
 **Testes:** `CompatibilidadeAboRhTest` (Java) e `teste_compat.cpp` (C) conferem as 64 combinações contra a regra dos antígenos (A, B e Rh: o doador não pode ter nenhum antígeno que o receptor não tenha), verificam que existem exatamente 27 pares compatíveis, os casos de compatibilidade (O− doa para todos, AB+ recebe de todos, mesmo tipo) e de incompatibilidade (A+→B−, A+→A−, Rh+→Rh−), e protegem a ordem do enum.
+
+## 6. FEFO — First Expired, First Out (lista ordenada por validade)
+
+**C:** `c_structures/fefo.cpp` / `fefo.hpp` — `fefo_inserir_ordenado` e `fefo_remover_primeira`.
+**Java:** `estoque/FilaFEFO.java` (usa `estruturas/ListaEncadeada.java`, método `inserirOrdenado`) — `adicionar` e `proxima`.
+
+As duas versões mantêm uma lista encadeada que está sempre ordenada por validade crescente. Em vez de procurar a menor validade a cada pedido, cada bolsa nova é inserida no lugar certo, e a primeira da lista é sempre a que vence antes. Em C, `fefo_inserir_ordenado` aloca o nó com `malloc` e percorre a lista com um ponteiro para ponteiro (`NoFefo** p`, que começa em `&l->cabeca`) enquanto o nó atual vier antes ou empatar com a nova bolsa; depois faz `novo->proximo = *p; *p = novo;`. Em Java, `ListaEncadeada.inserirOrdenado` faz a mesma caminhada com uma referência ao nó `anterior` e um `Comparator`, tratando a inserção na cabeça como caso especial, e `FilaFEFO` fornece o comparador (validade, depois id). Retirar a próxima bolsa é tirar a cabeça: `fefo_remover_primeira` em C (devolve `-1` se não houver bolsa) e `proxima()` em Java (devolve `null`). A diferença está nos detalhes de cada linguagem: em C a validade é um inteiro `AAAAMMDD`, o `free` do nó é manual e a data de hoje é um parâmetro; em Java a validade é `LocalDate`, o nó retirado é coletado pelo GC e a data de hoje vem de um `Clock` (que os testes podem fixar). Antes, `FilaFEFO` usava `PriorityQueue` (inserção O(log n)), que escondia a lógica; agora a regra de ordenação aparece no código da lista, como o professor pediu.
+
+**Regras de desempate e descarte:** com a mesma validade, sai primeiro a bolsa de menor id; se o id também for igual (ou ainda não existir), vale a ordem de chegada. Bolsa já vencida é descartada na entrada (`adicionar` devolve `false`, `fefo_inserir_ordenado` devolve `0`) e, se vencer enquanto espera na lista, é pulada na retirada. Como a lista é ordenada, as vencidas ficam sempre na frente.
+
+**Complexidade (justificada pelo código):**
+- **Inserção O(n):** no pior caso (bolsa que vence depois de todas) o laço percorre os n nós da lista.
+- **Retirada do topo O(1):** só se mexe na cabeça; descartar bolsas que venceram só custa mais proporcionalmente ao número de bolsas descartadas, e cada bolsa é descartada uma única vez.
+- **Espaço O(n):** um nó por bolsa guardada.
+
+**Testes:** `FilaFEFOTest` e `ListaEncadeadaOrdenadaTest` (Java) e `teste_fefo.cpp` (C) conferem a ordem de saída, o exemplo da inserção entre 15/10 e 25/10, o desempate por id e por ordem de chegada, a fila vazia, a bolsa vencida na entrada e a que vence dentro da lista, e comparam uma sequência aleatória (semente fixa) com a ordenação completa feita por `qsort` (C) e `List.sort` (Java).
