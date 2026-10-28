@@ -1,6 +1,7 @@
 package com.hemoflow.hemoflow.estruturas;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 
 /**
@@ -14,6 +15,7 @@ import java.util.List;
  * <ul>
  *   <li>Inserção no início — O(1)</li>
  *   <li>Inserção no fim — O(n)</li>
+ *   <li>Inserção ordenada — O(n)</li>
  *   <li>Remoção por valor — O(n)</li>
  *   <li>Busca — O(n)</li>
  * </ul>
@@ -78,6 +80,33 @@ public class ListaEncadeada<T> {
                 atual = atual.proximo;
             }
             atual.proximo = novo;
+        }
+        tamanho++;
+    }
+
+    /**
+     * Insere um elemento no ponto certo de uma lista que já está ordenada
+     * segundo {@code comparador} — O(n).
+     *
+     * <p>Percorre a lista até achar o primeiro nó que deve vir DEPOIS do novo
+     * e religa os ponteiros. Em empate, o novo elemento entra depois dos
+     * equivalentes que já estavam na lista (ordem de chegada preservada).</p>
+     *
+     * @param dado       elemento a inserir
+     * @param comparador define a ordem; a lista deve ter sido montada só com este método
+     */
+    public void inserirOrdenado(T dado, Comparator<? super T> comparador) {
+        No<T> novo = new No<>(dado);
+        if (cabeca == null || comparador.compare(cabeca.dado, dado) > 0) {
+            novo.proximo = cabeca;          // vira a nova cabeça
+            cabeca = novo;
+        } else {
+            No<T> anterior = cabeca;
+            while (anterior.proximo != null && comparador.compare(anterior.proximo.dado, dado) <= 0) {
+                anterior = anterior.proximo;
+            }
+            novo.proximo = anterior.proximo;
+            anterior.proximo = novo;
         }
         tamanho++;
     }
