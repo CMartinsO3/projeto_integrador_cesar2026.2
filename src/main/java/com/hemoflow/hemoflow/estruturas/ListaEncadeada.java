@@ -3,6 +3,7 @@ package com.hemoflow.hemoflow.estruturas;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.function.Predicate;
 
 /**
  * Lista encadeada simples de uso genérico.
@@ -16,7 +17,7 @@ import java.util.List;
  *   <li>Inserção no início — O(1)</li>
  *   <li>Inserção no fim — O(n)</li>
  *   <li>Inserção ordenada — O(n)</li>
- *   <li>Remoção por valor — O(n)</li>
+ *   <li>Remoção por valor ou por condição — O(n)</li>
  *   <li>Busca — O(n)</li>
  * </ul>
  *
@@ -136,6 +137,33 @@ public class ListaEncadeada<T> {
         while (anterior.proximo != null) {
             if (anterior.proximo.dado.equals(dado)) {
                 anterior.proximo = anterior.proximo.proximo; // desencadeia o nó
+                tamanho--;
+                return true;
+            }
+            anterior = anterior.proximo;
+        }
+        return false;
+    }
+
+    /**
+     * Remove o primeiro elemento que satisfaz a condição — O(n).
+     *
+     * @param condicao critério de busca (ex.: mesmo id)
+     * @return {@code true} se algum elemento foi removido
+     */
+    public boolean removerSe(Predicate<? super T> condicao) {
+        if (cabeca == null) {
+            return false;
+        }
+        if (condicao.test(cabeca.dado)) {
+            cabeca = cabeca.proximo;
+            tamanho--;
+            return true;
+        }
+        No<T> anterior = cabeca;
+        while (anterior.proximo != null) {
+            if (condicao.test(anterior.proximo.dado)) {
+                anterior.proximo = anterior.proximo.proximo;
                 tamanho--;
                 return true;
             }

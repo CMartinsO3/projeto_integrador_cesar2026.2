@@ -30,17 +30,20 @@ public class EstoqueService {
     private final NoRedeRepository noRedeRepository;
     private final HospitalRepository hospitalRepository;
     private final RequisicaoRepository requisicaoRepository;
+    private final IndiceEstoque indiceEstoque;
 
     public EstoqueService(
             BolsaRepository bolsaRepository,
             NoRedeRepository noRedeRepository,
             HospitalRepository hospitalRepository,
-            RequisicaoRepository requisicaoRepository
+            RequisicaoRepository requisicaoRepository,
+            IndiceEstoque indiceEstoque
     ) {
         this.bolsaRepository = bolsaRepository;
         this.noRedeRepository = noRedeRepository;
         this.hospitalRepository = hospitalRepository;
         this.requisicaoRepository = requisicaoRepository;
+        this.indiceEstoque = indiceEstoque;
     }
 
     // -------------------------------------------------------------------------
@@ -60,7 +63,9 @@ public class EstoqueService {
                 dto.lote(),
                 local
         );
-        return bolsaRepository.save(bolsa);
+        Bolsa salva = bolsaRepository.save(bolsa);
+        indiceEstoque.registrarAposCommit(salva);
+        return salva;
     }
 
     @Transactional(readOnly = true)
@@ -82,7 +87,10 @@ public class EstoqueService {
         Bolsa bolsa = buscar(id);
         validarTransicaoBolsa(bolsa.getStatus(), novoStatus);
         bolsa.setStatus(novoStatus);
-        return bolsaRepository.save(bolsa);
+        Bolsa salva = bolsaRepository.save(bolsa);
+        // toda transição parte de DISPONIVEL ou de um status posterior: a bolsa sai do índice
+        indiceEstoque.retirarAposCommit(salva);
+        return salva;
     }
 
     // -------------------------------------------------------------------------
@@ -124,6 +132,9 @@ public class EstoqueService {
             throw new RegraNegocioException("Requisição em status " + requisicao.getStatus() + " não pode ser alocada");
         }
 
+        // Bolsas que venceram enquanto esperavam saem do índice
+        indiceEstoque.descartarVencidas();
+
         // U1: filtra apenas por hemocomponente e status DISPONIVEL
         // Compatibilidade ABO/Rh será aplicada na Unidade 2 (CompatibilidadeAboRh)
         List<Bolsa> candidatas = bolsaRepository.findByStatusAndHemocomponente(
@@ -151,6 +162,7 @@ public class EstoqueService {
         }
 
         bolsaRepository.saveAll(alocadas);
+        alocadas.forEach(indiceEstoque::retirarAposCommit);
         requisicao.setStatus(StatusRequisicao.ALOCADA);
         requisicaoRepository.save(requisicao);
         return alocadas;
@@ -245,6 +257,7 @@ public class EstoqueService {
                 .orElseThrow(() -> new RecursoNaoEncontradoException("Nó de rede não encontrado: " + noRedeId));
         Bolsa b = new Bolsa(tipo, hemo, dataColeta, dataValidade, lote, no);
         bolsaRepository.save(b);
+        indiceEstoque.registrarAposCommit(b);
         return Map.of("id", b.getId(), "tipoSanguineo", tipo.name(), "status", "DISPONIVEL", "lote", lote);
     }
 
@@ -258,6 +271,7 @@ public class EstoqueService {
         StatusBolsa novoStatus = "DESCARTE".equals(motivo) ? StatusBolsa.DESCARTADA : StatusBolsa.ENTREGUE;
         b.setStatus(novoStatus);
         bolsaRepository.save(b);
+        indiceEstoque.retirarAposCommit(b);
         return Map.of("id", b.getId(), "status", novoStatus.name(), "motivo", motivo);
     }
 

@@ -122,3 +122,24 @@ As duas versões mantêm uma lista encadeada que está sempre ordenada por valid
 - **Espaço O(n):** um nó por bolsa guardada.
 
 **Testes:** `FilaFEFOTest` e `ListaEncadeadaOrdenadaTest` (Java) e `teste_fefo.cpp` (C) conferem a ordem de saída, o exemplo da inserção entre 15/10 e 25/10, o desempate por id e por ordem de chegada, a fila vazia, a bolsa vencida na entrada e a que vence dentro da lista, e comparam uma sequência aleatória (semente fixa) com a ordenação completa feita por `qsort` (C) e `List.sort` (Java).
+
+## 7. Índice de estoque por tabela hash (com encadeamento)
+
+**C:** `c_structures/tabela_hash.cpp` / `tabela_hash.hpp` — `hash_funcao`, `hash_posicao`, `hash_inserir`, `hash_buscar`, `hash_remover`, e as operações de estoque `indice_registrar` / `indice_proxima`.
+**Java:** `estruturas/TabelaHash.java` (tabela própria, sem `HashMap`) e `estoque/IndiceEstoque.java` (o índice do estoque, sincronizado com o `EstoqueService`).
+
+**Chave e tamanho.** A chave é o tipo sanguíneo mais o hemocomponente, no formato `A_POS|HEMACIAS`, então existem 8 × 4 = 32 chaves possíveis. Cada chave leva a um grupo que guarda a lista FEFO (seção 6) das bolsas daquele tipo. A tabela tem 67 posições (`HASH_TAM` em C, `CAPACIDADE_PADRAO` em Java), um número primo maior que o dobro das chaves possíveis: no pior caso o fator de carga é 32 / 67 ≈ 0,48. Com essa tabela, as 32 chaves ocupam 28 posições e a maior cadeia tem 2 grupos (4 colisões reais), o que exercita o encadeamento sem deixar as cadeias longas.
+
+**Função hash e posição.** As duas versões usam `h = h * 31 + caractere` sobre os caracteres da chave, com aritmética de 32 bits sem sinal, e a posição é `h % 67`. Em C, `hash_funcao` usa `uint32_t`; em Java, `TabelaHash.hash` usa `int` (o estouro do `int` dá o mesmo resultado, e a posição é calculada com `Integer.remainderUnsigned`). Para chaves ASCII, as duas linguagens chegam à mesma posição: `A_POS|HEMACIAS` cai na posição 21, `O_NEG|PLASMA` na 31 e `AB_NEG|PLAQUETAS` na 65, valores conferidos nos testes das duas versões.
+
+**Colisão.** Quando duas chaves caem na mesma posição, elas ficam encadeadas no mesmo bucket. Em C, o bucket é um ponteiro para o primeiro `Grupo`, e cada `Grupo` tem o ponteiro `proximo` para o seguinte; `hash_inserir` coloca o novo grupo no início do bucket, e `hash_remover` usa um ponteiro para ponteiro (`Grupo** p`) para desencadear o grupo, seja ele a cabeça ou um nó do meio. Em Java, o bucket é uma referência para uma `Entrada`, com o campo `proximo`, e `TabelaHash.remover` guarda o nó `anterior` pelo mesmo motivo. Buscar uma chave calcula a posição (uma conta), vai direto ao bucket e compara só as poucas chaves dali, sem olhar as bolsas dos outros grupos.
+
+**Sincronização com o `EstoqueService`.** O banco continua sendo a fonte da verdade; o índice fica em memória. Ele é montado quando a aplicação termina de subir (`IndiceEstoqueCarga`, que lê as bolsas `DISPONIVEL`) e é atualizado pelo `EstoqueService`: registrar entrada ou criar bolsa coloca a bolsa no grupo; alocar, registrar saída e mudar o status para fora de `DISPONIVEL` tiram a bolsa do índice; e `alocar` também descarta do índice as bolsas que já venceram. Essas mudanças só acontecem depois do commit da transação (`registrarAposCommit` / `retirarAposCommit`), para que um rollback não deixe bolsas inexistentes no índice. Como o índice é compartilhado entre requisições, seus métodos são `synchronized`. Hoje a alocação (`alocar`) ainda escolhe as bolsas pelo banco, na ordem de cadastro; usar o índice para escolher a bolsa (FEFO + compatibilidade ABO/Rh) é a integração das três histórias e fica como etapa seguinte.
+
+**Complexidade (justificada pelo código):**
+- **Inserir, buscar e remover: O(1) em média.** O custo é uma conta (a função hash, proporcional ao tamanho da chave, que é pequeno e fixo) mais a comparação das chaves do bucket. Com fator de carga ≈ 0,48 e maior cadeia de 2, são poucas comparações.
+- **Pior caso: O(n).** Se todas as n chaves caíssem no mesmo bucket, a busca percorreria uma cadeia com n grupos (o teste com capacidade 1 mostra esse caso).
+- **Espaço: O(n).** A tabela tem 67 ponteiros fixos mais um grupo por chave existente. Um grupo vazio é removido da tabela.
+- Dentro de um grupo valem as complexidades da lista FEFO (seção 6): inserir uma bolsa O(m) e retirar a primeira O(1), onde m é o número de bolsas do grupo.
+
+**Testes:** `teste_hash.cpp` (C), `TabelaHashTest`, `IndiceEstoqueTest` e `EstoqueServiceIndiceTest` (Java) cobrem inserir, buscar, remover, chave inexistente e inválida, colisão forçada (as chaves `!` e `d` caem no mesmo bucket; capacidade 1 para cadeias longas e remoção do início, meio e fim), as 32 chaves do estoque, uma comparação de 3000 operações aleatórias com um mapa de referência, a atualização do índice quando a bolsa é registrada, alocada, retirada ou vence, e o fato de que o índice só muda depois do commit.
