@@ -78,6 +78,29 @@ public class FilaFEFO {
         return null;
     }
 
+    /**
+     * Remove a bolsa com o id informado, em qualquer posição da fila — O(n).
+     *
+     * @return {@code true} se a bolsa estava na fila
+     */
+    public boolean removerPorId(Long id) {
+        return id != null && fila.removerSe(b -> id.equals(b.getId()));
+    }
+
+    /**
+     * Descarta as bolsas que já venceram (ficam sempre na frente da fila).
+     *
+     * @return quantas foram descartadas
+     */
+    public int descartarVencidas() {
+        int descartadas = 0;
+        while (!fila.estaVazia() && venceu(fila.obter(0))) {
+            fila.removerDoInicio();
+            descartadas++;
+        }
+        return descartadas;
+    }
+
     public boolean estaVazia() {
         return fila.estaVazia();
     }
