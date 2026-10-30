@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Equipe clínica — HemoFlow</title>
+  <link rel="stylesheet" href="/css/hemoflow.css">
+</head>
+<body>
+<div class="auth-shell">
+  <aside class="auth-story">
+    <a class="brand" href="/" style="color:#fff">
+      <span class="mark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3c-1.8 3.2-6 6.4-6 10.2A6 6 0 0 0 12 21a6 6 0 0 0 6-7.8C18 9.4 13.8 6.2 12 3Z"/><path d="M12 11v6M9 14h6"/></svg></span>
+      <span><strong>HemoFlow</strong><em style="color:#9db5b3">Área restrita</em></span>
+    </a>
+    <div>
+      <p class="quote">Aqui o estoque é tratado como <em>vida em trânsito.</em></p>
+      <small>Acesso exclusivo da equipe responsável por validade, cadeia fria e alocação FEFO.</small>
+    </div>
+    <small>Credenciais de administrador · ambiente acadêmico</small>
+  </aside>
+  <main class="auth-form">
+    <div class="auth-card">
+      <p class="kicker">Administração</p>
+      <h1>Sala de operações</h1>
+      <p class="sub">Identifique-se para abrir o painel da hemorrede.</p>
+      <div class="field">
+        <label for="usuario">Usuário</label>
+        <input id="usuario" placeholder="admin" autocomplete="username">
+      </div>
+      <div class="field">
+        <label for="senha">Senha</label>
+        <input id="senha" type="password" placeholder="admin" autocomplete="current-password">
+      </div>
+      <button class="btn btn-teal btn-full" type="button" onclick="login()">Abrir painel</button>
+      <div id="erro" class="alert">Usuário ou senha inválidos.</div>
+      <div class="auth-links">
+        <a href="/login-usuario">Sou doador</a>
+        <a href="/">Voltar à central</a>
+      </div>
+    </div>
+  </main>
+</div>
+<script>
+async function login() {
+  const res = await fetch('/api/v1/auth/login-admin', {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({usuario: document.getElementById('usuario').value, senha: document.getElementById('senha').value})
+  });
+  const d = await res.json();
+  if (d.ok) window.location.href = d.redirect;
+  else document.getElementById('erro').classList.add('show');
+}
+document.addEventListener('keydown', e => { if(e.key==='Enter') login(); });
+</script>
+</body>
+</html>
