@@ -25,11 +25,33 @@
     <aside class="map-sheet">
       <p class="kicker">Recife</p>
       <h2>Pontos de coleta</h2>
-      <p style="color:var(--ink-soft);font-size:.9rem">Campanhas ativas e hospitais da malha. Toque no mapa para o estoque local.</p>
+      <p style="color:var(--ink-soft);font-size:.9rem">Escolha um hospital no mapa para consultar horários e agendar sua doação.</p>
       <ul id="campanhas"><li>Carregando a programação…</li></ul>
     </aside>
     <div id="mapa"></div>
   </div>
+  <dialog id="dialogAgendamento" style="border:0;border-radius:16px;padding:1.5rem;max-width:440px;width:calc(100% - 2rem);box-shadow:0 20px 60px #102a362e">
+    <form id="formAgendamento">
+      <p class="kicker">Agendamento de doação</p>
+      <h2 id="hospitalAgendamento" style="margin:.25rem 0 1rem"></h2>
+      <p style="color:var(--ink-soft);font-size:.9rem">Segunda a sábado, das 8h às 18h. Há 5 vagas por horário de 30 minutos.</p>
+      <div class="field">
+        <label for="dataAgendamento">Data (próximos 30 dias)</label>
+        <input id="dataAgendamento" type="date" required>
+      </div>
+      <div class="field">
+        <label for="horarioAgendamento">Horário disponível</label>
+        <select id="horarioAgendamento" required disabled>
+          <option value="">Selecione uma data primeiro</option>
+        </select>
+      </div>
+      <p id="mensagemAgendamento" class="msg" role="status" aria-live="polite"></p>
+      <div style="display:flex;gap:.6rem;justify-content:flex-end;margin-top:1rem">
+        <button id="fecharAgendamento" class="btn btn-ghost" type="button">Fechar</button>
+        <button id="confirmarAgendamento" class="btn btn-primary" type="submit" disabled>Confirmar horário</button>
+      </div>
+    </form>
+  </dialog>
 </div>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="/js/hemoflow.js"></script>
@@ -37,43 +59,175 @@
 const params = new URLSearchParams(window.location.search);
 const mapa = L.map('mapa').setView([-8.0476, -34.8770], 13);
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {attribution: 'OpenStreetMap'}).addTo(mapa);
+const dialogAgendamento = document.getElementById('dialogAgendamento');
+const dataAgendamento = document.getElementById('dataAgendamento');
+const horarioAgendamento = document.getElementById('horarioAgendamento');
+const mensagemAgendamento = document.getElementById('mensagemAgendamento');
+let sessaoDoador = null;
+let hospitalSelecionado = null;
 
-function carregarHospitais(doadorId) {
-  if (doadorId) {
-    fetch('/api/v1/doadores/' + doadorId + '/hospitais-recomendados')
-      .then(r => r.json()).then(hospitais => {
-        hospitais.forEach(h => {
-          if (h.latitude && h.longitude) {
-            const marker = L.marker([h.latitude, h.longitude]).addTo(mapa);
-            marker.bindPopup('<b>' + h.nome + '</b><br>Seu tipo: ' + HF.abo(h.tipoSanguineoDoador) + '<br><button class="btn btn-sm btn-teal" style="margin-top:8px" onclick="verEstoque(' + h.id + ')">Ver estoque</button><div id="est-' + h.id + '"></div>');
-          }
-        });
-      });
-  } else {
-    fetch('/api/v1/hospitais').then(r => r.json()).then(hospitais => {
-      if (!Array.isArray(hospitais)) return;
-      hospitais.forEach(h => {
-        if (h.latitude && h.longitude) {
-          L.marker([h.latitude, h.longitude]).addTo(mapa).bindPopup('<b>' + h.nome + '</b>');
-        }
-      });
+function adicionarHospitais(hospitais, recomendados) {
+  if (!Array.isArray(hospitais)) return;
+  hospitais.forEach(hospital => {
+    if (!Number.isFinite(hospital.latitude) || !Number.isFinite(hospital.longitude)
+        || hospital.latitude === 0 || hospital.longitude === 0) return;
+    const marker = L.marker([hospital.latitude, hospital.longitude]).addTo(mapa);
+    marker.bindPopup(() => {
+      const conteudo = document.createElement('div');
+      const nome = document.createElement('strong');
+      nome.textContent = hospital.nome;
+      conteudo.append(nome);
+      if (recomendados && hospital.tipoSanguineoDoador) {
+        const tipo = document.createElement('div');
+        tipo.textContent = 'Seu tipo: ' + HF.abo(hospital.tipoSanguineoDoador);
+        conteudo.append(tipo);
+      }
+
+      const acoes = document.createElement('div');
+      acoes.style.display = 'flex';
+      acoes.style.gap = '6px';
+      acoes.style.marginTop = '8px';
+
+      const agendar = document.createElement('button');
+      agendar.className = 'btn btn-sm btn-primary';
+      agendar.textContent = 'Agendar doação';
+      agendar.addEventListener('click', () => abrirAgendamento(hospital));
+      acoes.append(agendar);
+
+      const estoque = document.createElement('button');
+      estoque.className = 'btn btn-sm btn-teal';
+      estoque.textContent = 'Ver estoque';
+      estoque.addEventListener('click', () => verEstoque(hospital.id, conteudo));
+      acoes.append(estoque);
+      conteudo.append(acoes);
+      return conteudo;
     });
-  }
+
+    if (Number(params.get('agendarHospital')) === hospital.id) {
+      setTimeout(() => abrirAgendamento(hospital), 0);
+    }
+  });
 }
 
-fetch('/api/v1/auth/sessao').then(r => r.json()).then(s => {
-  const id = params.get('doadorId') || (s.logado && s.role === 'DOADOR' ? s.id : null);
-  carregarHospitais(id);
-}).catch(() => carregarHospitais(params.get('doadorId')));
+fetch('/api/v1/auth/sessao').then(r => r.json()).then(sessao => {
+  if (sessao.logado && sessao.role === 'DOADOR') {
+    sessaoDoador = sessao;
+    return fetch('/api/v1/doadores/' + sessao.id + '/hospitais-recomendados')
+      .then(resposta => resposta.json())
+      .then(hospitais => adicionarHospitais(hospitais, true));
+  }
+  return fetch('/api/v1/hospitais')
+    .then(resposta => resposta.json())
+    .then(hospitais => adicionarHospitais(hospitais, false));
+}).catch(() => {
+  fetch('/api/v1/hospitais')
+    .then(resposta => resposta.json())
+    .then(hospitais => adicionarHospitais(hospitais, false))
+    .catch(() => {
+      document.getElementById('campanhas').innerHTML =
+        '<li>Não foi possível carregar os hospitais. Atualize a página e tente novamente.</li>';
+    });
+});
 
-function verEstoque(id) {
+function verEstoque(id, conteudo) {
   fetch('/api/v1/bolsas/hospital/' + id + '/estoque-mock').then(r => r.json()).then(d => {
     let html = '<ul style="margin-top:8px;padding-left:16px">';
     Object.entries(d.estoque).forEach(([tipo, qtd]) => { html += '<li>' + HF.tipo(tipo) + ': ' + qtd + '</li>'; });
     html += '</ul>';
-    document.getElementById('est-' + id).innerHTML = html;
+    const estoque = document.createElement('div');
+    estoque.innerHTML = html;
+    conteudo.append(estoque);
   });
 }
+
+function abrirAgendamento(hospital) {
+  if (!sessaoDoador) {
+    const returnTo = '/mapa?agendarHospital=' + encodeURIComponent(hospital.id);
+    window.location.href = '/login-usuario?returnTo=' + encodeURIComponent(returnTo);
+    return;
+  }
+  hospitalSelecionado = hospital;
+  document.getElementById('hospitalAgendamento').textContent = hospital.nome;
+  const hoje = new Date();
+  const dataMaxima = new Date(hoje);
+  dataMaxima.setDate(dataMaxima.getDate() + 30);
+  dataAgendamento.min = formatarData(hoje);
+  dataAgendamento.max = formatarData(dataMaxima);
+  dataAgendamento.value = dataAgendamento.min;
+  mensagemAgendamento.textContent = '';
+  dialogAgendamento.showModal();
+  carregarHorarios();
+}
+
+function formatarData(data) {
+  const ano = data.getFullYear();
+  const mes = String(data.getMonth() + 1).padStart(2, '0');
+  const dia = String(data.getDate()).padStart(2, '0');
+  return `${ano}-${mes}-${dia}`;
+}
+
+async function carregarHorarios() {
+  horarioAgendamento.innerHTML = '<option value="">Carregando horários...</option>';
+  horarioAgendamento.disabled = true;
+  document.getElementById('confirmarAgendamento').disabled = true;
+  try {
+    const resposta = await fetch(
+      `/api/v1/agendamentos/hospital/${hospitalSelecionado.id}/disponibilidade?data=${dataAgendamento.value}`);
+    const dados = await resposta.json();
+    if (!resposta.ok) throw new Error(dados.mensagem || dados.erro || 'Não foi possível consultar os horários.');
+    horarioAgendamento.innerHTML = dados.length
+      ? '<option value="">Selecione um horário</option>' + dados.map(slot =>
+          `<option value="${slot.horario}">${slot.horario.substring(0, 5)} · ${slot.vagasDisponiveis} vaga(s)</option>`
+        ).join('')
+      : '<option value="">Sem horários disponíveis nesta data</option>';
+    horarioAgendamento.disabled = dados.length === 0;
+    mensagemAgendamento.textContent = dados.length
+      ? 'Os horários são atualizados conforme as vagas são preenchidas.'
+      : 'Escolha um dia de segunda a sábado com horários disponíveis.';
+  } catch (erro) {
+    horarioAgendamento.innerHTML = '<option value="">Horários indisponíveis</option>';
+    mensagemAgendamento.textContent = erro.message;
+  }
+}
+
+dataAgendamento.addEventListener('change', carregarHorarios);
+horarioAgendamento.addEventListener('change', () => {
+  document.getElementById('confirmarAgendamento').disabled = !horarioAgendamento.value;
+});
+document.getElementById('fecharAgendamento').addEventListener('click', () => dialogAgendamento.close());
+dialogAgendamento.addEventListener('click', evento => {
+  if (evento.target === dialogAgendamento) dialogAgendamento.close();
+});
+document.getElementById('formAgendamento').addEventListener('submit', async evento => {
+  evento.preventDefault();
+  if (!hospitalSelecionado || !horarioAgendamento.value) return;
+  const confirmar = document.getElementById('confirmarAgendamento');
+  confirmar.disabled = true;
+  mensagemAgendamento.textContent = 'Confirmando seu horário...';
+  try {
+    const resposta = await fetch('/api/v1/agendamentos', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      credentials: 'same-origin',
+      body: JSON.stringify({
+        hospitalId: hospitalSelecionado.id,
+        dataHora: `${dataAgendamento.value}T${horarioAgendamento.value}`
+      })
+    });
+    const dados = await resposta.json();
+    if (!resposta.ok) throw new Error(dados.mensagem || dados.erro || 'Não foi possível confirmar o agendamento.');
+    mensagemAgendamento.textContent = 'Doação agendada com sucesso! Você pode conferir o horário na sua área do doador.';
+    horarioAgendamento.disabled = true;
+    setTimeout(() => dialogAgendamento.close(), 1800);
+  } catch (erro) {
+    const mensagemErro = erro.message;
+    mensagemAgendamento.textContent = erro.message;
+    await carregarHorarios();
+    mensagemAgendamento.textContent = mensagemErro;
+  } finally {
+    confirmar.disabled = !horarioAgendamento.value || horarioAgendamento.disabled;
+  }
+});
 
 fetch('/api/v1/campanhas').then(r => r.json()).then(cs => {
   const ul = document.getElementById('campanhas');
