@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Gestão de bolsas — HemoFlow</title>
+  <link rel="stylesheet" href="/css/hemoflow.css">
+</head>
+<body>
+<div class="app">
+  <aside class="side">
+    <a class="brand" href="/" style="color:#fff">
+      <span class="mark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3c-1.8 3.2-6 6.4-6 10.2A6 6 0 0 0 12 21a6 6 0 0 0 6-7.8C18 9.4 13.8 6.2 12 3Z"/><path d="M12 11v6M9 14h6"/></svg></span>
+      <span><strong>HemoFlow</strong><em>Estoque</em></span>
+    </a>
+    <nav>
+      <a href="/">Indicadores</a>
+      <a href="/dashboard-admin">Operações</a>
+      <a class="is-active" href="/bolsas-painel">Bolsas</a>
+      <a href="/mapa">Mapa</a>
+      <a href="/doe-agora">Doar</a>
+    </nav>
+  </aside>
+  <div class="main">
+    <div class="main-bar">
+      <div>
+        <h1>Gestão de bolsas</h1>
+        <p>Entrada, baixa por transfusão e descarte — registro clínico.</p>
+      </div>
+    </div>
+    <div class="main-body">
+      <section class="card">
+        <h3>Registrar entrada</h3>
+        <form id="formEntrada" class="toolbar">
+          <select id="tipoSanguineo" class="control">
+            <option value="O_NEG">O−</option>
+            <option value="O_POS">O+</option>
+            <option value="A_POS">A+</option>
+            <option value="A_NEG">A−</option>
+            <option value="B_POS">B+</option>
+            <option value="B_NEG">B−</option>
+            <option value="AB_POS">AB+</option>
+            <option value="AB_NEG">AB−</option>
+          </select>
+          <select id="hemo" class="control">
+            <option value="HEMACIAS">Hemácias</option>
+            <option value="PLAQUETAS">Plaquetas</option>
+            <option value="PLASMA">Plasma</option>
+            <option value="CRIOPRECIPITADO">Crioprecipitado</option>
+          </select>
+          <input id="lote" class="control" placeholder="Lote (ex: L-010)">
+          <input id="coleta" class="control" type="date">
+          <input id="validade" class="control" type="date">
+          <select id="noRedeId" class="control"><option value="1">Carregando locais…</option></select>
+          <button class="btn btn-teal" type="submit">Registrar entrada</button>
+        </form>
+        <div id="msgEntrada" class="msg" style="color:var(--ok)"></div>
+      </section>
+
+      <section class="card" style="margin-top:1rem">
+        <div class="toolbar" style="justify-content:space-between">
+          <h3 style="margin:0">Bolsas em estoque</h3>
+          <button class="btn btn-ghost" type="button" onclick="carregarBolsas()">Atualizar lista</button>
+        </div>
+        <table class="data">
+          <thead><tr><th>ID</th><th>Tipo</th><th>Hemocomp.</th><th>Lote</th><th>Validade</th><th>Status</th><th>Ação</th></tr></thead>
+          <tbody id="tabelaBolsas"></tbody>
+        </table>
+      </section>
+    </div>
+  </div>
+</div>
+<script src="/js/hemoflow.js"></script>
+<script>
+fetch('/api/v1/nos-rede').then(r=>r.json()).then(nos => {
+  const sel = document.getElementById('noRedeId');
+  if (Array.isArray(nos) && nos.length > 0) {
+    sel.innerHTML = nos.map(n => `<option value="${n.id}">${n.codigo} — ${n.nome}</option>`).join('');
+  }
+});
+
+function carregarBolsas() {
+  fetch('/api/v1/bolsas').then(r => r.json()).then(bolsas => {
+    if (!Array.isArray(bolsas)) { document.getElementById('tabelaBolsas').innerHTML = '<tr><td class="empty" colspan="7">Nenhuma bolsa.</td></tr>'; return; }
+    document.getElementById('tabelaBolsas').innerHTML = bolsas.map(b =>
+      '<tr><td>' + b.id + '</td><td>' + HF.abo(b.tipoSanguineo) + '</td><td>' + HF.hemo(b.hemocomponente) + '</td><td>' + (b.lote||'') + '</td><td>' + (b.dataValidade||'') + '</td><td><span class="chip chip-teal">' + HF.status(b.status) + '</span></td>'
+      + '<td>' + (b.status === 'DISPONIVEL' ? '<button class="btn btn-sm btn-teal" onclick="darBaixa(' + b.id + ', \'TRANSFUSAO\')">Transfusão</button> <button class="btn btn-sm btn-danger" onclick="darBaixa(' + b.id + ', \'DESCARTE\')">Descartar</button>' : '—') + '</td></tr>'
+    ).join('');
+  });
+}
+function darBaixa(id, motivo) {
+  fetch('/api/v1/bolsas/' + id + '/saida', {
+    method: 'POST', headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({motivo})
+  }).then(() => carregarBolsas());
+}
+document.getElementById('formEntrada').addEventListener('submit', async e => {
+  e.preventDefault();
+  const res = await fetch('/api/v1/bolsas/entrada', {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({
+      tipoSanguineo: document.getElementById('tipoSanguineo').value,
+      hemocomponente: document.getElementById('hemo').value,
+      lote: document.getElementById('lote').value,
+      dataColeta: document.getElementById('coleta').value,
+      dataValidade: document.getElementById('validade').value,
+      noRedeId: document.getElementById('noRedeId').value
+    })
+  });
+  const d = await res.json();
+  document.getElementById('msgEntrada').textContent = 'Bolsa #' + d.id + ' registrada. Lote: ' + d.lote;
+  carregarBolsas();
+});
+carregarBolsas();
+</script>
+</body>
+</html>
