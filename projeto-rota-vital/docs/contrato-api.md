@@ -57,6 +57,17 @@ Os cadastros e respostas de nós aceitam/informam `latitude` e `longitude` em gr
 | `PUT` | `/hospitais/{id}` | Atualiza um hospital |
 | `DELETE` | `/hospitais/{id}` | Inativação lógica (não exclui histórico) |
 
+### Agendamentos de doação (`/agendamentos`)
+
+| Método | Rota | Descrição |
+|---|---|---|
+| `GET` | `/agendamentos/hospital/{hospitalId}/disponibilidade?data=AAAA-MM-DD` | Lista horários livres de 30 em 30 minutos, de segunda a sábado, entre 8h e 18h; cada horário aceita até 5 doadores |
+| `POST` | `/agendamentos` | Agenda para o doador autenticado, informando `hospitalId` e `dataHora` |
+| `GET` | `/agendamentos/doador/{doadorId}` | Consulta os agendamentos do doador autenticado; outro doador recebe `403` |
+| `PATCH` | `/agendamentos/{id}/status` | Atualiza o status; exige sessão da equipe clínica |
+
+O `POST` exige sessão autenticada com perfil `DOADOR`; o identificador do doador vem da sessão, não do corpo enviado pelo navegador. A data precisa estar entre hoje e 30 dias à frente. O servidor valida novamente o horário e a capacidade antes de salvar, serializando novas reservas por hospital para evitar ultrapassar o limite de vagas. Horários cancelados não ocupam vaga.
+
 ### Doações (`/doacoes`)
 
 | Método | Rota | Descrição |
