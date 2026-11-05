@@ -73,8 +73,8 @@ class RedeServiceTest {
     }
 
     @Test
-    @DisplayName("Calcula menor tempo por Dijkstra e informa a distância total")
-    void calcularRotaDijkstraDeveUsarGrafoPersistidoEInformarDistancia() {
+    @DisplayName("Calcula rota pelo vizinho mais próximo e informa tempo e distância")
+    void calcularRotaVizinhoMaisProximoDeveUsarGrafoPersistidoEInformarDistancia() {
         NoRede origem = redeService.criarNo(new NoRedeDTOs.Cadastro(
                 "ROTA-ORIGEM", "Origem Rota", TipoNo.HEMOCENTRO, -8.0630, -34.8712));
         NoRede destino = redeService.criarNo(new NoRedeDTOs.Cadastro(

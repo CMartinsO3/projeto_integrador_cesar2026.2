@@ -11,6 +11,7 @@ Este pacote contém as implementações da Unidade 2: buscas sequencial, binári
 - `ProcessadorPedidoService` executa a cadeia integrada: recebe a requisição, consulta o hash, filtra por compatibilidade, mantém FEFO, calcula a rota para cada candidata e aloca as bolsas elegíveis.
 - O processamento detalhado está disponível em `POST /api/v1/requisicoes/{id}/processar`; a resposta inclui as bolsas escolhidas e os dados de rota de cada uma. O endpoint legado `/alocar` permanece disponível.
 - A rota é montada com nós e ligações persistidos e está disponível pela API `GET /api/v1/rotas/vizinho-mais-proximo?origemId={id}&destinoId={id}`.
+- A tela `/rotas` permite selecionar origem e destino, consultar o algoritmo, ver os pontos percorridos e conferir tempo e distância no mapa.
 - A retirada das bolsas do índice em memória é agendada para depois do commit do banco.
 
 Limitações: o vizinho mais próximo é guloso, não garante o menor custo total e pode não encontrar uma rota existente; as ligações são direcionadas; a regra ABO/Rh específica está implementada para hemácias. A complexidade do roteamento é O(V+E) de tempo esperado, pois cada vértice e sua lista de vizinhos são processados no máximo uma vez. As ordenações implementadas correspondem aos quatro métodos informados pelo professor: Bubble, Selection, Insertion e Merge Sort.

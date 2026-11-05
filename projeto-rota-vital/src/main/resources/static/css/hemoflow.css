@@ -615,6 +615,30 @@ table.data .empty { color: var(--ink-soft); text-align: center; padding: 1.4rem;
   font-weight: 500;
   margin-bottom: .3rem;
 }
+.route-sheet h1 {
+  font-family: 'Newsreader', Georgia, serif;
+  font-size: 1.65rem;
+  font-weight: 500;
+}
+.route-description, .route-note { color: var(--ink-soft); font-size: .86rem; }
+.route-sheet form { display: grid; gap: .45rem; margin-top: 1rem; }
+.route-sheet label { font-size: .8rem; font-weight: 600; }
+.route-sheet select {
+  width: 100%;
+  min-height: 42px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: .55rem .65rem;
+  background: var(--white);
+  color: var(--ink);
+}
+.route-sheet button { margin-top: .35rem; }
+.route-note { margin-top: .8rem; }
+.route-result { border-top: 1px solid var(--line); margin-top: .9rem; padding-top: .8rem; }
+.route-result h2 { margin-bottom: .45rem; }
+.route-result h3 { font-size: .9rem; margin-top: .7rem; }
+.route-result ol { padding-left: 1.3rem; display: grid; gap: .3rem; }
+.route-sheet .msg.error { color: #a52e2e; }
 .map-sheet ul { list-style: none; margin-top: .8rem; display: grid; gap: .55rem; }
 .map-sheet li {
   padding: .7rem .75rem;
