@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Rotas da rede — HemoFlow</title>
+  <link rel="stylesheet" href="/css/hemoflow.css">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+</head>
+<body class="map-page">
+<header class="topbar">
+  <a class="brand" href="/">
+    <span class="mark" aria-hidden="true">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3c-1.8 3.2-6 6.4-6 10.2A6 6 0 0 0 12 21a6 6 0 0 0 6-7.8C18 9.4 13.8 6.2 12 3Z"/><path d="M12 11v6M9 14h6"/></svg>
+    </span>
+    <span><strong>HemoFlow</strong><em>Hemorrede clínica</em></span>
+  </a>
+  <nav>
+    <a href="/">Operações</a>
+    <a href="/mapa">Onde doar</a>
+    <a class="is-active" href="/rotas">Rotas</a>
+    <a href="/bolsas-painel">Estoque</a>
+  </nav>
+</header>
+
+<main class="map-stage">
+  <div id="mapa" aria-label="Mapa da topologia da hemorrede"></div>
+  <section class="map-sheet route-sheet" aria-labelledby="routeTitle">
+    <p class="kicker">Malha de distribuição</p>
+    <h1 id="routeTitle">Consultar rota</h1>
+    <p class="route-description">Escolha a origem e o destino para visualizar o percurso calculado na rede.</p>
+    <form id="routeForm">
+      <label for="routeOrigin">Origem</label>
+      <select id="routeOrigin" required disabled>
+        <option value="">Carregando pontos da rede...</option>
+      </select>
+      <label for="routeDestination">Destino</label>
+      <select id="routeDestination" required disabled>
+        <option value="">Carregando pontos da rede...</option>
+      </select>
+      <button class="btn btn-primary" type="submit" id="routeSubmit" disabled>Calcular rota</button>
+    </form>
+    <p class="route-note">O cálculo usa o algoritmo guloso do vizinho mais próximo, considerando o tempo de cada ligação. A linha destaca a sequência de pontos da rota, não o traçado de ruas.</p>
+    <div id="routeStatus" class="msg" role="status" aria-live="polite">Carregando topologia...</div>
+    <section id="routeResult" class="route-result" hidden aria-live="polite">
+      <h2>Resultado</h2>
+      <p><strong>Tempo total:</strong> <span id="routeTime"></span></p>
+      <p><strong>Distância total:</strong> <span id="routeDistance"></span></p>
+      <h3>Sequência de pontos</h3>
+      <ol id="routeStops"></ol>
+    </section>
+  </section>
+</main>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script th:inline="none">
+(() => {
+  const map = L.map('mapa').setView([-8.05, -34.9], 11);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '&copy; OpenStreetMap contributors'
+  }).addTo(map);
+
+  const originSelect = document.getElementById('routeOrigin');
+  const destinationSelect = document.getElementById('routeDestination');
+  const submitButton = document.getElementById('routeSubmit');
+  const status = document.getElementById('routeStatus');
+  const result = document.getElementById('routeResult');
+  const networkLayer = L.layerGroup().addTo(map);
+  let routeLayer = null;
+
+  function showError(message) {
+    status.textContent = message;
+    status.classList.add('error');
+  }
+
+  function pointLabel(point) {
+    return `${point.nome} (${point.codigo})`;
+  }
+
+  async function loadTopology() {
+    try {
+      const response = await fetch('/api/v1/topologia');
+      if (!response.ok) {
+        throw new Error(`Não foi possível carregar a topologia (HTTP ${response.status}).`);
+      }
+      const topology = await response.json();
+      const points = topology.nos.filter(point =>
+        Number.isFinite(point.latitude) && Number.isFinite(point.longitude)
+      );
+
+      topology.ligacoes.forEach(connection => {
+        const from = topology.nos.find(point => point.id === connection.origemId);
+        const to = topology.nos.find(point => point.id === connection.destinoId);
+        if (from && to && points.includes(from) && points.includes(to)) {
+          L.polyline([[from.latitude, from.longitude], [to.latitude, to.longitude]], {
+            color: '#78909c',
+            weight: 2,
+            opacity: 0.55
+          }).addTo(networkLayer);
+        }
+      });
+
+      points.forEach(point => {
+        L.circleMarker([point.latitude, point.longitude], {
+          radius: 6,
+          color: '#145c57',
+          fillColor: '#ffffff',
+          fillOpacity: 1,
+          weight: 2
+        }).bindPopup(pointLabel(point)).addTo(networkLayer);
+      });
+
+      if (!points.length) {
+        showError('A topologia não possui pontos com coordenadas para exibir.');
+        return;
+      }
+
+      const bounds = L.latLngBounds(points.map(point => [point.latitude, point.longitude]));
+      map.fitBounds(bounds, { padding: [30, 30], maxZoom: 13 });
+      [originSelect, destinationSelect].forEach(select => {
+        select.replaceChildren(new Option('Selecione um ponto', ''));
+        points.slice().sort((a, b) => pointLabel(a).localeCompare(pointLabel(b), 'pt-BR'))
+          .forEach(point => select.add(new Option(pointLabel(point), point.id)));
+        select.disabled = false;
+      });
+      submitButton.disabled = false;
+      status.textContent = `${points.length} pontos da rede carregados.`;
+      status.classList.remove('error');
+    } catch (error) {
+      showError(error.message || 'Falha ao carregar os pontos da rede.');
+    }
+  }
+
+  document.getElementById('routeForm').addEventListener('submit', async event => {
+    event.preventDefault();
+    result.hidden = true;
+    if (routeLayer) {
+      map.removeLayer(routeLayer);
+      routeLayer = null;
+    }
+
+    const originId = originSelect.value;
+    const destinationId = destinationSelect.value;
+    if (!originId || !destinationId) {
+      showError('Selecione a origem e o destino.');
+      return;
+    }
+
+    status.textContent = 'Calculando rota...';
+    status.classList.remove('error');
+    submitButton.disabled = true;
+    try {
+      const params = new URLSearchParams({ origemId: originId, destinoId: destinationId });
+      const response = await fetch(`/api/v1/rotas/vizinho-mais-proximo?${params}`);
+      if (!response.ok) {
+        throw new Error(`Não foi possível calcular a rota (HTTP ${response.status}).`);
+      }
+      const route = await response.json();
+      if (!route.rota.length) {
+        status.textContent = 'Nenhum ponto de rota foi retornado para essa consulta.';
+        return;
+      }
+
+      const coordinates = route.rota
+        .filter(point => Number.isFinite(point.latitude) && Number.isFinite(point.longitude))
+        .map(point => [point.latitude, point.longitude]);
+      if (coordinates.length !== route.rota.length) {
+        throw new Error('A rota contém pontos sem coordenadas e não pode ser desenhada.');
+      }
+
+      routeLayer = L.layerGroup().addTo(map);
+      L.polyline(coordinates, {
+        color: route.encontrada ? '#c74747' : '#d88922',
+        weight: 5,
+        opacity: 0.9,
+        dashArray: route.encontrada ? null : '8 8'
+      }).addTo(routeLayer);
+      route.rota.forEach((point, index) => {
+        L.marker(coordinates[index]).bindPopup(`${index + 1}. ${pointLabel(point)}`).addTo(routeLayer);
+      });
+      const bounds = L.latLngBounds(coordinates);
+      map.fitBounds(bounds, { padding: [40, 40], maxZoom: 14 });
+
+      document.getElementById('routeTime').textContent = `${route.tempoTotalMinutos} min`;
+      document.getElementById('routeDistance').textContent = `${Number(route.distanciaTotalKm).toFixed(2)} km`;
+      const stops = document.getElementById('routeStops');
+      stops.replaceChildren(...route.rota.map(point => {
+        const item = document.createElement('li');
+        item.textContent = pointLabel(point);
+        return item;
+      }));
+      result.hidden = false;
+      if (route.encontrada) {
+        status.textContent = 'Rota encontrada. A linha vermelha indica os pontos percorridos.';
+      } else {
+        status.textContent = 'O algoritmo chegou a um beco sem saída; a linha tracejada mostra o trecho parcial.';
+        status.classList.add('error');
+      }
+    } catch (error) {
+      showError(error.message || 'Falha ao calcular a rota.');
+    } finally {
+      submitButton.disabled = false;
+    }
+  });
+
+  loadTopology();
+})();
+</script>
+</body>
+</html>
