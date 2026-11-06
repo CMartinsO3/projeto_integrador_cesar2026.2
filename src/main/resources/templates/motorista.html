@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Acompanhamento do motorista — HemoFlow</title>
+  <link rel="stylesheet" href="/css/hemoflow.css">
+</head>
+<body>
+<header class="topbar">
+  <a class="brand" href="/"><span class="mark" aria-hidden="true">H</span><span><strong>HemoFlow</strong><em>Entrega · demonstração</em></span></a>
+  <nav>
+    <a href="/">Operações</a>
+    <a href="/requisicoes-hospital">Requisições</a>
+    <a class="is-active" href="/motorista">Motorista</a>
+    <a href="/monitoramento">Monitoramento</a>
+  </nav>
+</header>
+<main class="wrap page-content">
+  <section class="section-head">
+    <div><p class="kicker">US 6</p><h1>Acompanhamento da entrega</h1></div>
+    <p>Rotas, previsão de chegada, próximo ponto e atualização de status.</p>
+  </section>
+  <p class="notice notice-warn">Tela de demonstração sem login. Rotas e estimativas não substituem navegação ou orientação clínica.</p>
+  <p id="deliveryStatus" class="msg" role="status" aria-live="polite">Carregando entregas...</p>
+  <section id="deliveries" class="grid grid-2"></section>
+</main>
+<script th:inline="none">
+(() => {
+  const container = document.getElementById('deliveries');
+  const status = document.getElementById('deliveryStatus');
+  const statusLabels = { ALOCADA: 'Aguardando saída', EM_TRANSITO: 'Em trânsito', ENTREGUE: 'Entregue' };
+
+  function appendText(parent, tag, text, className) {
+    const node = document.createElement(tag);
+    node.textContent = text;
+    if (className) node.className = className;
+    parent.append(node);
+    return node;
+  }
+
+  async function updateStatus(requisicaoId, newStatus) {
+    const response = await fetch(`/api/v1/entregas/requisicoes/${requisicaoId}/status`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status: newStatus })
+    });
+    if (!response.ok) throw new Error(`Falha ao atualizar entrega (HTTP ${response.status}).`);
+    await loadDeliveries();
+  }
+
+  async function advancePoint(entregaId) {
+    const response = await fetch(`/api/v1/entregas/${entregaId}/proximo-ponto`, { method: 'PATCH' });
+    if (!response.ok) throw new Error(`Falha ao atualizar o próximo ponto (HTTP ${response.status}).`);
+    await loadDeliveries();
+  }
+
+  async function loadDeliveries() {
+    status.textContent = 'Carregando entregas...';
+    container.replaceChildren();
+    const response = await fetch('/api/v1/entregas');
+    if (!response.ok) throw new Error(`Falha ao carregar entregas (HTTP ${response.status}).`);
+    const entries = await response.json();
+    const grouped = new Map();
+    entries.forEach(entry => {
+      if (!grouped.has(entry.requisicaoId)) grouped.set(entry.requisicaoId, []);
+      grouped.get(entry.requisicaoId).push(entry);
+    });
+
+    for (const [requestId, deliveries] of grouped) {
+      const first = deliveries[0];
+      const card = document.createElement('article');
+      card.className = 'card delivery-card';
+      appendText(card, 'p', `Requisição #${requestId} · ${statusLabels[first.statusRequisicao] || first.statusRequisicao}`, 'kicker');
+      appendText(card, 'h2', first.nomeHospital);
+      appendText(card, 'p', `Previsão: ${new Date(first.previsaoChegada).toLocaleString('pt-BR')}`);
+      appendText(card, 'p', `Tempo estimado: ${first.tempoEstimadoMinutos} min · Distância: ${Number(first.distanciaEstimadaKm).toFixed(2)} km`);
+      if (first.alertaCadeiaFria) appendText(card, 'p', 'Alerta: rota ultrapassa o limite didático de cadeia fria.', 'notice notice-danger');
+
+      deliveries.forEach(delivery => {
+        const item = document.createElement('section');
+        item.className = 'delivery-item';
+        appendText(item, 'h3', `Bolsa #${delivery.bolsaId} · ${delivery.lote}`);
+        appendText(item, 'p', `${delivery.tipoSanguineo} · ${delivery.hemocomponente}`);
+        appendText(item, 'p', `Próximo ponto: ${delivery.rota[delivery.proximoNoIndice]?.nome || first.nomeHospital}`);
+        const route = document.createElement('ol');
+        route.className = 'route-steps';
+        delivery.rota.forEach((point, index) => appendText(route, 'li', `${index + 1}. ${point.nome}`));
+        item.append(route);
+        if (delivery.alertaTemperatura) {
+          appendText(item, 'p', `Alerta térmico simulado: ${delivery.ultimaTemperaturaCelsius} °C fora da faixa fictícia.`, 'notice notice-danger');
+        } else if (delivery.ultimaTemperaturaCelsius != null) {
+          appendText(item, 'p', `Última leitura simulada: ${delivery.ultimaTemperaturaCelsius} °C.`);
+        }
+        if (first.statusRequisicao === 'EM_TRANSITO'
+            && delivery.proximoNoIndice < delivery.rota.length - 1) {
+          const nextButton = document.createElement('button');
+          nextButton.className = 'btn btn-ghost btn-sm';
+          nextButton.textContent = 'Marcar próximo ponto visitado';
+          nextButton.addEventListener('click', () => advancePoint(delivery.entregaId)
+            .catch(error => { status.textContent = error.message; }));
+          item.append(nextButton);
+        }
+        card.append(item);
+      });
+
+      const actions = document.createElement('div');
+      actions.className = 'hero-actions';
+      if (first.statusRequisicao === 'ALOCADA') {
+        const button = document.createElement('button');
+        button.className = 'btn btn-primary';
+        button.textContent = 'Iniciar entrega';
+        button.addEventListener('click', () => updateStatus(requestId, 'EM_TRANSITO')
+          .catch(error => { status.textContent = error.message; }));
+        actions.append(button);
+      } else {
+        const button = document.createElement('button');
+        button.className = 'btn btn-primary';
+        button.textContent = 'Confirmar entrega';
+        button.addEventListener('click', () => updateStatus(requestId, 'ENTREGUE')
+          .catch(error => { status.textContent = error.message; }));
+        actions.append(button);
+      }
+      card.append(actions);
+      container.append(card);
+    }
+    status.textContent = entries.length ? `${grouped.size} entrega(s) em acompanhamento.` : 'Não há entregas alocadas ou em trânsito.';
+  }
+
+  loadDeliveries().catch(error => { status.textContent = error.message || 'Não foi possível carregar as entregas.'; });
+  window.setInterval(() => loadDeliveries().catch(error => { status.textContent = error.message; }), 15000);
+})();
+</script>
+</body>
+</html>

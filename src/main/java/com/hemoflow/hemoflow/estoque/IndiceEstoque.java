@@ -2,6 +2,9 @@ package com.hemoflow.hemoflow.estoque;
 
 import java.time.Clock;
 import java.util.Collection;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -114,6 +117,46 @@ public class IndiceEstoque {
             grupos.remover(chave);
         }
         return bolsa;
+    }
+
+    /**
+     * Consulta, via tabela hash, todas as bolsas compatíveis com o receptor e
+     * componente solicitado. O resultado já vem em ordem FEFO global, mesmo
+     * quando as bolsas pertencem a grupos sanguíneos diferentes. Não remove
+     * itens do índice; a retirada ocorre somente após o commit da alocação.
+     */
+    public synchronized List<Bolsa> candidatasCompativeis(
+            TipoSanguineo receptor, Hemocomponente hemocomponente) {
+        List<Bolsa> resultado = new ArrayList<>();
+        for (TipoSanguineo doador : TipoSanguineo.values()) {
+            if (!CompatibilidadeAboRh.compativel(doador, receptor)) {
+                continue;
+            }
+            FilaFEFO fila = grupos.buscar(chave(doador, hemocomponente));
+            if (fila != null) {
+                resultado.addAll(fila.listarValidas());
+                if (fila.estaVazia()) {
+                    grupos.remover(chave(doador, hemocomponente));
+                }
+            }
+        }
+        resultado.sort(Comparator.comparing(Bolsa::getDataValidade)
+                .thenComparing(Bolsa::getId, Comparator.nullsLast(Comparator.naturalOrder())));
+        return resultado;
+    }
+
+    /** Consulta FEFO de um único grupo sanguíneo, sem retirar as bolsas do índice. */
+    public synchronized List<Bolsa> candidatasCompativeisExatas(
+            TipoSanguineo tipo, Hemocomponente hemocomponente) {
+        FilaFEFO fila = grupos.buscar(chave(tipo, hemocomponente));
+        if (fila == null) {
+            return new ArrayList<>();
+        }
+        List<Bolsa> resultado = fila.listarValidas();
+        if (fila.estaVazia()) {
+            grupos.remover(chave(tipo, hemocomponente));
+        }
+        return resultado;
     }
 
     /** Quantas bolsas válidas há no grupo (as vencidas são descartadas antes de contar). */

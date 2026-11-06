@@ -41,6 +41,12 @@ Unidade solicitante de hemocomponentes.
 - `id`: identificador único
 - `nome`: String
 - `localizacao`: String (nó do grafo)
+- `latitude` e `longitude`: coordenadas geográficas da unidade
+
+### NoRede e Ligacao
+O grafo de distribuição é composto por nós com `latitude` e `longitude` e por ligações direcionadas entre esses nós.
+- `tempoMinutos`: tempo estimado da ligação, usado para escolher o vizinho ainda não visitado mais rápido
+- `distanciaKm`: distância geográfica em linha reta entre as coordenadas dos nós, calculada pela fórmula de Haversine
 
 ### Requisicao
 Pedido de hemocomponente feito por um hospital.
@@ -123,6 +129,23 @@ classDiagram
         +String id
         +String nome
         +String localizacao
+        +double latitude
+        +double longitude
+    }
+
+    class NoRede {
+        +String codigo
+        +String nome
+        +TipoNo tipo
+        +double latitude
+        +double longitude
+    }
+
+    class Ligacao {
+        +NoRede origem
+        +NoRede destino
+        +int tempoMinutos
+        +double distanciaKm
     }
 
     class Requisicao {
@@ -144,6 +167,7 @@ classDiagram
     CentroColeta "1" --> "N" Bolsa : origina
     Hemocentro "1" --> "N" Bolsa : processa/armazena
     Hospital "1" --> "N" Requisicao : cria
+    NoRede "1" --> "N" Ligacao : origem/destino
     Requisicao "N" --> "N" Bolsa : aloca
     Requisicao "1" --> "1" Rota : gera
     Hemocentro "1" --> "N" Rota : origem
@@ -162,6 +186,7 @@ classDiagram
 - **Compatibilidade ABO/Rh:** a alocação de uma Bolsa para uma Requisição só é permitida se o `tipoSanguineo` da bolsa for compatível com o `tipoSanguineo` solicitado, segundo a matriz didática do projeto.
 - **FEFO (First Expired, First Out):** entre bolsas compatíveis, a de `dataValidade` mais próxima deve ser priorizada na alocação.
 - **Cadeia fria:** o `tempoEstimado` de uma Rota não deve ultrapassar o `limiteCadeiaFria` definido para o hemocomponente transportado.
+- **Roteirização:** o algoritmo do vizinho mais próximo escolhe localmente a ligação de menor tempo; a distância em quilômetros é informada separadamente. A heurística não garante o menor custo global.
 - **Baixa de estoque:** ao confirmar uma alocação, o status da Bolsa muda para "Alocada" e ela deixa de estar disponível para novas requisições.
 
 ---

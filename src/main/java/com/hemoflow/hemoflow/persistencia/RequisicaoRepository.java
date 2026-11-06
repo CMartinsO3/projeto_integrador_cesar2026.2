@@ -9,4 +9,6 @@ import com.hemoflow.hemoflow.dominio.StatusRequisicao;
 
 public interface RequisicaoRepository extends JpaRepository<Requisicao, Long> {
     List<Requisicao> findByStatus(StatusRequisicao status);
+
+    List<Requisicao> findByStatusInOrderByDataSolicitacaoDesc(List<StatusRequisicao> statuses);
 }

@@ -15,7 +15,7 @@
   <nav>
     <a href="/">Operações</a>
     <a href="/mapa">Onde doar</a>
-    <span data-auth-nav><a class="btn btn-ghost" href="/login-usuario">Já tenho cadastro</a></span>
+    <span data-auth-nav><a id="linkLogin" class="btn btn-ghost" href="/login-usuario">Já tenho cadastro</a></span>
   </nav>
 </header>
 
@@ -75,22 +75,43 @@
 </div>
 <script src="/js/hemoflow.js"></script>
 <script>
+const returnTo = new URLSearchParams(window.location.search).get('returnTo');
+
+function destinoDepoisDoCadastro(fallback) {
+  if (!returnTo || !returnTo.startsWith('/')) return fallback;
+  const destino = new URL(returnTo, window.location.origin);
+  return destino.origin === window.location.origin
+    ? destino.pathname + destino.search + destino.hash
+    : fallback;
+}
+
+document.getElementById('linkLogin').href = '/login-usuario?returnTo=' + encodeURIComponent(returnTo || '');
+
 document.getElementById('form').addEventListener('submit', async e => {
   e.preventDefault();
-  const res = await fetch('/api/v1/doadores', {
-    method: 'POST', headers:{'Content-Type':'application/json'}, credentials:'same-origin',
-    body: JSON.stringify({
-      nome: document.getElementById('nome').value,
-      email: document.getElementById('email').value,
-      senha: document.getElementById('senha').value,
-      dataNascimento: document.getElementById('nascimento').value,
-      tipoSanguineo: document.getElementById('tipo').value
-    })
-  });
-  const data = await res.json();
   const msg = document.getElementById('msg');
-  if (data.erro) { msg.style.color='#b42318'; msg.textContent = data.erro; }
-  else { window.location.href = data.redirect || '/mapa'; }
+  try {
+    const res = await fetch('/api/v1/doadores', {
+      method: 'POST', headers:{'Content-Type':'application/json'}, credentials:'same-origin',
+      body: JSON.stringify({
+        nome: document.getElementById('nome').value,
+        email: document.getElementById('email').value,
+        senha: document.getElementById('senha').value,
+        dataNascimento: document.getElementById('nascimento').value,
+        tipoSanguineo: document.getElementById('tipo').value
+      })
+    });
+    const data = await res.json();
+    if (!res.ok || data.erro) {
+      msg.style.color='#b42318';
+      msg.textContent = data.erro || 'Não foi possível concluir o cadastro. Tente novamente.';
+    } else {
+      window.location.href = destinoDepoisDoCadastro(data.redirect || '/mapa');
+    }
+  } catch {
+    msg.style.color='#b42318';
+    msg.textContent = 'Não foi possível conectar ao sistema. Verifique sua conexão e tente novamente.';
+  }
 });
 </script>
 </body>

@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Monitoramento — HemoFlow</title>
+  <link rel="stylesheet" href="/css/hemoflow.css">
+</head>
+<body>
+<header class="topbar">
+  <a class="brand" href="/"><span class="mark" aria-hidden="true">H</span><span><strong>HemoFlow</strong><em>Monitoramento · demonstração</em></span></a>
+  <nav>
+    <a href="/">Operações</a>
+    <a href="/requisicoes-hospital">Requisições</a>
+    <a href="/motorista">Motorista</a>
+    <a class="is-active" href="/monitoramento">Monitoramento</a>
+  </nav>
+</header>
+<main class="wrap page-content">
+  <section class="section-head">
+    <div><p class="kicker">US 7 · US 8</p><h1>Temperatura e conectividade</h1></div>
+    <p>Telemetria fictícia e status de dispositivos atualizados manualmente.</p>
+  </section>
+  <p class="notice notice-danger"><strong>Somente demonstração:</strong> todas as faixas são fictícias (20–30 °C para cada componente) e não servem para armazenamento, transporte ou decisão clínica. Não há sensores reais conectados.</p>
+  <section class="card">
+    <div class="section-head compact">
+      <div><h2>Leituras das bolsas em trânsito</h2><p id="temperatureStatus">Carregando...</p></div>
+      <div class="hero-actions">
+        <button class="btn btn-ghost" id="normalSample">Simular leitura normal</button>
+        <button class="btn btn-ghost" id="alertSample">Demonstrar alerta térmico</button>
+      </div>
+    </div>
+    <div class="table-wrap">
+      <table class="data-table">
+        <thead><tr><th>Bolsa</th><th>Componente</th><th>Temperatura</th><th>Faixa fictícia</th><th>Estado</th><th>Registrada em</th></tr></thead>
+        <tbody id="temperatureRows"></tbody>
+      </table>
+    </div>
+  </section>
+  <section class="card" style="margin-top:1rem">
+    <div class="section-head compact"><div><h2>Dispositivos da rede</h2><p>Status simulado e alterado manualmente pelo painel.</p></div></div>
+    <div class="table-wrap">
+      <table class="data-table">
+        <thead><tr><th>Unidade</th><th>Status</th><th>Atualizado</th><th>Alterar status</th></tr></thead>
+        <tbody id="deviceRows"></tbody>
+      </table>
+    </div>
+  </section>
+  <section class="card" style="margin-top:1rem">
+    <h2>Faixas de demonstração configuradas</h2>
+    <div class="table-wrap">
+      <table class="data-table">
+        <thead><tr><th>Componente</th><th>Limites fictícios</th></tr></thead>
+        <tbody id="rangeRows"></tbody>
+      </table>
+    </div>
+  </section>
+</main>
+<script th:inline="none">
+(() => {
+  const temperatureRows = document.getElementById('temperatureRows');
+  const deviceRows = document.getElementById('deviceRows');
+  const rangeRows = document.getElementById('rangeRows');
+  const status = document.getElementById('temperatureStatus');
+  const deviceStatus = ['ONLINE', 'INSTAVEL', 'OFFLINE'];
+  const labels = { ONLINE: 'Online', INSTAVEL: 'Instável', OFFLINE: 'Offline' };
+  let intervalId = null;
+  let loading = false;
+
+  function cell(row, value) {
+    const element = document.createElement('td');
+    element.textContent = value;
+    row.append(element);
+    return element;
+  }
+
+  async function simulate(forceAlert) {
+    const response = await fetch(`/api/v1/monitoramento/leituras/simular?forcarAlerta=${forceAlert}`, { method: 'POST' });
+    if (!response.ok) throw new Error(`Falha ao simular leituras (HTTP ${response.status}).`);
+  }
+
+  async function loadPanel(generateReading) {
+    if (loading) return;
+    loading = true;
+    try {
+      if (generateReading) await simulate(false);
+      const response = await fetch('/api/v1/monitoramento');
+      if (!response.ok) throw new Error(`Falha ao carregar monitoramento (HTTP ${response.status}).`);
+      const panel = await response.json();
+      temperatureRows.replaceChildren();
+      panel.leiturasRecentes.forEach(reading => {
+        const row = document.createElement('tr');
+        cell(row, `#${reading.bolsaId} · ${reading.lote}`);
+        cell(row, reading.hemocomponente);
+        cell(row, `${Number(reading.temperaturaCelsius).toFixed(1)} °C`);
+        cell(row, `${reading.minimoConfiguradoCelsius}–${reading.maximoConfiguradoCelsius} °C (fictício)`);
+        cell(row, reading.alerta ? 'ALERTA SIMULADO' : 'Dentro da faixa fictícia');
+        cell(row, new Date(reading.registradaEm).toLocaleString('pt-BR'));
+        if (reading.alerta) row.classList.add('row-alert');
+        temperatureRows.append(row);
+      });
+      status.textContent = panel.leiturasRecentes.length
+        ? `${panel.leiturasRecentes.length} bolsa(s) em trânsito · nova leitura a cada ${panel.intervaloLeituraSegundos} s enquanto esta tela estiver aberta.`
+        : 'Sem bolsas em trânsito para simular leitura.';
+
+      rangeRows.replaceChildren();
+      panel.faixasTemperatura.forEach(range => {
+        const row = document.createElement('tr');
+        cell(row, range.hemocomponente);
+        cell(row, `${range.minimoCelsius}–${range.maximoCelsius} °C · fictício`);
+        rangeRows.append(row);
+      });
+
+      deviceRows.replaceChildren();
+      panel.dispositivos.forEach(device => {
+        const row = document.createElement('tr');
+        cell(row, `${device.nome} (${device.codigo})`);
+        cell(row, labels[device.status] || device.status);
+        cell(row, new Date(device.atualizadoEm).toLocaleString('pt-BR'));
+        const action = document.createElement('td');
+        const select = document.createElement('select');
+        deviceStatus.forEach(value => select.add(new Option(labels[value], value)));
+        select.value = device.status;
+        const button = document.createElement('button');
+        button.className = 'btn btn-ghost btn-sm';
+        button.textContent = 'Atualizar';
+        button.addEventListener('click', async () => {
+          button.disabled = true;
+          try {
+            const result = await fetch(`/api/v1/nos-rede/${device.noRedeId}/status-conectividade`, {
+              method: 'PUT',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ status: select.value })
+            });
+            if (!result.ok) throw new Error(`Falha ao atualizar status (HTTP ${result.status}).`);
+            await loadPanel(false);
+          } catch (error) {
+            status.textContent = error.message || 'Não foi possível atualizar o dispositivo.';
+          } finally {
+            button.disabled = false;
+          }
+        });
+        action.append(select, button);
+        row.append(action);
+        deviceRows.append(row);
+      });
+
+      if (!intervalId) intervalId = window.setInterval(() => loadPanel(true), panel.intervaloLeituraSegundos * 1000);
+    } catch (error) {
+      status.textContent = error.message || 'Não foi possível carregar o painel.';
+    } finally {
+      loading = false;
+    }
+  }
+
+  async function simulateOnDemand(forceAlert) {
+    status.textContent = 'Registrando leitura simulada...';
+    try {
+      const response = await fetch(`/api/v1/monitoramento/leituras/simular?forcarAlerta=${forceAlert}`, { method: 'POST' });
+      if (!response.ok) throw new Error(`Falha ao simular leituras (HTTP ${response.status}).`);
+      await loadPanel(false);
+    } catch (error) {
+      status.textContent = error.message || 'Não foi possível simular a leitura.';
+    }
+  }
+
+  document.getElementById('normalSample').addEventListener('click', () => simulateOnDemand(false));
+  document.getElementById('alertSample').addEventListener('click', () => simulateOnDemand(true));
+  loadPanel(true);
+})();
+</script>
+</body>
+</html>

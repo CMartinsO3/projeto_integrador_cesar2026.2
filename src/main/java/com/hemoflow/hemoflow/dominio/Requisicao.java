@@ -1,8 +1,11 @@
 package com.hemoflow.hemoflow.dominio;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 import jakarta.persistence.Column;
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
@@ -13,6 +16,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import jakarta.persistence.OneToMany;
 
 @Entity
 @Table(name = "requisicao")
@@ -46,6 +50,9 @@ public class Requisicao {
 
     @Column(nullable = false)
     private LocalDateTime dataSolicitacao = LocalDateTime.now();
+
+    @OneToMany(mappedBy = "requisicao", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Entrega> entregas = new ArrayList<>();
 
     protected Requisicao() {
     }
@@ -100,5 +107,13 @@ public class Requisicao {
 
     public LocalDateTime getDataSolicitacao() {
         return dataSolicitacao;
+    }
+
+    public List<Entrega> getEntregas() {
+        return List.copyOf(entregas);
+    }
+
+    public void adicionarEntrega(Entrega entrega) {
+        entregas.add(entrega);
     }
 }

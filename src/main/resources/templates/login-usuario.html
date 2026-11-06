@@ -35,7 +35,7 @@
       <button class="btn btn-primary btn-full" type="button" onclick="login()">Entrar com serenidade</button>
       <div id="erro" class="alert">Email ou senha não reconhecidos. Tente novamente, sem pressa.</div>
       <div class="auth-links">
-        <a href="/doe-agora">Ainda não tenho cadastro</a>
+        <a id="linkCadastro" href="/doe-agora">Ainda não tenho cadastro</a>
         <a href="/login-admin">Sou da equipe clínica</a>
         <a href="/">Voltar à central</a>
       </div>
@@ -43,13 +43,25 @@
   </main>
 </div>
 <script>
+const returnTo = new URLSearchParams(window.location.search).get('returnTo');
+
+function destinoDepoisDoLogin(fallback) {
+  if (!returnTo || !returnTo.startsWith('/')) return fallback;
+  const destino = new URL(returnTo, window.location.origin);
+  return destino.origin === window.location.origin
+    ? destino.pathname + destino.search + destino.hash
+    : fallback;
+}
+
+document.getElementById('linkCadastro').href = '/doe-agora?returnTo=' + encodeURIComponent(returnTo || '');
+
 async function login() {
   const res = await fetch('/api/v1/auth/login-doador', {
     method:'POST', headers:{'Content-Type':'application/json'},
     body: JSON.stringify({email: document.getElementById('email').value, senha: document.getElementById('senha').value})
   });
   const d = await res.json();
-  if (d.ok) window.location.href = d.redirect;
+  if (d.ok) window.location.href = destinoDepoisDoLogin(d.redirect);
   else document.getElementById('erro').classList.add('show');
 }
 document.addEventListener('keydown', e => { if(e.key==='Enter') login(); });

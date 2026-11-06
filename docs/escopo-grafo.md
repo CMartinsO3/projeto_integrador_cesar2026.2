@@ -6,7 +6,7 @@
 
 ## 1. Objetivo do Grafo
 
-Representar a rede de distribuição entre o hemocentro e os hospitais atendidos, permitindo calcular a **rota de menor tempo** entre a origem (hemocentro) e o destino (hospital solicitante), respeitando o limite de tempo da cadeia fria.
+Representar a rede de distribuição entre o hemocentro e os hospitais atendidos, permitindo construir uma rota pelo **algoritmo do vizinho mais próximo**, partindo da origem do pedido e escolhendo em cada passo o vizinho não visitado com menor tempo de viagem. O algoritmo é guloso e não garante o menor tempo global nem encontrar todos os caminhos existentes.
 
 ---
 
@@ -16,11 +16,13 @@ Representar a rede de distribuição entre o hemocentro e os hospitais atendidos
 Cada nó representa uma unidade física da rede:
 - **1 Hemocentro** — nó central, único ponto de origem das entregas.
 - **5 a 6 Hospitais** — nós folha, pontos de destino das entregas.
+- Cada nó pode armazenar latitude e longitude; elas são necessárias para criar ligações com distância geográfica.
 
 ### Arestas
 Cada aresta representa uma via/rota entre duas unidades, com peso associado:
-- **Peso** = tempo estimado de viagem, em minutos.
-- Arestas podem ser **direcionadas ou não-direcionadas**. Optamos pela **não-direcionadas**, já que a via é a mesma nos dois sentidos, exceto se houver justificativa de trânsito.
+- **Tempo estimado** = duração da ligação, em minutos; é o peso usado para escolher localmente o vizinho mais próximo.
+- **Distância** = calculada em quilômetros em linha reta a partir das coordenadas dos nós ligados, usando a fórmula de Haversine; não representa a quilometragem real da malha viária.
+- As arestas são **direcionadas**, como na implementação atual: só se percorre a ligação no sentido origem → destino cadastrado. Para representar uma via de mão dupla, cadastre uma aresta em cada sentido.
 - Podem existir **1 a 2 rotas intermediárias** (nós de passagem, não necessariamente hospitais) para exercitar caminhos com mais de uma aresta.
 
 ---
@@ -34,12 +36,15 @@ Cada aresta representa uma via/rota entre duas unidades, com peso associado:
 
 ---
 
-## 4. Algoritmo de Caminho Mínimo
+## 4. Algoritmo do Vizinho Mais Próximo
 
-- **Algoritmo escolhido:** Dijkstra.
-- **Motivo:** todos os pesos das arestas são positivos, e o grafo é pequeno.
+- **Algoritmo escolhido:** vizinho mais próximo (guloso).
+- **Regra:** partindo da origem do pedido, percorre as arestas de saída e escolhe o vizinho ainda não visitado com menor tempo; repete até chegar ao destino ou ficar sem vizinhos elegíveis.
+- **Desempate:** identificador do destino em ordem lexicográfica.
+- **Limitação:** a escolha local não garante o menor custo total e pode deixar de encontrar o destino mesmo quando existe outro caminho. Não há retrocesso.
 - **Entrada:** nó de origem (Hemocentro) e nó de destino (Hospital solicitante).
-- **Saída:** sequência de nós do caminho e o tempo total estimado.
+- **Saída:** sequência de nós visitados e o tempo total do percurso; se não alcançar o destino, o resultado informa que não foi encontrado.
+- **Complexidade:** O(V+E) de tempo esperado e O(V) de espaço auxiliar. Cada vértice é visitado no máximo uma vez e as listas de vizinhos dos vértices visitados são examinadas uma vez; a soma dos vizinhos examinados não ultrapassa E.
 
 ---
 
@@ -66,12 +71,12 @@ graph TD
     H5[Hospital E]
     INT[Nó intermediário]
 
-    HC -->|25 min| H1
-    HC -->|40 min| H2
-    HC -->|15 min| INT
-    INT -->|20 min| H3
-    HC -->|60 min| H4
-    HC -->|35 min| H5
+    HC -->|25 min; distância calculada pelas coordenadas| H1
+    HC -->|40 min; distância calculada pelas coordenadas| H2
+    HC -->|15 min; distância calculada pelas coordenadas| INT
+    INT -->|20 min; distância calculada pelas coordenadas| H3
+    HC -->|60 min; distância calculada pelas coordenadas| H4
+    HC -->|35 min; distância calculada pelas coordenadas| H5
 ```
 
 ---
@@ -84,23 +89,25 @@ Representação como **lista de adjacência**, adequada para grafos pequenos e e
 class Grafo {
     Map<String, List<Aresta>> adjacencias = new HashMap<>();
 
-    void adicionarAresta(String origem, String destino, int peso) {
+    void adicionarAresta(String origem, String destino, int tempoMinutos, double distanciaKm) {
         adjacencias.computeIfAbsent(origem, k -> new ArrayList<>())
-                   .add(new Aresta(destino, peso));
+                   .add(new Aresta(destino, tempoMinutos, distanciaKm));
     }
 }
 
 class Aresta {
     String destino;
-    int peso; // tempo estimado em minutos
+    int tempoMinutos;
+    double distanciaKm;
 
-    Aresta(String destino, int peso) {
+    Aresta(String destino, int tempoMinutos, double distanciaKm) {
         this.destino = destino;
-        this.peso = peso;
+        this.tempoMinutos = tempoMinutos;
+        this.distanciaKm = distanciaKm;
     }
 }
 ```
 
-A fila de prioridade usada no Dijkstra pode ser implementada com `PriorityQueue<Nó>` do próprio Java, ordenada pela menor distância acumulada — a mesma estrutura de fila de prioridade já usada na priorização FEFO do estoque, reaproveitando o mesmo conceito de AED em duas partes do sistema.
+A implementação persiste as coordenadas nos nós e calcula a distância da aresta em quilômetros no momento da leitura. O endpoint de topologia informa os dois atributos da ligação e o endpoint de rota informa tempo total e distância total. A escolha do vizinho é baseada no tempo da aresta; a distância geográfica é informativa.
 
 ---

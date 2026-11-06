@@ -60,13 +60,54 @@ class RedeServiceTest {
     @Test
     @DisplayName("Ligação válida é persistida e aparece na listagem")
     void criarLigacaoValidaDeveSerListada() {
-        NoRede origem = redeService.criarNo(new NoRedeDTOs.Cadastro("TESTE-ORIGEM-2", "Origem 2", TipoNo.HEMOCENTRO));
-        NoRede destino = redeService.criarNo(new NoRedeDTOs.Cadastro("TESTE-DESTINO-2", "Destino 2", TipoNo.HOSPITAL));
+        NoRede origem = redeService.criarNo(new NoRedeDTOs.Cadastro(
+                "TESTE-ORIGEM-2", "Origem 2", TipoNo.HEMOCENTRO, -8.0630, -34.8712));
+        NoRede destino = redeService.criarNo(new NoRedeDTOs.Cadastro(
+                "TESTE-DESTINO-2", "Destino 2", TipoNo.HOSPITAL, -8.0609, -34.9119));
 
         Ligacao ligacao = redeService.criarLigacao(origem.getId(), destino.getId(), 12);
 
         assertEquals(12, ligacao.getTempoMinutos());
+        assertTrue(ligacao.getDistanciaKm() > 4 && ligacao.getDistanciaKm() < 5);
         assertTrue(redeService.listarLigacoes().stream().anyMatch(l -> l.getId().equals(ligacao.getId())));
+    }
+
+    @Test
+    @DisplayName("Calcula rota pelo vizinho mais próximo e informa tempo e distância")
+    void calcularRotaVizinhoMaisProximoDeveUsarGrafoPersistidoEInformarDistancia() {
+        NoRede origem = redeService.criarNo(new NoRedeDTOs.Cadastro(
+                "ROTA-ORIGEM", "Origem Rota", TipoNo.HEMOCENTRO, -8.0630, -34.8712));
+        NoRede destino = redeService.criarNo(new NoRedeDTOs.Cadastro(
+                "ROTA-DESTINO", "Destino Rota", TipoNo.HOSPITAL, -8.0609, -34.9119));
+        redeService.criarLigacao(origem.getId(), destino.getId(), 17);
+
+        var rota = redeService.calcularRotaVizinhoMaisProximo(origem.getId(), destino.getId());
+
+        assertTrue(rota.encontrada());
+        assertEquals(17, rota.tempoTotalMinutos());
+        assertTrue(rota.distanciaTotalKm() > 4 && rota.distanciaTotalKm() < 5);
+        assertEquals(2, rota.nos().size());
+        assertEquals(origem.getId(), rota.nos().get(0).getId());
+        assertEquals(destino.getId(), rota.nos().get(1).getId());
+    }
+
+    @Test
+    @DisplayName("Não permite criar ligação sem coordenadas nos dois nós")
+    void criarLigacaoSemCoordenadasDeveLancarExcecao() {
+        NoRede origem = redeService.criarNo(new NoRedeDTOs.Cadastro("SEM-COORD-ORIGEM", "Origem", TipoNo.HEMOCENTRO));
+        NoRede destino = redeService.criarNo(new NoRedeDTOs.Cadastro("SEM-COORD-DESTINO", "Destino", TipoNo.HOSPITAL));
+
+        assertThrows(RegraNegocioException.class,
+                () -> redeService.criarLigacao(origem.getId(), destino.getId(), 5));
+    }
+
+    @Test
+    @DisplayName("Calcula distância geográfica em quilômetros")
+    void calcularDistanciaGeograficaDeveRetornarQuilometros() {
+        NoRede origem = new NoRede("ORIGEM-DISTANCIA", "Origem", TipoNo.HEMOCENTRO, 0.0, 0.0);
+        NoRede destino = new NoRede("DESTINO-DISTANCIA", "Destino", TipoNo.HOSPITAL, 0.0, 1.0);
+
+        assertEquals(111.195, com.hemoflow.hemoflow.grafo.DistanciaGeografica.calcularKm(origem, destino), 0.01);
     }
 
     @Test

@@ -10,10 +10,13 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.hemoflow.hemoflow.api.dto.NoRedeDTOs;
+import com.hemoflow.hemoflow.config.DemoMonitoramentoProperties;
+import com.hemoflow.hemoflow.dominio.StatusConectividade;
 import com.hemoflow.hemoflow.rede.RedeService;
 
 import jakarta.validation.Valid;
@@ -23,9 +26,11 @@ import jakarta.validation.Valid;
 public class RedeController {
 
     private final RedeService redeService;
+    private final DemoMonitoramentoProperties monitoramentoProperties;
 
-    public RedeController(RedeService redeService) {
+    public RedeController(RedeService redeService, DemoMonitoramentoProperties monitoramentoProperties) {
         this.redeService = redeService;
+        this.monitoramentoProperties = monitoramentoProperties;
     }
 
     @GetMapping("/nos-rede")
@@ -49,6 +54,14 @@ public class RedeController {
         return NoRedeDTOs.Resposta.de(redeService.atualizarNo(id, dto));
     }
 
+    @PutMapping("/nos-rede/{id}/status-conectividade")
+    public NoRedeDTOs.Resposta atualizarStatusConectividade(
+            @PathVariable Long id,
+            @Valid @RequestBody NoRedeDTOs.AtualizacaoStatusConectividade dto
+    ) {
+        return NoRedeDTOs.Resposta.de(redeService.atualizarStatusConectividade(id, dto.status()));
+    }
+
     @DeleteMapping("/nos-rede/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void removerNo(@PathVariable Long id) {
@@ -63,6 +76,19 @@ public class RedeController {
         );
     }
 
+    @GetMapping("/rotas/vizinho-mais-proximo")
+    public RotaVizinhoResposta calcularRota(
+            @RequestParam Long origemId, @RequestParam Long destinoId) {
+        var rota = redeService.calcularRotaVizinhoMaisProximo(origemId, destinoId);
+        return new RotaVizinhoResposta(
+                rota.nos().stream().map(NoRedeDTOs.Resposta::de).toList(),
+                rota.tempoTotalMinutos(),
+                rota.distanciaTotalKm(),
+                rota.encontrada(),
+                rota.tempoTotalMinutos() > monitoramentoProperties.getLimiteRotaMinutos(),
+                monitoramentoProperties.getLimiteRotaMinutos());
+    }
+
     @GetMapping("/ligacoes")
     public List<NoRedeDTOs.LigacaoResposta> listarLigacoes() {
         return redeService.listarLigacoes().stream().map(NoRedeDTOs.LigacaoResposta::de).toList();
@@ -74,6 +100,16 @@ public class RedeController {
         return NoRedeDTOs.LigacaoResposta.de(
                 redeService.criarLigacao(dto.origemId(), dto.destinoId(), dto.tempoMinutos())
         );
+    }
+
+    public record RotaVizinhoResposta(
+            List<NoRedeDTOs.Resposta> rota,
+            long tempoTotalMinutos,
+            double distanciaTotalKm,
+            boolean encontrada,
+            boolean alertaCadeiaFria,
+            int limiteCadeiaFriaMinutos
+    ) {
     }
 
     public record TopologiaResposta(

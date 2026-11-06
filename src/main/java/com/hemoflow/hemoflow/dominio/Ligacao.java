@@ -10,6 +10,8 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 
+import com.hemoflow.hemoflow.grafo.DistanciaGeografica;
+
 @Entity
 @Table(name = "ligacao")
 public class Ligacao {
@@ -52,6 +54,10 @@ public class Ligacao {
 
     public int getTempoMinutos() {
         return tempoMinutos;
+    }
+
+    public double getDistanciaKm() {
+        return DistanciaGeografica.calcularKm(origem, destino);
     }
 
     public void setOrigem(NoRede origem) {

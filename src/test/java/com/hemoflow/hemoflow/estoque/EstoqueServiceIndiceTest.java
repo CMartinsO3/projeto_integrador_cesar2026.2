@@ -24,6 +24,7 @@ import org.junit.jupiter.api.Test;
 
 import com.hemoflow.hemoflow.dominio.Bolsa;
 import com.hemoflow.hemoflow.dominio.Hemocomponente;
+import com.hemoflow.hemoflow.dominio.Hospital;
 import com.hemoflow.hemoflow.dominio.NoRede;
 import com.hemoflow.hemoflow.dominio.Requisicao;
 import com.hemoflow.hemoflow.dominio.StatusBolsa;
@@ -34,6 +35,7 @@ import com.hemoflow.hemoflow.persistencia.BolsaRepository;
 import com.hemoflow.hemoflow.persistencia.HospitalRepository;
 import com.hemoflow.hemoflow.persistencia.NoRedeRepository;
 import com.hemoflow.hemoflow.persistencia.RequisicaoRepository;
+import com.hemoflow.hemoflow.rede.RedeService;
 
 /**
  * Confere que registrar, retirar, alocar e vencer uma bolsa no
@@ -49,8 +51,9 @@ class EstoqueServiceIndiceTest {
     private final HospitalRepository hospitalRepository = mock(HospitalRepository.class);
     private final RequisicaoRepository requisicaoRepository = mock(RequisicaoRepository.class);
     private final IndiceEstoque indice = new IndiceEstoque();
+    private final RedeService redeService = mock(RedeService.class);
     private final EstoqueService servico =
-            new EstoqueService(bolsaRepository, noRedeRepository, hospitalRepository, requisicaoRepository, indice);
+            new EstoqueService(bolsaRepository, noRedeRepository, hospitalRepository, requisicaoRepository, indice, redeService);
 
     /** "Banco" falso: guarda as bolsas salvas, na ordem de cadastro. */
     private final Map<Long, Bolsa> banco = new LinkedHashMap<>();
@@ -59,6 +62,7 @@ class EstoqueServiceIndiceTest {
 
     EstoqueServiceIndiceTest() {
         NoRede no = new NoRede("HC-TESTE", "Hemocentro Teste", TipoNo.HEMOCENTRO);
+        definirIdNo(no, 1L);
         when(noRedeRepository.findById(1L)).thenReturn(Optional.of(no));
         when(bolsaRepository.save(any(Bolsa.class))).thenAnswer(inv -> {
             Bolsa b = inv.getArgument(0);
@@ -69,6 +73,16 @@ class EstoqueServiceIndiceTest {
             return b;
         });
         when(bolsaRepository.findById(anyLong())).thenAnswer(inv -> Optional.ofNullable(banco.get(inv.getArgument(0))));
+    }
+
+    private static void definirIdNo(NoRede no, Long id) {
+        try {
+            Field campo = NoRede.class.getDeclaredField("id");
+            campo.setAccessible(true);
+            campo.set(no, id);
+        } catch (ReflectiveOperationException e) {
+            throw new IllegalStateException(e);
+        }
     }
 
     private static void definirId(Bolsa b, Long id) {
@@ -130,7 +144,13 @@ class EstoqueServiceIndiceTest {
         Requisicao requisicao = mock(Requisicao.class);
         when(requisicao.getStatus()).thenReturn(StatusRequisicao.PENDENTE);
         when(requisicao.getHemocomponente()).thenReturn(Hemocomponente.HEMACIAS);
+        when(requisicao.getTipoSanguineo()).thenReturn(TipoSanguineo.A_POS);
+        NoRede localHospital = new NoRede("H-TESTE", "Hospital Teste", TipoNo.HOSPITAL);
+        definirIdNo(localHospital, 2L);
+        when(requisicao.getHospital()).thenReturn(new Hospital("Hospital Teste", localHospital));
         when(requisicao.getQuantidade()).thenReturn(1);
+        when(redeService.calcularRotaVizinhoMaisProximo(anyLong(), anyLong()))
+                .thenReturn(new RedeService.RotaCalculada(List.of(), 5, true));
         when(requisicaoRepository.findById(10L)).thenReturn(Optional.of(requisicao));
         when(bolsaRepository.findByStatusAndHemocomponente(StatusBolsa.DISPONIVEL, Hemocomponente.HEMACIAS))
                 .thenReturn(new ArrayList<>(banco.values()));
@@ -138,7 +158,7 @@ class EstoqueServiceIndiceTest {
         List<Bolsa> alocadas = servico.alocar(10L);
 
         assertEquals(1, alocadas.size());
-        assertEquals(primeira, alocadas.get(0).getId());               // U1: a primeira da lista
+        assertEquals(primeira, alocadas.get(0).getId());               // FEFO: a que vence primeiro
         assertEquals(StatusBolsa.ALOCADA, alocadas.get(0).getStatus());
         assertEquals(1, indice.quantidade(TipoSanguineo.A_POS, Hemocomponente.HEMACIAS));
         assertEquals(segunda, indice.proxima(TipoSanguineo.A_POS, Hemocomponente.HEMACIAS).getId());
@@ -150,7 +170,7 @@ class EstoqueServiceIndiceTest {
         RelogioMutavel relogio = new RelogioMutavel(hoje);
         IndiceEstoque indiceComRelogio = new IndiceEstoque(relogio);
         EstoqueService servicoComRelogio = new EstoqueService(
-                bolsaRepository, noRedeRepository, hospitalRepository, requisicaoRepository, indiceComRelogio);
+                bolsaRepository, noRedeRepository, hospitalRepository, requisicaoRepository, indiceComRelogio, redeService);
 
         servicoComRelogio.registrarEntrada(TipoSanguineo.O_NEG, Hemocomponente.PLASMA,
                 hoje.minusDays(1), hoje.plusDays(2), "L-PLASMA", 1L);
@@ -164,7 +184,13 @@ class EstoqueServiceIndiceTest {
         Requisicao requisicao = mock(Requisicao.class);
         when(requisicao.getStatus()).thenReturn(StatusRequisicao.PENDENTE);
         when(requisicao.getHemocomponente()).thenReturn(Hemocomponente.HEMACIAS);
+        when(requisicao.getTipoSanguineo()).thenReturn(TipoSanguineo.A_POS);
+        NoRede localHospital = new NoRede("H-TESTE", "Hospital Teste", TipoNo.HOSPITAL);
+        definirIdNo(localHospital, 2L);
+        when(requisicao.getHospital()).thenReturn(new Hospital("Hospital Teste", localHospital));
         when(requisicao.getQuantidade()).thenReturn(1);
+        when(redeService.calcularRotaVizinhoMaisProximo(anyLong(), anyLong()))
+                .thenReturn(new RedeService.RotaCalculada(List.of(), 5, true));
         when(requisicaoRepository.findById(11L)).thenReturn(Optional.of(requisicao));
         when(bolsaRepository.findByStatusAndHemocomponente(StatusBolsa.DISPONIVEL, Hemocomponente.HEMACIAS))
                 .thenReturn(List.of(banco.get((Long) hemacias.get("id"))));

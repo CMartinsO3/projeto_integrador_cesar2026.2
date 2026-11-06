@@ -40,6 +40,7 @@ Como responsável hospitalar, quero criar uma requisição informando tipo sangu
 - O hospital informa componente, tipo sanguíneo, quantidade necessária e janela de entrega.
 - Todos os campos são obrigatórios para o envio.
 - A requisição criada deve ficar vinculada ao hospital solicitante.
+- A tela `/requisicoes-hospital` permite selecionar o hospital, criar pedidos e consultar os pedidos vinculados a ele. É uma demonstração sem autenticação; o filtro por hospital não substitui controle de acesso.
 
 **Confirmação (BDD)**
 ```
@@ -47,6 +48,11 @@ Cenário: Envio de requisição válida
 Dado que todos os campos obrigatórios estejam preenchidos
 Quando o hospital enviar a requisição
 Então ela deve ser registrada com status "Pendente" e vinculada ao hospital solicitante
+
+Cenário: Consulta das requisições do hospital
+Dado que existam requisições registradas por mais de um hospital
+Quando o usuário selecionar um hospital na tela de requisições
+Então somente as requisições vinculadas ao hospital selecionado devem ser exibidas
 ```
 
 ---
@@ -101,11 +107,11 @@ Então as bolsas com menor prazo de validade devem ser priorizadas primeiro
 
 **Cartão**
 
-Como responsável pela logística, quero que o sistema calcule a rota mais rápida entre o hemocentro e o hospital solicitante, para que a entrega respeite a janela de tempo da cadeia fria.
+Como responsável pela logística, quero que o sistema construa uma rota a partir da origem do pedido escolhendo em cada passo o vizinho ainda não visitado com menor tempo, para que a entrega considere a janela da cadeia fria.
 
 **Conversa**
-- O sistema utiliza um grafo limitado de unidades e vias, considerando distância/tempo (peso das arestas) para calcular o caminho mínimo (algoritmo de Dijkstra).
-- É necessário definir o limite máximo de tempo de viagem antes de comprometer a cadeia fria.
+- O sistema utiliza um grafo de unidades e ligações direcionadas, escolhendo o próximo vizinho pela menor duração da aresta; essa heurística não garante o caminho globalmente mais rápido.
+- Para esta demonstração, o limite é de 120 minutos para todas as cargas. O limite é configurável; o aviso é didático e não representa validação clínica de cadeia fria.
 
 **Confirmação (BDD)**
 ```
@@ -117,7 +123,7 @@ Então deve apresentar o caminho selecionado e o tempo estimado de deslocamento
 Cenário: Rota fora da janela da cadeia fria
 Dado que o tempo estimado da rota calculada ultrapasse o limite da cadeia fria
 Quando a rota for apresentada
-Então o sistema deve sinalizar o risco antes da confirmação da entrega
+Então a tela `/rotas` e o resultado do processamento devem exibir um alerta quando o tempo superar 120 minutos
 ```
 
 ---
@@ -129,15 +135,16 @@ Então o sistema deve sinalizar o risco antes da confirmação da entrega
 Como motorista responsável pelo transporte, quero visualizar a rota calculada e o tempo estimado de chegada, para seguir o trajeto definido e não comprometer a temperatura da carga.
 
 **Conversa**
-- A tela do motorista exibe rota, tempo estimado e próximo destino.
-- O motorista pode atualizar o status da entrega (em trânsito, entregue).
+- A tela `/motorista` exibe as entregas roteadas, rota, tempo estimado, próximo destino e alerta de cadeia fria.
+- O motorista pode iniciar o trânsito e confirmar a entrega; também pode avançar o próximo ponto da rota.
+- A tela é uma demonstração sem autenticação ou autorização por motorista.
 
 **Confirmação (BDD)**
 ```
 Cenário: Visualização da rota pelo motorista
 Dado que uma rota tenha sido calculada para a entrega
 Quando o motorista acessar a tela de acompanhamento
-Então o sistema deve exibir a rota, o tempo estimado e o próximo destino
+Então o sistema deve exibir a rota, o tempo estimado, o próximo destino e eventual alerta de cadeia fria
 
 Cenário: Atualização de status da entrega
 Dado que a entrega esteja em andamento
@@ -154,8 +161,9 @@ Então o sistema deve refletir essa mudança para os demais usuários
 Como gestor do hemocentro, quero visualizar em um painel a temperatura da bolsa durante o transporte (simulada), para identificar rapidamente qualquer risco de rompimento da cadeia fria.
 
 **Conversa**
-- A temperatura é simulada por telemetria, com valores registrados periodicamente.
-- Definir a faixa de temperatura aceitável por tipo de hemocomponente.
+- A tela `/monitoramento` registra leituras fictícias enquanto estiver aberta e também permite simular uma leitura fora da faixa.
+- Para fins exclusivamente didáticos, a faixa configurada é de 20 a 30 °C para cada hemocomponente. Esses valores não são recomendações clínicas ou operacionais.
+- Não há sensor físico nem tarefa periódica executada no servidor; a simulação depende da página aberta.
 
 **Confirmação (BDD)**
 ```
@@ -174,8 +182,8 @@ Então o sistema deve gerar um alerta visível no painel
 Como gestor de operações, quero visualizar o status de conectividade dos dispositivos de telemetria em um painel, para saber se estou recebendo dados confiáveis durante o trajeto.
 
 **Conversa**
-- O sistema representa as unidades/dispositivos e indica seu status (Online, Offline, Instável), com dados simulados.
-- Definir o tempo de timeout que caracteriza um dispositivo como "Offline".
+- O painel permite atualizar manualmente o status de cada unidade entre `ONLINE`, `INSTAVEL` e `OFFLINE`.
+- O estado e o horário da última atualização são persistidos. Não há heartbeat, detecção automática nem timeout para marcar um dispositivo como offline.
 
 **Confirmação (BDD)**
 ```
@@ -216,6 +224,7 @@ Como responsável hospitalar, quero consultar o status da minha requisição (pe
 **Conversa**
 - O hospital pode consultar individualmente uma requisição ou listar todas as suas requisições.
 - Os status possíveis devem ser padronizados: Pendente, Alocada, Em trânsito, Entregue.
+- A tela `/requisicoes-hospital` consulta por hospital selecionado e permite abrir o detalhe da requisição; a demonstração não possui autenticação.
 
 **Confirmação (BDD)**
 ```
