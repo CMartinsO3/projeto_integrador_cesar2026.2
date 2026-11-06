@@ -2,6 +2,8 @@ package com.hemoflow.hemoflow.config;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Random;
 
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
@@ -23,6 +25,7 @@ public class DadosIniciais implements CommandLineRunner {
     private final AgendamentoRepository agendamentoRepository;
     private final AdministradorRepository administradorRepository;
     private final DoacaoRealizadaRepository doacaoRealizadaRepository;
+    private final LeituraTemperaturaRepository leituraTemperaturaRepository;
 
     public DadosIniciais(
             NoRedeRepository noRedeRepository,
@@ -34,7 +37,8 @@ public class DadosIniciais implements CommandLineRunner {
             CampanhaRepository campanhaRepository,
             AgendamentoRepository agendamentoRepository,
             AdministradorRepository administradorRepository,
-            DoacaoRealizadaRepository doacaoRealizadaRepository
+            DoacaoRealizadaRepository doacaoRealizadaRepository,
+            LeituraTemperaturaRepository leituraTemperaturaRepository
     ) {
         this.noRedeRepository = noRedeRepository;
         this.ligacaoRepository = ligacaoRepository;
@@ -46,6 +50,7 @@ public class DadosIniciais implements CommandLineRunner {
         this.agendamentoRepository = agendamentoRepository;
         this.administradorRepository = administradorRepository;
         this.doacaoRealizadaRepository = doacaoRealizadaRepository;
+        this.leituraTemperaturaRepository = leituraTemperaturaRepository;
     }
 
     @Override
@@ -113,10 +118,10 @@ public class DadosIniciais implements CommandLineRunner {
         bolsaRepository.save(new Bolsa(TipoSanguineo.AB_NEG, Hemocomponente.HEMACIAS,        hoje.minusDays(15), hoje.plusDays(10),  "L-008", nAgamen));
 
         // ── Bolsas CRÍTICAS (próximas do vencimento) ─────────────────────────
-        Bolsa v1 = bolsaRepository.save(new Bolsa(TipoSanguineo.O_NEG,  Hemocomponente.HEMACIAS,  hoje.minusDays(24), hoje.plusDays(1),  "VENC-001", nHemope));
-        Bolsa v2 = bolsaRepository.save(new Bolsa(TipoSanguineo.A_POS,  Hemocomponente.PLAQUETAS, hoje.minusDays(4),  hoje.plusDays(2),  "VENC-002", nHr));
-        Bolsa v3 = bolsaRepository.save(new Bolsa(TipoSanguineo.B_NEG,  Hemocomponente.PLASMA,    hoje.minusDays(28), hoje.plusDays(3),  "VENC-003", nImip));
-        Bolsa v4 = bolsaRepository.save(new Bolsa(TipoSanguineo.AB_POS, Hemocomponente.HEMACIAS,  hoje.minusDays(22), hoje.plusDays(4),  "VENC-004", nHemope));
+        bolsaRepository.save(new Bolsa(TipoSanguineo.O_NEG,  Hemocomponente.HEMACIAS,  hoje.minusDays(24), hoje.plusDays(1),  "VENC-001", nHemope));
+        bolsaRepository.save(new Bolsa(TipoSanguineo.A_POS,  Hemocomponente.PLAQUETAS, hoje.minusDays(4),  hoje.plusDays(2),  "VENC-002", nHr));
+        bolsaRepository.save(new Bolsa(TipoSanguineo.B_NEG,  Hemocomponente.PLASMA,    hoje.minusDays(28), hoje.plusDays(3),  "VENC-003", nImip));
+        bolsaRepository.save(new Bolsa(TipoSanguineo.AB_POS, Hemocomponente.HEMACIAS,  hoje.minusDays(22), hoje.plusDays(4),  "VENC-004", nHemope));
         // Bolsa já vencida (para teste de filtragem)
         bolsaRepository.save(new Bolsa(TipoSanguineo.O_POS,  Hemocomponente.HEMACIAS,  hoje.minusDays(30), hoje.minusDays(2), "VENC-000", nHemope));
 
@@ -131,6 +136,58 @@ public class DadosIniciais implements CommandLineRunner {
         // ── Requisição de amostra ──────────────────────────────────────────────
         requisicaoRepository.save(new Requisicao(hemope, TipoSanguineo.A_POS, Hemocomponente.HEMACIAS, 1, LocalDateTime.now().plusHours(6)));
 
+        // ── Histórico sintético (14 dias) para as análises estatísticas ───────
+        // Semente fixa → dados reprodutíveis. Apenas ENTREGUE/CANCELADA, para não
+        // poluir as filas operacionais. Demanda com leve tendência de alta.
+        Random rnd = new Random(2026);
+        Random entregaRnd = new Random(77);
+        Hospital[] hospitais = {hemope, hr, imip, huoc, agamen, barao, getul, pelopid, portug, esperan, santaJ};
+        TipoSanguineo[] tipos = {
+                TipoSanguineo.O_POS, TipoSanguineo.O_POS, TipoSanguineo.O_POS, TipoSanguineo.A_POS, TipoSanguineo.A_POS,
+                TipoSanguineo.B_POS, TipoSanguineo.O_NEG, TipoSanguineo.O_NEG, TipoSanguineo.A_NEG,
+                TipoSanguineo.B_NEG, TipoSanguineo.AB_POS, TipoSanguineo.AB_NEG};
+        for (int dia = 14; dia >= 1; dia--) {
+            int nReq = 1 + rnd.nextInt(3) + (14 - dia) / 5;
+            for (int i = 0; i < nReq; i++) {
+                LocalDateTime solicitada = LocalDateTime.now().minusDays(dia).withHour(8 + rnd.nextInt(9)).withMinute(rnd.nextInt(60));
+                Requisicao r = new Requisicao(hospitais[rnd.nextInt(hospitais.length)], tipos[rnd.nextInt(tipos.length)],
+                        Hemocomponente.HEMACIAS, 1 + rnd.nextInt(4), solicitada.plusHours(4 + rnd.nextInt(20)));
+                r.definirDataSolicitacao(solicitada);
+                boolean entregue = rnd.nextInt(10) < 8;
+                r.setStatus(entregue ? StatusRequisicao.ENTREGUE : StatusRequisicao.CANCELADA);
+                if (entregue) {
+                    // Entrega histórica (gerador separado para não alterar a sequência acima)
+                    long minutos = 8 + entregaRnd.nextInt(40);
+                    r.adicionarEntrega(new Entrega(r, t1, List.of(nHemope, r.getHospital().getLocalizacao()),
+                            minutos, Math.round(minutos * 0.45 * 10) / 10.0, false));
+                }
+                requisicaoRepository.save(r);
+            }
+        }
+
+        // ── Descartes históricos (taxa de descarte por vencimento) ────────────
+        // Bolsas já vencidas e descartadas (motivo VENCIMENTO deduzido pela validade)
+        // e duas descartadas por outro motivo, para a análise de descarte.
+        TipoSanguineo[] tiposDescarte = {TipoSanguineo.O_POS, TipoSanguineo.O_POS, TipoSanguineo.A_POS,
+                TipoSanguineo.B_NEG, TipoSanguineo.AB_POS, TipoSanguineo.O_NEG};
+        for (int i = 0; i < tiposDescarte.length; i++) {
+            Bolsa d = new Bolsa(tiposDescarte[i], Hemocomponente.HEMACIAS, hoje.minusDays(60 + i), hoje.minusDays(18 - i),
+                    "DESC-" + (i + 1), nHemope);
+            d.setStatus(StatusBolsa.DESCARTADA);
+            bolsaRepository.save(d);
+        }
+        for (int i = 0; i < 2; i++) {
+            Bolsa o = new Bolsa(TipoSanguineo.A_POS, Hemocomponente.PLAQUETAS, hoje.minusDays(3), hoje.plusDays(4),
+                    "DESC-OUT-" + (i + 1), nHemope);
+            o.setStatus(StatusBolsa.DESCARTADA);
+            bolsaRepository.save(o);
+        }
+        // ── Leituras de temperatura simuladas (faixa fictícia 20–30 °C) ───────
+        Bolsa[] emTransito = {t1, t2, t3};
+        for (int i = 0; i < 24; i++) {
+            double temp = Math.round((25.0 + rnd.nextGaussian() * 2.6) * 10.0) / 10.0;
+            leituraTemperaturaRepository.save(new LeituraTemperatura(emTransito[i % 3], temp, 20, 30, temp < 20 || temp > 30));
+        }
         // ── Campanhas ─────────────────────────────────────────────────────────
         campanhaRepository.save(new Campanha("Doe Sangue - Vida Nova",     "Campanha emergencial por estoque critico de O negativo.",    hoje,             hoje.plusDays(30),  hemope,  "O_NEG,O_POS"));
         campanhaRepository.save(new Campanha("Hemope em Acao",             "Venha salvar vidas no maior hemocentro de Pernambuco.",      hoje,             hoje.plusDays(60),  hemope,  "Todos"));

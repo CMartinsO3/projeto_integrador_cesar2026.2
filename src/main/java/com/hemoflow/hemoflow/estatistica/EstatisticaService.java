@@ -110,8 +110,10 @@ public class EstatisticaService {
 
     /**
      * Calcula o resumo descritivo das requisições hospitalares.
-     * A taxa de atendimento é calculada como:
-     *   (requisições ALOCADA / total) * 100, arredondado a 1 casa decimal.
+     * Critério único de atendimento (usado também em AnaliseAvancadaService):
+     * uma requisição é atendida se estiver ALOCADA, EM_TRANSITO ou ENTREGUE.
+     * Taxa = (atendidas / total) * 100, arredondada a 1 casa decimal;
+     * PENDENTE, AGUARDANDO_ESTOQUE e CANCELADA não contam como atendidas.
      */
     @Transactional(readOnly = true)
     public EstatisticaDTOs.ResumoRequisicoes resumoRequisicoes() {
@@ -132,7 +134,7 @@ public class EstatisticaService {
                         .orElse(0.0));
 
         double taxaAtendimento = total == 0 ? 0.0
-                : arredondar1(alocadas * 100.0 / total);
+                : arredondar1(contarAtendidas(todas) * 100.0 / total);
 
         return new EstatisticaDTOs.ResumoRequisicoes(
                 total,
@@ -145,6 +147,16 @@ public class EstatisticaService {
                 mediaQuantidade,
                 taxaAtendimento
         );
+    }
+
+    /** Critério único de requisição atendida: ALOCADA, EM_TRANSITO ou ENTREGUE. */
+    public static boolean atendida(Requisicao r) {
+        StatusRequisicao s = r.getStatus();
+        return s == StatusRequisicao.ALOCADA || s == StatusRequisicao.EM_TRANSITO || s == StatusRequisicao.ENTREGUE;
+    }
+
+    static long contarAtendidas(List<Requisicao> requisicoes) {
+        return requisicoes.stream().filter(EstatisticaService::atendida).count();
     }
 
     // -------------------------------------------------------------------------

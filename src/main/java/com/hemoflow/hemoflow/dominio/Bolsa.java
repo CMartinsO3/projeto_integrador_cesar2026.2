@@ -42,6 +42,10 @@ public class Bolsa {
     @Column(nullable = false)
     private StatusBolsa status = StatusBolsa.DISPONIVEL;
 
+    /** Motivo do descarte ("VENCIMENTO" ou "OUTRO"); nulo enquanto a bolsa não foi descartada. */
+    @Column
+    private String motivoDescarte;
+
     @ManyToOne(optional = false)
     @JoinColumn(name = "localizacao_id")
     private NoRede localizacaoAtual;
@@ -96,6 +100,19 @@ public class Bolsa {
 
     public void setStatus(StatusBolsa status) {
         this.status = status;
+        if (status == StatusBolsa.DESCARTADA && motivoDescarte == null) {
+            motivoDescarte = isVencida() ? "VENCIMENTO" : "OUTRO";
+        }
+    }
+
+    /** Descarta a bolsa registrando o motivo explicitamente (ex.: "VENCIMENTO"). */
+    public void descartar(String motivo) {
+        this.motivoDescarte = motivo;
+        this.status = StatusBolsa.DESCARTADA;
+    }
+
+    public String getMotivoDescarte() {
+        return motivoDescarte;
     }
 
     public NoRede getLocalizacaoAtual() {

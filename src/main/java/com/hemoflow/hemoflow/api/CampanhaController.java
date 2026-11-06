@@ -1,6 +1,5 @@
 package com.hemoflow.hemoflow.api;
 
-import com.hemoflow.hemoflow.dominio.Campanha;
 import com.hemoflow.hemoflow.persistencia.CampanhaRepository;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;

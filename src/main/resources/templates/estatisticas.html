@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Estatística e Probabilidade — HemoFlow</title>
+  <link rel="stylesheet" href="/css/hemoflow.css">
+  <style>
+    .bars { display:flex; align-items:flex-end; gap:6px; height:150px; padding:.5rem 0; }
+    .bar { flex:1; background:var(--teal,#1f8a8a); min-width:14px; position:relative; border-radius:3px 3px 0 0; }
+    .bar span { position:absolute; top:-1.1rem; left:0; right:0; text-align:center; font-size:.7rem; }
+    .bar-label { font-size:.65rem; text-align:center; flex:1; min-width:14px; color:var(--ink-soft,#667); }
+    .box { position:relative; height:34px; margin:.8rem 0 .3rem; }
+    .box .whisker { position:absolute; top:16px; height:2px; background:#445; }
+    .box .iqr { position:absolute; top:4px; height:26px; background:#9fd3d3; border:2px solid #1f8a8a; }
+    .box .med { position:absolute; top:2px; height:30px; width:3px; background:#b00020; }
+    .formula { font-family:monospace; font-size:.8rem; color:var(--ink-soft,#556); }
+    .muted { color:var(--ink-soft,#667); font-size:.85rem; }
+    table.data-table td.num { text-align:right; font-variant-numeric:tabular-nums; }
+  </style>
+</head>
+<body>
+<header class="topbar">
+  <a class="brand" href="/"><span class="mark" aria-hidden="true">H</span><span><strong>HemoFlow</strong><em>Estatística e Probabilidade</em></span></a>
+  <nav>
+    <a href="/">Indicadores</a>
+    <a href="/dashboard-admin">Operações</a>
+    <a class="is-active" href="/estatisticas">Estatística</a>
+    <a href="/monitoramento">Monitoramento</a>
+  </nav>
+</header>
+<main class="wrap page-content">
+  <section class="section-head">
+    <div><p class="kicker">US 9 · Indicadores de estoque e demanda</p><h1>Análise estatística</h1></div>
+    <p>Estatística descritiva, regressão, intervalos de confiança, teste de hipótese e modelos de probabilidade calculados sobre os dados reais do sistema. Fórmulas em <code>docs/estatistica.md</code>.</p>
+  </section>
+
+  <section class="card">
+    <h3>1. Demanda — estatística descritiva (unidades por requisição)</h3>
+    <div class="grid grid-4" id="kpiDemanda"></div>
+    <div class="grid grid-2" style="margin-top:1rem">
+      <div><h4>Histograma (regra de Sturges)</h4><div class="bars" id="histograma"></div><div class="bars" style="height:auto" id="histLabels"></div></div>
+      <div><h4>Boxplot</h4><div class="box" id="boxplot"></div><p class="muted" id="boxLegenda"></p></div>
+    </div>
+  </section>
+
+  <section class="card" style="margin-top:1rem">
+    <h3>2. Série temporal da demanda, média móvel e tendência (regressão linear)</h3>
+    <div class="bars" id="serie"></div><div class="bars" style="height:auto" id="serieLabels"></div>
+    <p id="tendenciaTxt" class="muted"></p>
+  </section>
+
+  <section class="card" style="margin-top:1rem" id="secDescarte">
+    <h3>3. Taxa de descarte por vencimento</h3>
+    <p class="formula">taxa = bolsas descartadas por vencimento ÷ bolsas coletadas (todas as registradas) · IC 95% de Wald</p>
+    <div class="grid grid-4" id="kpiDescarte"></div>
+    <div class="table-wrap" style="margin-top:1rem"><table class="data-table"><thead><tr><th>Tipo</th><th>Coletadas</th><th>Descartadas (venc.)</th><th>Taxa</th><th>IC 95%</th></tr></thead><tbody id="descarteRows"></tbody></table></div>
+    <p class="muted" id="descarteTxt"></p>
+  </section>
+
+  <section class="card" style="margin-top:1rem" id="secHospitais">
+    <h3>4. Demanda por hospital</h3>
+    <div class="grid grid-2">
+      <div class="table-wrap"><table class="data-table"><thead><tr><th>Hospital</th><th>Requisições</th><th>Unidades</th><th>Média/req.</th><th>Desvio padrão</th></tr></thead><tbody id="hospitalRows"></tbody></table></div>
+      <div><h4>Unidades solicitadas por hospital</h4><div class="bars" id="hospitalBars"></div><div class="bars" style="height:auto" id="hospitalLabels"></div></div>
+    </div>
+  </section>
+
+  <section class="card" style="margin-top:1rem" id="secTempos">
+    <h3>5. Tempos — duração das entregas e prazo de atendimento</h3>
+    <div class="grid grid-4" id="kpiTempos"></div>
+    <p class="muted" id="temposTxt"></p>
+  </section>
+
+  <section class="card" style="margin-top:1rem">
+    <h3>6. Risco de desabastecimento por tipo sanguíneo (Poisson, horizonte de 7 dias)</h3>
+    <p class="formula">P(ruptura) = P(D &gt; estoque), D ~ Poisson(λ = demanda diária × 7)</p>
+    <div class="table-wrap"><table class="data-table"><thead><tr><th>Tipo</th><th>Estoque válido</th><th>Demanda/dia</th><th>λ (7 dias)</th><th>P(ruptura)</th><th>Nível</th><th>Estoque de segurança (95%)</th></tr></thead><tbody id="riscoRows"></tbody></table></div>
+  </section>
+
+  <section class="card" style="margin-top:1rem">
+    <h3>7. Probabilidade — condicional, Bayes, Poisson e Binomial</h3>
+    <div class="grid grid-2">
+      <div><h4>P(tipo), P(atendida | tipo) e P(tipo | atendida) — Bayes</h4>
+        <div class="table-wrap"><table class="data-table"><thead><tr><th>Tipo</th><th>P(tipo)</th><th>P(atend.|tipo)</th><th>P(tipo|atend.)</th></tr></thead><tbody id="bayesRows"></tbody></table></div></div>
+      <div><h4>Chegada de requisições por dia — Poisson</h4><div class="bars" id="poisson"></div><div class="bars" style="height:auto" id="poissonLabels"></div><p class="muted" id="poissonTxt"></p>
+        <h4>Atendimento — Binomial</h4><p class="muted" id="binomialTxt"></p></div>
+    </div>
+  </section>
+
+  <section class="card" style="margin-top:1rem">
+    <h3>8. Cadeia fria — inferência sobre a temperatura</h3>
+    <div class="grid grid-4" id="kpiTemp"></div>
+    <p class="muted" id="tempTxt" style="margin-top:.8rem"></p>
+  </section>
+</main>
+<script>
+const f = (v, d = 2) => v === null || v === undefined ? '—' : Number(v).toFixed(d);
+const pct = v => v === null || v === undefined ? '—' : (v * 100).toFixed(1) + '%';
+const kpi = (label, value, hint) => `<div class="kpi teal"><div class="label">${label}</div><div class="value">${value}</div><div class="hint">${hint || ''}</div></div>`;
+const get = u => fetch(u).then(r => r.json());
+
+function bars(id, labelsId, items, fmt) {
+  const max = Math.max(1e-9, ...items.map(i => i.v));
+  document.getElementById(id).innerHTML = items.map(i => `<div class="bar" style="height:${Math.max(2, i.v / max * 100)}%" title="${i.l}: ${fmt(i.v)}"><span>${fmt(i.v)}</span></div>`).join('');
+  document.getElementById(labelsId).innerHTML = items.map(i => `<div class="bar-label">${i.l}</div>`).join('');
+}
+
+get('/api/v1/estatisticas/demanda').then(d => {
+  const q = d.quantidadePorRequisicao;
+  document.getElementById('kpiDemanda').innerHTML =
+    kpi('Média', f(q.media), `IC 95%: ${f(q.icInferior95)} – ${f(q.icSuperior95)}`) +
+    kpi('Mediana / Moda', `${f(q.mediana, 1)} / ${f(q.moda, 1)}`, `n = ${q.n}`) +
+    kpi('Desvio padrão', f(q.desvioPadrao), `variância ${f(q.variancia)} · amplitude ${f(q.amplitude, 1)}`) +
+    kpi('Coef. de variação', q.coeficienteVariacaoPercent == null ? '—' : f(q.coeficienteVariacaoPercent, 1) + '%', `Q1 ${f(q.q1, 1)} · Q3 ${f(q.q3, 1)}`);
+  bars('histograma', 'histLabels', d.histograma.map(h => ({ l: h.rotulo, v: h.frequencia })), v => v);
+  if (q.n > 0) {
+    const lo = q.minimo, hi = q.maximo, span = Math.max(1e-9, hi - lo), p = x => ((x - lo) / span * 100) + '%';
+    document.getElementById('boxplot').innerHTML =
+      `<div class="whisker" style="left:${p(lo)};width:${(hi - lo) / span * 100}%"></div>` +
+      `<div class="iqr" style="left:${p(q.q1)};width:${(q.q3 - q.q1) / span * 100}%"></div>` +
+      `<div class="med" style="left:${p(q.mediana)}"></div>`;
+    document.getElementById('boxLegenda').textContent = `mín ${f(lo, 1)} · Q1 ${f(q.q1, 1)} · mediana ${f(q.mediana, 1)} · Q3 ${f(q.q3, 1)} · máx ${f(hi, 1)}`;
+  }
+  bars('serie', 'serieLabels', d.serieDiaria.map(s => ({ l: s.data.slice(5), v: s.unidades })), v => v);
+  const t = d.tendencia;
+  document.getElementById('tendenciaTxt').textContent = t
+    ? `Tendência: ${f(t.inclinacaoUnidadesPorDia)} unid./dia (r = ${f(t.r)}, R² = ${f(t.r2)}). Previsão para o próximo dia: ${f(t.previsaoProximoDia, 1)} unidades.` +
+      (d.correlacaoQuantidadePrazoHoras == null ? '' : ` Correlação quantidade × prazo (h): ${f(d.correlacaoQuantidadePrazoHoras)}.`)
+    : 'Dados insuficientes para a reta de tendência (são necessários ao menos 3 dias com variação).';
+});
+
+get('/api/v1/estatisticas/descarte').then(d => {
+  const tipo = t => t.replace('_POS', '+').replace('_NEG', '−');
+  const p1 = v => v == null ? '—' : f(v, 1) + '%';
+  document.getElementById('kpiDescarte').innerHTML =
+    kpi('Taxa de descarte (venc.)', p1(d.taxaPercent), `IC 95%: ${p1(d.icInferior95)} – ${p1(d.icSuperior95)}`) +
+    kpi('Descartadas por vencimento', d.descartadasPorVencimento, `de ${d.totalColetadas} coletadas`) +
+    kpi('Descartadas (outros motivos)', d.descartadasOutrosMotivos, 'não entram na taxa') +
+    kpi('Vencidas ainda no estoque', d.vencidasNaoDescartadas, 'DISPONIVEL com validade expirada');
+  document.getElementById('descarteRows').innerHTML = d.porTipo.map(t =>
+    `<tr><td>${tipo(t.tipoSanguineo)}</td><td class="num">${t.coletadas}</td><td class="num">${t.descartadasPorVencimento}</td><td class="num">${p1(t.taxaPercent)}</td><td class="num">${p1(t.icInferior95)} – ${p1(t.icSuperior95)}</td></tr>`).join('');
+  document.getElementById('descarteTxt').textContent = d.totalColetadas === 0
+    ? 'Sem bolsas registradas: taxa indefinida.'
+    : d.descartadasPorVencimento === 0
+      ? 'Nenhuma bolsa descartada por vencimento até agora (taxa 0%).'
+      : `${d.descartadasPorVencimento} de ${d.totalColetadas} bolsas foram descartadas por vencimento. Com IC pequeno-amostral (Wald), tipos com poucas bolsas têm intervalos largos.`;
+});
+
+get('/api/v1/estatisticas/hospitais').then(hs => {
+  document.getElementById('hospitalRows').innerHTML = hs.map(h =>
+    `<tr><td>${h.hospital}</td><td class="num">${h.requisicoes}</td><td class="num">${h.unidades}</td><td class="num">${f(h.mediaUnidades)}</td><td class="num">${f(h.desvioPadraoUnidades)}</td></tr>`).join('');
+  bars('hospitalBars', 'hospitalLabels', hs.map(h => ({ l: h.hospital.split(' ').pop().slice(0, 8), v: h.unidades })), v => v);
+});
+
+get('/api/v1/estatisticas/tempos').then(t => {
+  const e = t.tempoEntregaMinutos, a = t.prazoAtendimentoHoras;
+  document.getElementById('kpiTempos').innerHTML =
+    kpi('Entrega: média', e.media == null ? '—' : f(e.media, 1) + ' min', `n = ${e.n} · IC 95%: ${f(e.icInferior95, 1)} – ${f(e.icSuperior95, 1)}`) +
+    kpi('Entrega: mediana / desvio', `${f(e.mediana, 1)} / ${f(e.desvioPadrao, 1)} min`, `mín ${f(e.minimo, 0)} · máx ${f(e.maximo, 0)}`) +
+    kpi('Prazo: média', a.media == null ? '—' : f(a.media, 1) + ' h', `n = ${a.n} · IC 95%: ${f(a.icInferior95, 1)} – ${f(a.icSuperior95, 1)}`) +
+    kpi('Prazo: mediana / desvio', `${f(a.mediana, 1)} / ${f(a.desvioPadrao, 1)} h`, `Q1 ${f(a.q1, 1)} · Q3 ${f(a.q3, 1)}`);
+  document.getElementById('temposTxt').textContent =
+    'Entrega = Entrega.tempoEstimadoMinutos. Prazo de atendimento = janelaEntrega − dataSolicitacao (horas).' +
+    (t.requisicoesSemDados > 0 ? ` ${t.requisicoesSemDados} requisição(ões) sem datas foram ignoradas.` : '');
+});
+
+get('/api/v1/estatisticas/risco').then(r => {
+  document.getElementById('riscoRows').innerHTML = r.tipos.map(t =>
+    `<tr><td>${t.tipoSanguineo.replace('_POS', '+').replace('_NEG', '−')}</td><td class="num">${t.estoqueDisponivel}</td><td class="num">${f(t.demandaMediaDiaria)}</td><td class="num">${f(t.lambdaHorizonte)}</td><td class="num">${pct(t.probRuptura)}</td><td><span class="chip chip-${t.nivel}">${t.nivel}</span></td><td class="num">${t.estoqueSegurancaSugerido}</td></tr>`).join('');
+});
+
+get('/api/v1/estatisticas/probabilidade').then(p => {
+  document.getElementById('bayesRows').innerHTML = Object.keys(p.frequenciaRelativaPorTipo).map(t => {
+    const b = p.bayes.find(x => x.tipoSanguineo === t);
+    return `<tr><td>${t.replace('_POS', '+').replace('_NEG', '−')}</td><td class="num">${pct(p.frequenciaRelativaPorTipo[t])}</td><td class="num">${pct(p.pAtendidaDadoTipo[t])}</td><td class="num">${b ? pct(b.pTipoDadoAtendida) : '—'}</td></tr>`;
+  }).join('');
+  const po = p.poisson;
+  bars('poisson', 'poissonLabels', po.distribuicao.map(x => ({ l: x.k, v: x.probabilidade })), v => (v * 100).toFixed(0) + '%');
+  document.getElementById('poissonTxt').textContent = `λ = ${f(po.lambdaRequisicoesPorDia)} req./dia · P(0) = ${pct(po.probNenhumaRequisicao)} · P(≥1) = ${pct(po.probPeloMenosUma)} · P(mais que o dobro da média) = ${pct(po.probMaisQueDobroDaMedia)}`;
+  const b = p.binomial;
+  document.getElementById('binomialTxt').textContent = `p(atendimento) = ${pct(b.pAtendimento)} (IC 95%: ${pct(p.icInferiorAtendimento95)} – ${pct(p.icSuperiorAtendimento95)}). Em ${b.n} requisições: E[X] = ${f(b.esperanca)}, Var[X] = ${f(b.variancia)}, P(X ≥ ${b.kMinimo}) = ${pct(b.probPeloMenosK)}.`;
+});
+
+get('/api/v1/estatisticas/temperatura').then(t => {
+  const d = t.temperatura;
+  document.getElementById('kpiTemp').innerHTML =
+    kpi('Temperatura média', d.media == null ? '—' : f(d.media) + ' °C', `IC 95%: ${f(d.icInferior95)} – ${f(d.icSuperior95)}`) +
+    kpi('Desvio padrão', f(d.desvioPadrao), `n = ${t.leituras}`) +
+    kpi('Fora da faixa', t.percentualForaDaFaixa == null ? '—' : f(t.percentualForaDaFaixa, 1) + '%', `IC 95%: ${f(t.icInferiorForaFaixa95, 1)}% – ${f(t.icSuperiorForaFaixa95, 1)}%`) +
+    kpi('P(fora) — Normal', t.probForaDaFaixaNormal == null ? '—' : pct(t.probForaDaFaixaNormal), 'T ~ N(média, desvio)');
+  document.getElementById('tempTxt').textContent = `Teste de hipótese (H0: μ = ${f(t.pontoMedioFaixa, 1)} °C): z = ${f(t.estatisticaZ)}, p-valor = ${f(t.pValor, 4)}. ${t.conclusaoTeste}.`;
+});
+</script>
+</body>
+</html>
+

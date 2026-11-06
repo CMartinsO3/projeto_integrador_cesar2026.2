@@ -12,7 +12,6 @@ import com.hemoflow.hemoflow.config.DemoMonitoramentoProperties;
 import com.hemoflow.hemoflow.dominio.Bolsa;
 import com.hemoflow.hemoflow.dominio.Hemocomponente;
 import com.hemoflow.hemoflow.dominio.LeituraTemperatura;
-import com.hemoflow.hemoflow.dominio.NoRede;
 import com.hemoflow.hemoflow.dominio.StatusBolsa;
 import com.hemoflow.hemoflow.persistencia.BolsaRepository;
 import com.hemoflow.hemoflow.persistencia.LeituraTemperaturaRepository;

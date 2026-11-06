@@ -10,7 +10,6 @@ import com.hemoflow.hemoflow.api.RecursoNaoEncontradoException;
 import com.hemoflow.hemoflow.api.RegraNegocioException;
 import com.hemoflow.hemoflow.config.DemoMonitoramentoProperties;
 import com.hemoflow.hemoflow.dominio.Bolsa;
-import com.hemoflow.hemoflow.dominio.Entrega;
 import com.hemoflow.hemoflow.dominio.Hemocomponente;
 import com.hemoflow.hemoflow.dominio.Requisicao;
 import com.hemoflow.hemoflow.dominio.StatusBolsa;

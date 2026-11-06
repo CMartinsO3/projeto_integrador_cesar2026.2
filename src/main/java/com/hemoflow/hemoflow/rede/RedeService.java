@@ -44,8 +44,8 @@ public class RedeService {
      */
     @Transactional(readOnly = true)
     public RotaCalculada calcularRotaVizinhoMaisProximo(Long origemId, Long destinoId) {
-        NoRede origem = buscarNo(origemId);
-        NoRede destino = buscarNo(destinoId);
+        buscarNo(origemId);   // valida a existência dos nós (lança exceção se não existirem)
+        buscarNo(destinoId);
         Grafo grafo = new Grafo();
         List<NoRede> nos = noRedeRepository.findAll();
         Map<String, NoRede> nosPorId = new HashMap<>();

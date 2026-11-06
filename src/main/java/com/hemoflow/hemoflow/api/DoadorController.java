@@ -66,7 +66,7 @@ public class DoadorController {
     public ResponseEntity<?> deletar(@PathVariable Long id) {
         return doadorRepo.findById(id).map(d -> {
             d.setAtivo(false); doadorRepo.save(d);
-            return ResponseEntity.<Void>ok().build();
+            return ResponseEntity.ok().build();
         }).orElse(ResponseEntity.notFound().build());
     }
 

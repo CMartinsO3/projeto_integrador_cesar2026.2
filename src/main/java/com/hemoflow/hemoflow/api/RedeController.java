@@ -16,7 +16,6 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.hemoflow.hemoflow.api.dto.NoRedeDTOs;
 import com.hemoflow.hemoflow.config.DemoMonitoramentoProperties;
-import com.hemoflow.hemoflow.dominio.StatusConectividade;
 import com.hemoflow.hemoflow.rede.RedeService;
 
 import jakarta.validation.Valid;

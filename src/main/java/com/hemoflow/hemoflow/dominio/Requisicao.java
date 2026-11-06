@@ -109,6 +109,11 @@ public class Requisicao {
         return dataSolicitacao;
     }
 
+    /** Uso restrito à carga de dados sintéticos históricos (demonstração/estatística). */
+    public void definirDataSolicitacao(LocalDateTime dataSolicitacao) {
+        this.dataSolicitacao = dataSolicitacao;
+    }
+
     public List<Entrega> getEntregas() {
         return List.copyOf(entregas);
     }

@@ -1,7 +1,6 @@
 package com.hemoflow.hemoflow.estoque;
 
 import java.time.LocalDate;
-import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -277,8 +276,14 @@ public class EstoqueService {
         if (b.getStatus() == StatusBolsa.ENTREGUE || b.getStatus() == StatusBolsa.DESCARTADA) {
             throw new RegraNegocioException("Bolsa já se encontra em status terminal: " + b.getStatus());
         }
-        StatusBolsa novoStatus = "DESCARTE".equals(motivo) ? StatusBolsa.DESCARTADA : StatusBolsa.ENTREGUE;
-        b.setStatus(novoStatus);
+        boolean descarte = "DESCARTE".equals(motivo) || "VENCIMENTO".equals(motivo);
+        StatusBolsa novoStatus = descarte ? StatusBolsa.DESCARTADA : StatusBolsa.ENTREGUE;
+        if (descarte) {
+            // Motivo explícito VENCIMENTO, ou deduzido pela validade (ver Bolsa.setStatus)
+            b.descartar("VENCIMENTO".equals(motivo) || b.isVencida() ? "VENCIMENTO" : "OUTRO");
+        } else {
+            b.setStatus(novoStatus);
+        }
         bolsaRepository.save(b);
         indiceEstoque.retirarAposCommit(b);
         return Map.of("id", b.getId(), "status", novoStatus.name(), "motivo", motivo);

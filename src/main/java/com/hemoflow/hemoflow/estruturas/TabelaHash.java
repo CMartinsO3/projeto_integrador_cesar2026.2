@@ -46,7 +46,7 @@ public class TabelaHash<V> {
         this(CAPACIDADE_PADRAO);
     }
 
-    @SuppressWarnings({"unchecked", "rawtypes"})
+    @SuppressWarnings("unchecked")
     public TabelaHash(int capacidade) {
         if (capacidade < 1) {
             throw new IllegalArgumentException("Capacidade deve ser pelo menos 1");

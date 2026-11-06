@@ -29,7 +29,7 @@ O HemoFlow unifica em uma única plataforma web:
   * **Grafos e Caminhos Mínimos:** Roteirização e logística de entregas
   * **Lista, Fila e Pilha (Unidade 1):** estoque de bolsas, requisições em ordem de chegada e histórico de operações — [detalhes](./docs/estruturas-u1.md)
   * **Unidade 2:** buscas sequencial, binária e por hash; Bubble, Selection, Insertion e Merge Sort; FEFO por inserção ordenada; índice de estoque por tabela hash; matriz ABO/Rh; e roteamento pelo vizinho mais próximo — [algoritmos e equivalência C++/Java](./docs/algoritmos-u2.md)
-* **Análise & Estatística:** Estatística descritiva e probabilidade aplicadas ao estoque/demanda
+* **Análise & Estatística:** estatística descritiva (posição, dispersão, histograma, boxplot), série temporal e regressão, intervalos de confiança, teste de hipótese, Bayes, Poisson, Binomial e Normal aplicados a estoque, demanda e cadeia fria — painel em `/estatisticas` e [documentação](./docs/estatistica.md)
 * **Infraestrutura & Redes:** Concorrência, CI/CD, Nuvem e Simulação de Telemetria/Comunicação de Rede
 
 ---

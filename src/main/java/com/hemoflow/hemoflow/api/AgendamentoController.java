@@ -17,7 +17,6 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.hemoflow.hemoflow.dominio.Agendamento;
 import com.hemoflow.hemoflow.dominio.StatusAgendamento;
-import com.hemoflow.hemoflow.dominio.StatusAgendamento;
 import com.hemoflow.hemoflow.estoque.AgendamentoService;
 import com.hemoflow.hemoflow.persistencia.AgendamentoRepository;
 

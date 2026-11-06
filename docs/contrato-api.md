@@ -304,3 +304,20 @@ public class BolsaComponenteDTO {
 O tratamento de erro é centralizado num único `@RestControllerAdvice`, garantindo que todo endpoint devolva o mesmo formato de erro descrito na seção 5, sem repetir tratamento em cada controller.
 
 ---
+
+## Estatísticas (somente leitura)
+
+| Método | Rota | Resposta |
+| :--- | :--- | :--- |
+| GET | `/api/v1/estatisticas/estoque` | `ResumoEstoque` |
+| GET | `/api/v1/estatisticas/requisicoes` | `ResumoRequisicoes` |
+| GET | `/api/v1/estatisticas/demanda` | `AnaliseDemanda` — descritiva, histograma, série diária, tendência |
+| GET | `/api/v1/estatisticas/probabilidade` | `AnaliseProbabilidade` — Bayes, Poisson, Binomial |
+| GET | `/api/v1/estatisticas/risco` | `RiscoDesabastecimento` — P(ruptura) por tipo sanguíneo |
+| GET | `/api/v1/estatisticas/temperatura` | `AnaliseTemperatura` — IC, teste de hipótese, Normal |
+| GET | `/api/v1/estatisticas/descarte` | `AnaliseDescarte` — taxa de descarte por vencimento (total e por tipo, IC 95%) |
+| GET | `/api/v1/estatisticas/hospitais` | `DemandaHospital[]` — requisições, unidades, média e desvio por hospital |
+| GET | `/api/v1/estatisticas/tempos` | `AnaliseTempos` — duração das entregas e prazo de atendimento |
+
+Medidas indefinidas (amostra pequena) vêm como `null`. Fórmulas em [estatistica.md](./estatistica.md).
+

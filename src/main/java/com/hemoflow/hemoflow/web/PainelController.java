@@ -22,6 +22,9 @@ public class PainelController {
         return "index";
     }
 
+    @GetMapping("/estatisticas")
+    public String estatisticas() { return "estatisticas"; }
+
     @GetMapping("/doe-agora")
     public String doeAgora() { return "doe-agora"; }
 
