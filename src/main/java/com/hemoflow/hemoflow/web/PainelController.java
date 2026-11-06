@@ -49,8 +49,17 @@ public class PainelController {
     @GetMapping("/login-usuario")
     public String loginUsuario() { return "login-usuario"; }
 
+    @GetMapping({"/login-hospital", "/login-motorista"})
+    public String loginOperacional() { return "login-operacional"; }
+
+    @GetMapping("/cadastro-operacional")
+    public String cadastroOperacional() { return "cadastro-operacional"; }
+
     @GetMapping("/dashboard-admin")
     public String dashboardAdmin() { return "dashboard-admin"; }
+
+    @GetMapping("/contas-operacionais")
+    public String contasOperacionais() { return "contas-operacionais"; }
 
     @GetMapping("/dashboard-usuario")
     public String dashboardUsuario() { return "dashboard-usuario"; }

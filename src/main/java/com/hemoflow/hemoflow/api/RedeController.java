@@ -62,6 +62,11 @@ public class RedeController {
         return NoRedeDTOs.Resposta.de(redeService.atualizarStatusConectividade(id, dto.status()));
     }
 
+    @PostMapping("/nos-rede/{id}/heartbeat")
+    public NoRedeDTOs.Resposta registrarHeartbeat(@PathVariable Long id) {
+        return NoRedeDTOs.Resposta.de(redeService.registrarHeartbeat(id));
+    }
+
     @DeleteMapping("/nos-rede/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void removerNo(@PathVariable Long id) {

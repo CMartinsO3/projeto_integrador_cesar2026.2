@@ -18,8 +18,8 @@
 </header>
 <main class="wrap page-content">
   <section class="section-head">
-    <div><p class="kicker">US 7 · US 8</p><h1>Temperatura e conectividade</h1></div>
-    <p>Telemetria fictícia e status de dispositivos atualizados manualmente.</p>
+    <div><p class="kicker">REDE E TELEMETRIA</p><h1>Temperatura e conectividade</h1></div>
+    <p>Telemetria fictícia; heartbeat simulado enquanto este painel estiver aberto.</p>
   </section>
   <p class="notice notice-danger"><strong>Somente demonstração:</strong> todas as faixas são fictícias (20–30 °C para cada componente) e não servem para armazenamento, transporte ou decisão clínica. Não há sensores reais conectados.</p>
   <section class="card">
@@ -38,7 +38,7 @@
     </div>
   </section>
   <section class="card" style="margin-top:1rem">
-    <div class="section-head compact"><div><h2>Dispositivos da rede</h2><p>Status simulado e alterado manualmente pelo painel.</p></div></div>
+    <div class="section-head compact"><div><h2>Dispositivos da rede</h2><p>O dispositivo fica offline após 120 s sem heartbeat; esta tela simula sinais para dispositivos não marcados manualmente offline.</p></div></div>
     <div class="table-wrap">
       <table class="data-table">
         <thead><tr><th>Unidade</th><th>Status</th><th>Atualizado</th><th>Alterar status</th></tr></thead>
@@ -65,7 +65,9 @@
   const deviceStatus = ['ONLINE', 'INSTAVEL', 'OFFLINE'];
   const labels = { ONLINE: 'Online', INSTAVEL: 'Instável', OFFLINE: 'Offline' };
   let intervalId = null;
+  let heartbeatIntervalId = null;
   let loading = false;
+  let heartbeatDeviceIds = [];
 
   function cell(row, value) {
     const element = document.createElement('td');
@@ -112,6 +114,7 @@
       });
 
       deviceRows.replaceChildren();
+      heartbeatDeviceIds = panel.dispositivos.map(device => device.noRedeId);
       panel.dispositivos.forEach(device => {
         const row = document.createElement('tr');
         cell(row, `${device.nome} (${device.codigo})`);
@@ -146,11 +149,26 @@
       });
 
       if (!intervalId) intervalId = window.setInterval(() => loadPanel(true), panel.intervaloLeituraSegundos * 1000);
+      if (!heartbeatIntervalId) {
+        heartbeatIntervalId = window.setInterval(() => sendHeartbeats().catch(error => {
+          status.textContent = error.message || 'Não foi possível enviar heartbeat.';
+        }), 30000);
+        sendHeartbeats().catch(error => {
+          status.textContent = error.message || 'Não foi possível enviar heartbeat.';
+        });
+      }
     } catch (error) {
       status.textContent = error.message || 'Não foi possível carregar o painel.';
     } finally {
       loading = false;
     }
+  }
+
+  async function sendHeartbeats() {
+    const responses = await Promise.all(heartbeatDeviceIds.map(noRedeId =>
+      fetch(`/api/v1/nos-rede/${noRedeId}/heartbeat`, { method: 'POST' })));
+    const failed = responses.find(response => !response.ok);
+    if (failed) throw new Error(`Falha ao enviar heartbeat (HTTP ${failed.status}).`);
   }
 
   async function simulateOnDemand(forceAlert) {

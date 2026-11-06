@@ -221,14 +221,25 @@ Consulta as bolsas no índice hash, filtra compatibilidade ABO/Rh (para hemácia
 | `GET` | `/entregas` | Lista entregas de requisições alocadas ou em trânsito, com rota, próximo ponto e alertas |
 | `PATCH` | `/entregas/requisicoes/{requisicaoId}/status` | Inicia ou conclui a entrega (`EM_TRANSITO` ou `ENTREGUE`) |
 | `PATCH` | `/entregas/{entregaId}/proximo-ponto` | Avança o próximo ponto da rota de uma entrega em trânsito |
+| `PUT` | `/entregas/{entregaId}/motorista` | Atribui uma entrega a uma conta de motorista (administrador) |
 | `GET` | `/monitoramento` | Retorna faixas didáticas, últimas leituras e status de conectividade |
 | `POST` | `/monitoramento/leituras` | Registra uma temperatura simulada para uma bolsa em trânsito |
 | `POST` | `/monitoramento/leituras/simular?forcarAlerta=false` | Gera leituras fictícias para bolsas em trânsito; `true` força alerta |
 | `PUT` | `/nos-rede/{id}/status-conectividade` | Atualiza manualmente para `ONLINE`, `INSTAVEL` ou `OFFLINE` |
+| `POST` | `/nos-rede/{id}/heartbeat` | Atualiza o heartbeat; só marca `ONLINE` se o offline não tiver sido definido manualmente |
+| `POST` | `/auth/login-operacional` | Autentica uma conta hospitalar ou de motorista |
+| `POST` | `/auth/cadastro-operacional` | Cria conta própria de hospital (pendente de aprovação) ou motorista |
+| `GET` | `/auth/usuarios` | Lista contas operacionais (administrador) |
+| `POST` | `/auth/usuarios` | Cria conta hospitalar ou de motorista (administrador) |
+| `POST` | `/auth/usuarios/{id}/aprovar` | Aprova uma conta hospitalar pendente (administrador) |
 
-A demonstração não possui autenticação/autorização. O filtro hospitalar não isola dados por identidade. A temperatura padrão é fictícia (20–30 °C para cada hemocomponente), não vem de sensor real e a geração automática ocorre no navegador enquanto a página de monitoramento permanece aberta. O status de conectividade é manual: não há heartbeat nem detecção automática por timeout. Essas simulações não devem ser usadas em operação clínica.
+As telas `/requisicoes-hospital` e `/motorista` exigem sessão autenticada. Contas operacionais ficam armazenadas no banco; senhas são protegidas com BCrypt. O usuário pode criar uma conta em `/cadastro-operacional`, enviando `usuario`, `senha` (mínimo 8 caracteres), `nome`, `perfil` (`HOSPITAL` ou `MOTORISTA`) e, para hospital, `hospitalId`. Contas de motorista são ativadas no cadastro e só acessam entregas atribuídas à sua conta. Contas hospitalares permanecem pendentes e não podem entrar até a equipe clínica validar o vínculo e aprová-las em `POST /api/v1/auth/usuarios/{id}/aprovar`. Administradores também podem criar contas diretamente pelo painel ou por `POST /api/v1/auth/usuarios`. Para atribuir uma entrega, use `PUT /api/v1/entregas/{entregaId}/motorista` com `{"motoristaId": 1}`.
 
-As páginas web disponíveis são `/requisicoes-hospital`, `/motorista` e `/monitoramento`.
+O dispositivo é marcado `OFFLINE` após 120 segundos sem heartbeat. Na demonstração, o navegador do painel de monitoramento envia heartbeat a cada 30 segundos; sinais simulados não reativam um dispositivo marcado manualmente como `OFFLINE`. Isso não representa telemetria física. A temperatura padrão continua fictícia (20–30 °C por componente), não vem de sensor real e não deve ser usada em operação clínica. A configuração H2 padrão é em memória; para manter os registros entre reinicializações, use a configuração PostgreSQL documentada no projeto.
+
+No banco vazio de demonstração, o administrador inicial é `admin` com senha `admin`; troque essa credencial antes de qualquer implantação.
+
+O administrador entra em `/login-admin` e gerencia contas e atribuições no dashboard. As contas operacionais entram por `/login-hospital` ou `/login-motorista`; as páginas protegidas são `/requisicoes-hospital` e `/motorista`. O painel `/monitoramento` é restrito ao administrador.
 
 ---
 

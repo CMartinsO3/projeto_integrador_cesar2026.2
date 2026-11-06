@@ -41,6 +41,9 @@ public class NoRede {
     @Column(nullable = false, columnDefinition = "timestamp default current_timestamp")
     private LocalDateTime atualizadoStatusEm = LocalDateTime.now();
 
+    @Column(nullable = false, columnDefinition = "boolean default false")
+    private boolean offlineManual;
+
     protected NoRede() {
     }
 
@@ -110,6 +113,23 @@ public class NoRede {
 
     public void atualizarStatusConectividade(StatusConectividade statusConectividade) {
         this.statusConectividade = statusConectividade;
+        this.offlineManual = statusConectividade == StatusConectividade.OFFLINE;
+        this.atualizadoStatusEm = LocalDateTime.now();
+    }
+
+    public void registrarHeartbeat() {
+        if (offlineManual) {
+            return;
+        }
+        if (this.statusConectividade == StatusConectividade.OFFLINE) {
+            this.statusConectividade = StatusConectividade.ONLINE;
+        }
+        this.atualizadoStatusEm = LocalDateTime.now();
+    }
+
+    public void marcarOffline() {
+        this.statusConectividade = StatusConectividade.OFFLINE;
+        this.offlineManual = false;
         this.atualizadoStatusEm = LocalDateTime.now();
     }
 }

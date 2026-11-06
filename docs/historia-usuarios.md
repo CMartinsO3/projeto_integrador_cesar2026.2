@@ -40,7 +40,8 @@ Como responsável hospitalar, quero criar uma requisição informando tipo sangu
 - O hospital informa componente, tipo sanguíneo, quantidade necessária e janela de entrega.
 - Todos os campos são obrigatórios para o envio.
 - A requisição criada deve ficar vinculada ao hospital solicitante.
-- A tela `/requisicoes-hospital` permite selecionar o hospital, criar pedidos e consultar os pedidos vinculados a ele. É uma demonstração sem autenticação; o filtro por hospital não substitui controle de acesso.
+- A tela `/requisicoes-hospital` exige uma conta do perfil `HOSPITAL` vinculada a um único hospital.
+- O servidor usa o hospital da sessão ao criar requisições e limita consultas e detalhes às requisições desse hospital.
 
 **Confirmação (BDD)**
 ```
@@ -50,9 +51,9 @@ Quando o hospital enviar a requisição
 Então ela deve ser registrada com status "Pendente" e vinculada ao hospital solicitante
 
 Cenário: Consulta das requisições do hospital
-Dado que existam requisições registradas por mais de um hospital
-Quando o usuário selecionar um hospital na tela de requisições
-Então somente as requisições vinculadas ao hospital selecionado devem ser exibidas
+Dado que o hospital esteja autenticado com uma conta vinculada a ele
+Quando consultar suas requisições
+Então somente as requisições desse hospital devem ser exibidas, mesmo que outro ID seja enviado na URL
 ```
 
 ---
@@ -137,17 +138,18 @@ Como motorista responsável pelo transporte, quero visualizar a rota calculada e
 **Conversa**
 - A tela `/motorista` exibe as entregas roteadas, rota, tempo estimado, próximo destino e alerta de cadeia fria.
 - O motorista pode iniciar o trânsito e confirmar a entrega; também pode avançar o próximo ponto da rota.
-- A tela é uma demonstração sem autenticação ou autorização por motorista.
+- A tela exige uma conta persistida do perfil `MOTORISTA`; cada entrega precisa ser atribuída por um administrador.
+- O motorista consulta e atualiza somente as entregas atribuídas à sua conta. A mudança de status de uma requisição só é permitida quando todas as entregas dela estão atribuídas ao mesmo motorista.
 
 **Confirmação (BDD)**
 ```
 Cenário: Visualização da rota pelo motorista
-Dado que uma rota tenha sido calculada para a entrega
-Quando o motorista acessar a tela de acompanhamento
+Dado que uma entrega tenha sido atribuída à conta do motorista
+Quando o motorista autenticado acessar a tela de acompanhamento
 Então o sistema deve exibir a rota, o tempo estimado, o próximo destino e eventual alerta de cadeia fria
 
 Cenário: Atualização de status da entrega
-Dado que a entrega esteja em andamento
+Dado que a entrega esteja atribuída ao motorista autenticado e em andamento
 Quando o motorista atualizar o status (em trânsito ou entregue)
 Então o sistema deve refletir essa mudança para os demais usuários
 ```
@@ -163,7 +165,7 @@ Como gestor do hemocentro, quero visualizar em um painel a temperatura da bolsa 
 **Conversa**
 - A tela `/monitoramento` registra leituras fictícias enquanto estiver aberta e também permite simular uma leitura fora da faixa.
 - Para fins exclusivamente didáticos, a faixa configurada é de 20 a 30 °C para cada hemocomponente. Esses valores não são recomendações clínicas ou operacionais.
-- Não há sensor físico nem tarefa periódica executada no servidor; a simulação depende da página aberta.
+- O painel protegido por perfil de administrador simula heartbeats a cada 30 segundos enquanto a tela estiver aberta; não há sensor físico. Um status `OFFLINE` definido manualmente não é alterado por esses sinais simulados.
 
 **Confirmação (BDD)**
 ```
@@ -183,7 +185,8 @@ Como gestor de operações, quero visualizar o status de conectividade dos dispo
 
 **Conversa**
 - O painel permite atualizar manualmente o status de cada unidade entre `ONLINE`, `INSTAVEL` e `OFFLINE`.
-- O estado e o horário da última atualização são persistidos. Não há heartbeat, detecção automática nem timeout para marcar um dispositivo como offline.
+- Um dispositivo sem heartbeat por 120 segundos é marcado automaticamente como `OFFLINE` por uma tarefa periódica do servidor. No modo demonstração, abrir o painel volta a simular heartbeats para dispositivos cujo status não foi definido manualmente como `OFFLINE`; sem a tela aberta, eles expiram.
+- O endpoint `POST /api/v1/nos-rede/{id}/heartbeat` recebe o sinal, atualiza o horário e marca o dispositivo como `ONLINE`.
 
 **Confirmação (BDD)**
 ```
@@ -191,6 +194,11 @@ Cenário: Atualização de status de conectividade
 Dado que as unidades/dispositivos estejam cadastrados
 Quando houver alteração no status de conectividade de um dispositivo
 Então o painel deve atualizar a situação e sinalizar o dispositivo afetado
+
+Cenário: Dispositivo sem heartbeat
+Dado que um dispositivo não envie heartbeat por 120 segundos
+Quando a tarefa periódica de verificação for executada
+Então o sistema deve marcar o dispositivo como `OFFLINE`
 ```
 
 ---
@@ -224,7 +232,7 @@ Como responsável hospitalar, quero consultar o status da minha requisição (pe
 **Conversa**
 - O hospital pode consultar individualmente uma requisição ou listar todas as suas requisições.
 - Os status possíveis devem ser padronizados: Pendente, Alocada, Em trânsito, Entregue.
-- A tela `/requisicoes-hospital` consulta por hospital selecionado e permite abrir o detalhe da requisição; a demonstração não possui autenticação.
+- A tela `/requisicoes-hospital` permite consultar e abrir apenas requisições vinculadas ao hospital da conta autenticada.
 
 **Confirmação (BDD)**
 ```

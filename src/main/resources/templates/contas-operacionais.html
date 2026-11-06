@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Contas operacionais — HemoFlow</title>
+  <link rel="stylesheet" href="/css/hemoflow.css">
+</head>
+<body>
+<div class="app">
+  <aside class="side">
+    <a class="brand" href="/" style="color:#fff">
+      <span class="mark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3c-1.8 3.2-6 6.4-6 10.2A6 6 0 0 0 12 21a6 6 0 0 0 6-7.8C18 9.4 13.8 6.2 12 3Z"/><path d="M12 11v6M9 14h6"/></svg></span>
+      <span><strong>HemoFlow</strong><em>Equipe</em></span>
+    </a>
+    <nav>
+      <a href="/dashboard-admin">Operações</a>
+      <a class="is-active" href="/contas-operacionais">Contas operacionais</a>
+      <a href="/">Indicadores</a>
+      <a href="/bolsas-painel">Bolsas</a>
+      <a href="/mapa">Mapa</a>
+      <a href="/rotas">Rotas da rede</a>
+      <a href="/requisicoes-hospital">Requisições</a>
+      <a href="/motorista">Motorista</a>
+      <a href="/monitoramento">Monitoramento</a>
+      <a href="/docs">Swagger</a>
+    </nav>
+    <div class="who">
+      <b id="nomeAdmin">Carregando…</b>
+      Administrador
+      <button class="btn btn-ghost btn-sm" style="margin-top:.7rem;color:#fff;border-color:rgba(255,255,255,.2)" onclick="logout()">Encerrar sessão</button>
+    </div>
+  </aside>
+  <div class="main">
+    <div class="main-bar">
+      <div>
+        <h1>Contas operacionais</h1>
+        <p>Cadastre hospitais e motoristas e organize as entregas da equipe.</p>
+      </div>
+    </div>
+    <div class="main-body">
+      <section class="card">
+        <h2>Criar conta</h2>
+        <p>Defina as credenciais e compartilhe a senha com o usuário por um canal seguro.</p>
+        <div class="grid grid-3" style="margin-top:1rem">
+          <div class="field">
+          <label for="contaNome">Nome completo</label>
+          <input id="contaNome" class="control" autocomplete="name" placeholder="Nome completo">
+          </div>
+          <div class="field">
+          <label for="contaUsuario">Usuário</label>
+          <input id="contaUsuario" class="control" autocomplete="off" placeholder="Usuário">
+          </div>
+          <div class="field">
+          <label for="contaSenha">Senha</label>
+          <input id="contaSenha" class="control" type="password" minlength="8" autocomplete="new-password" placeholder="Mínimo de 8 caracteres">
+          </div>
+          <div class="field">
+          <label for="contaPerfil">Perfil</label>
+          <select id="contaPerfil" class="control">
+            <option value="HOSPITAL">Hospital</option>
+            <option value="MOTORISTA">Motorista</option>
+          </select>
+          </div>
+          <div class="field">
+          <label for="contaHospital">Hospital associado</label>
+          <select id="contaHospital" class="control"></select>
+          </div>
+          <div class="field" style="align-self:end">
+          <button class="btn btn-teal" type="button" onclick="criarContaOperacional()">Criar conta</button>
+          </div>
+        </div>
+        <p id="msgConta" class="msg" role="status" aria-live="polite"></p>
+      </section>
+
+      <section class="card" style="margin-top:1rem">
+        <h2>Solicitações de acesso hospitalar</h2>
+        <p>Confirme a vinculação do solicitante antes de aprovar o acesso às requisições do hospital.</p>
+        <div class="table-wrap">
+          <table class="data-table">
+            <thead><tr><th>Nome</th><th>Usuário</th><th>Hospital</th><th>Ação</th></tr></thead>
+            <tbody id="solicitacoesHospital">
+              <tr><td colspan="4">Carregando solicitações...</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p id="msgAprovacao" class="msg" role="status" aria-live="polite"></p>
+      </section>
+
+      <section class="card" style="margin-top:1rem">
+        <h2>Atribuir entrega a motorista</h2>
+        <p>Para atualizar o status de uma requisição, atribua todas as suas entregas ao mesmo motorista.</p>
+        <div class="toolbar form-row">
+          <div>
+            <label for="entregaAtribuicao">Entrega</label>
+            <select id="entregaAtribuicao" class="control"></select>
+          </div>
+          <div>
+            <label for="motoristaAtribuicao">Motorista</label>
+            <select id="motoristaAtribuicao" class="control"></select>
+          </div>
+          <button class="btn btn-ghost" type="button" onclick="atribuirEntrega()">Atribuir entrega</button>
+        </div>
+        <p id="msgAtribuicao" class="msg" role="status" aria-live="polite"></p>
+      </section>
+    </div>
+  </div>
+</div>
+<script>
+fetch('/api/v1/auth/sessao').then(response => response.json()).then(session => {
+  if (!session.logado || session.role !== 'ADMIN') {
+    window.location.href = '/login-admin';
+    return;
+  }
+  document.getElementById('nomeAdmin').textContent = session.nome || 'Admin';
+}).catch(() => {
+  window.location.href = '/login-admin';
+});
+
+function logout() {
+  fetch('/api/v1/auth/logout', { method: 'POST' }).then(() => {
+    window.location.href = '/login-admin';
+  });
+}
+
+async function inicializarContasOperacionais() {
+  const [hospitaisResponse, usuariosResponse, entregasResponse] = await Promise.all([
+    fetch('/api/v1/hospitais'),
+    fetch('/api/v1/auth/usuarios'),
+    fetch('/api/v1/entregas')
+  ]);
+  if (!hospitaisResponse.ok || !usuariosResponse.ok || !entregasResponse.ok) {
+    throw new Error('Falha ao carregar contas, hospitais ou entregas para administração.');
+  }
+
+  const [hospitais, usuarios, entregas] = await Promise.all([
+    hospitaisResponse.json(),
+    usuariosResponse.json(),
+    entregasResponse.json()
+  ]);
+  const pendentes = usuarios.filter(usuario => usuario.perfil === 'HOSPITAL' && !usuario.aprovado);
+  const corpoSolicitacoes = document.getElementById('solicitacoesHospital');
+  corpoSolicitacoes.replaceChildren();
+  if (pendentes.length === 0) {
+    const row = document.createElement('tr');
+    const cell = document.createElement('td');
+    cell.colSpan = 4;
+    cell.textContent = 'Nenhuma solicitação pendente.';
+    row.append(cell);
+    corpoSolicitacoes.append(row);
+  } else {
+    pendentes.forEach(usuario => {
+      const row = document.createElement('tr');
+      for (const value of [usuario.nome, usuario.usuario, usuario.hospitalNome || 'Hospital não informado']) {
+        const cell = document.createElement('td');
+        cell.textContent = value;
+        row.append(cell);
+      }
+      const actionCell = document.createElement('td');
+      const button = document.createElement('button');
+      button.className = 'btn btn-teal btn-sm';
+      button.type = 'button';
+      button.textContent = 'Aprovar';
+      button.addEventListener('click', () => aprovarContaHospital(usuario.id, button));
+      actionCell.append(button);
+      row.append(actionCell);
+      corpoSolicitacoes.append(row);
+    });
+  }
+  document.getElementById('contaHospital').replaceChildren(
+    new Option('Selecione um hospital', ''),
+    ...hospitais.filter(hospital => hospital.ativo)
+      .map(hospital => new Option(`${hospital.nome} (#${hospital.id})`, hospital.id))
+  );
+  document.getElementById('motoristaAtribuicao').replaceChildren(
+    ...usuarios.filter(usuario => usuario.perfil === 'MOTORISTA')
+      .map(usuario => new Option(`${usuario.nome} (${usuario.usuario})`, usuario.id))
+  );
+  document.getElementById('entregaAtribuicao').replaceChildren(
+    ...entregas.map(entrega => new Option(
+      `#${entrega.entregaId} · ${entrega.nomeHospital} · ${entrega.lote}`,
+      entrega.entregaId
+    ))
+  );
+}
+
+const contaPerfil = document.getElementById('contaPerfil');
+const contaHospital = document.getElementById('contaHospital');
+contaPerfil.addEventListener('change', () => {
+  contaHospital.disabled = contaPerfil.value !== 'HOSPITAL';
+});
+
+async function aprovarContaHospital(contaId, button) {
+  const mensagem = document.getElementById('msgAprovacao');
+  button.disabled = true;
+  try {
+    const response = await fetch(`/api/v1/auth/usuarios/${contaId}/aprovar`, { method: 'POST' });
+    const result = await response.json();
+    if (!response.ok) throw new Error(result.erro || `Falha ao aprovar conta (HTTP ${response.status}).`);
+    mensagem.textContent = `Acesso hospitalar de ${result.nome} aprovado.`;
+    await inicializarContasOperacionais();
+  } catch (error) {
+    mensagem.textContent = error.message || 'Não foi possível aprovar a conta.';
+    button.disabled = false;
+  }
+}
+
+async function criarContaOperacional() {
+  const perfil = contaPerfil.value;
+  const mensagem = document.getElementById('msgConta');
+  try {
+    const response = await fetch('/api/v1/auth/usuarios', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        usuario: document.getElementById('contaUsuario').value,
+        senha: document.getElementById('contaSenha').value,
+        nome: document.getElementById('contaNome').value,
+        perfil,
+        hospitalId: perfil === 'HOSPITAL' ? Number(contaHospital.value) : null
+      })
+    });
+    const result = await response.json();
+    if (!response.ok) throw new Error(result.erro || `Falha ao criar conta (HTTP ${response.status}).`);
+    mensagem.textContent = `Conta ${result.usuario} criada para o perfil ${result.perfil}.`;
+    document.getElementById('contaNome').value = '';
+    document.getElementById('contaUsuario').value = '';
+    document.getElementById('contaSenha').value = '';
+    await inicializarContasOperacionais();
+  } catch (error) {
+    mensagem.textContent = error.message || 'Não foi possível criar a conta.';
+  }
+}
+
+async function atribuirEntrega() {
+  const mensagem = document.getElementById('msgAtribuicao');
+  const entregaId = document.getElementById('entregaAtribuicao').value;
+  const motoristaId = document.getElementById('motoristaAtribuicao').value;
+  try {
+    if (!entregaId || !motoristaId) throw new Error('Selecione uma entrega e um motorista.');
+    const response = await fetch(`/api/v1/entregas/${entregaId}/motorista`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ motoristaId: Number(motoristaId) })
+    });
+    if (!response.ok) throw new Error(`Falha ao atribuir entrega (HTTP ${response.status}).`);
+    mensagem.textContent = `Entrega #${entregaId} atribuída ao motorista selecionado.`;
+  } catch (error) {
+    mensagem.textContent = error.message || 'Não foi possível atribuir a entrega.';
+  }
+}
+
+inicializarContasOperacionais().catch(error => {
+  document.getElementById('msgConta').textContent =
+    error.message || 'Falha ao preparar contas operacionais.';
+});
+</script>
+</body>
+</html>

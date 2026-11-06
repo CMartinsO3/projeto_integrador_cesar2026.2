@@ -3,6 +3,7 @@ package com.hemoflow.hemoflow.api;
 import java.util.List;
 
 import org.springframework.http.HttpStatus;
+import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -21,6 +22,7 @@ import com.hemoflow.hemoflow.estoque.EstoqueService;
 import com.hemoflow.hemoflow.estoque.ProcessadorPedidoService;
 import com.hemoflow.hemoflow.persistencia.RequisicaoRepository;
 
+import jakarta.servlet.http.HttpSession;
 import jakarta.validation.Valid;
 
 @RestController
@@ -43,30 +45,45 @@ public class RequisicaoController {
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public RequisicaoDTOs.Resposta criar(@Valid @RequestBody RequisicaoDTOs.Cadastro dto) {
-        return RequisicaoDTOs.Resposta.de(estoqueService.criarRequisicao(dto));
+    public RequisicaoDTOs.Resposta criar(
+            @Valid @RequestBody RequisicaoDTOs.Cadastro dto,
+            HttpSession session
+    ) {
+        Long hospitalId = hospitalIdDaSessao(session);
+        RequisicaoDTOs.Cadastro cadastro = hospitalId == null
+                ? dto
+                : new RequisicaoDTOs.Cadastro(
+                        hospitalId, dto.tipoSanguineo(), dto.hemocomponente(),
+                        dto.quantidade(), dto.janelaEntrega());
+        return RequisicaoDTOs.Resposta.de(estoqueService.criarRequisicao(cadastro));
     }
 
     @GetMapping
     public List<RequisicaoDTOs.Resposta> listar(
             @RequestParam(required = false) StatusRequisicao status,
-            @RequestParam(required = false) Long hospitalId
+            @RequestParam(required = false) Long hospitalId,
+            HttpSession session
     ) {
+        Long hospitalDaConta = hospitalIdDaSessao(session);
+        Long hospitalFiltro = hospitalDaConta == null ? hospitalId : hospitalDaConta;
         var lista = status == null ? requisicaoRepository.findAll() : requisicaoRepository.findByStatus(status);
-        if (hospitalId != null) {
+        if (hospitalFiltro != null) {
             lista = lista.stream()
-                    .filter(requisicao -> requisicao.getHospital().getId().equals(hospitalId))
+                    .filter(requisicao -> requisicao.getHospital().getId().equals(hospitalFiltro))
                     .toList();
         }
         return lista.stream().map(RequisicaoDTOs.Resposta::de).toList();
     }
 
     @GetMapping("/{id}")
-    public RequisicaoDTOs.Resposta buscar(@PathVariable Long id) {
-        return RequisicaoDTOs.Resposta.de(
-                requisicaoRepository.findById(id)
-                        .orElseThrow(() -> new RecursoNaoEncontradoException("Requisição não encontrada: " + id))
-        );
+    public RequisicaoDTOs.Resposta buscar(@PathVariable Long id, HttpSession session) {
+        var requisicao = requisicaoRepository.findById(id)
+                .orElseThrow(() -> new RecursoNaoEncontradoException("Requisição não encontrada: " + id));
+        Long hospitalId = hospitalIdDaSessao(session);
+        if (hospitalId != null && !requisicao.getHospital().getId().equals(hospitalId)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN);
+        }
+        return RequisicaoDTOs.Resposta.de(requisicao);
     }
 
     @PostMapping("/{id}/alocar")
@@ -108,5 +125,16 @@ public class RequisicaoController {
             double distanciaTotalKm,
             boolean alertaCadeiaFria
     ) {
+    }
+
+    private Long hospitalIdDaSessao(HttpSession session) {
+        if (!"HOSPITAL".equals(session.getAttribute("role"))) {
+            return null;
+        }
+        Object hospitalId = session.getAttribute("hospitalId");
+        if (hospitalId instanceof Long id) {
+            return id;
+        }
+        throw new ResponseStatusException(HttpStatus.FORBIDDEN);
     }
 }

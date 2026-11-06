@@ -12,17 +12,15 @@
   <nav>
     <a href="/">Operações</a>
     <a class="is-active" href="/requisicoes-hospital">Requisições</a>
-    <a href="/rotas">Rotas</a>
-    <a href="/motorista">Motorista</a>
-    <a href="/monitoramento">Monitoramento</a>
+    <a id="logoutLink" href="#" style="display:none">Sair</a>
   </nav>
 </header>
 <main class="wrap page-content">
   <section class="section-head">
-    <div><p class="kicker">US 2 · US 10</p><h1>Requisições hospitalares</h1></div>
+    <div><p class="kicker">ATENDIMENTO HOSPITALAR</p><h1>Requisições hospitalares</h1></div>
     <p>Crie pedidos e acompanhe o status registrado pelo hemocentro.</p>
   </section>
-  <p class="notice notice-warn">Tela didática sem autenticação. Os hospitais e pedidos exibidos são dados do ambiente de demonstração.</p>
+  <p class="notice notice-warn">Acesso restrito à conta hospitalar autenticada. Cada hospital consulta e cria apenas as próprias requisições.</p>
   <div class="grid grid-2">
     <section class="card">
       <h2>Criar requisição</h2>
@@ -72,6 +70,7 @@
   const statusForm = document.getElementById('formStatus');
   const statusList = document.getElementById('listStatus');
   const rows = document.getElementById('requestRows');
+  let session;
 
   function setOptions(select, values, placeholder) {
     select.replaceChildren(new Option(placeholder, ''));
@@ -83,12 +82,28 @@
   }
 
   async function loadHospitals() {
-    const response = await fetch('/api/v1/hospitais');
-    if (!response.ok) throw new Error(`Falha ao carregar hospitais (HTTP ${response.status}).`);
-    const hospitals = (await response.json()).filter(hospital => hospital.ativo);
+    const sessionResponse = await fetch('/api/v1/auth/sessao');
+    if (!sessionResponse.ok) throw new Error(`Falha ao verificar sessão (HTTP ${sessionResponse.status}).`);
+    session = await sessionResponse.json();
+    if (!session.logado || !['HOSPITAL', 'ADMIN'].includes(session.role)) {
+      window.location.href = '/login-hospital';
+      return;
+    }
+    const hospitals = session.role === 'HOSPITAL'
+      ? [{ id: session.hospitalId, nome: session.hospitalNome, ativo: true }]
+      : (await fetch('/api/v1/hospitais').then(response => {
+          if (!response.ok) throw new Error(`Falha ao carregar hospitais (HTTP ${response.status}).`);
+          return response.json();
+        })).filter(hospital => hospital.ativo);
     const options = hospitals.map(hospital => [`${hospital.nome} (#${hospital.id})`, hospital.id]);
     setOptions(hospitalSelect, options, 'Selecione um hospital');
     setOptions(filterSelect, options, 'Selecione um hospital');
+    if (session.role === 'HOSPITAL') {
+      hospitalSelect.value = String(session.hospitalId);
+      hospitalSelect.disabled = true;
+      filterSelect.value = String(session.hospitalId);
+      await loadRequests(session.hospitalId);
+    }
   }
 
   async function loadRequests(hospitalId) {
@@ -163,10 +178,16 @@
       statusList.textContent = error.message || 'Não foi possível consultar os pedidos.';
     });
   });
+  document.getElementById('logoutLink').addEventListener('click', async event => {
+    event.preventDefault();
+    await fetch('/api/v1/auth/logout', { method: 'POST' });
+    window.location.href = '/login-hospital';
+  });
   loadHospitals().catch(error => {
     statusForm.textContent = error.message || 'Não foi possível carregar hospitais.';
     statusForm.classList.add('error');
   });
+  document.getElementById('logoutLink').style.display = '';
 })();
 </script>
 </body>

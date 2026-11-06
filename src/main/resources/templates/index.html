@@ -3,28 +3,50 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>HemoFlow — Central de Operações</title>
+    <title>HemoFlow — Visão geral</title>
     <link rel="stylesheet" href="/css/hemoflow.css">
 </head>
 <body>
 <a class="skip" href="#conteudo">Ir ao conteúdo</a>
-<header class="topbar">
+<header class="topbar home-topbar">
     <a class="brand" href="/">
         <span class="mark" aria-hidden="true">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3c-1.8 3.2-6 6.4-6 10.2A6 6 0 0 0 12 21a6 6 0 0 0 6-7.8C18 9.4 13.8 6.2 12 3Z"/><path d="M12 11v6M9 14h6"/></svg>
         </span>
         <span><strong>HemoFlow</strong><em>Hemorrede clínica</em></span>
     </a>
-    <nav>
-        <a class="is-active" href="/">Operações</a>
-        <a href="/mapa">Onde doar</a>
-        <a href="/rotas">Rotas</a>
-        <a href="/requisicoes-hospital">Requisições</a>
-        <a href="/monitoramento">Monitoramento</a>
-        <a href="/bolsas-painel">Estoque</a>
-        <a href="/docs">API</a>
+    <nav aria-label="Navegação principal">
         <a class="btn btn-ghost" href="/login-admin">Equipe clínica</a>
         <span data-auth-nav><a class="btn btn-primary" href="/login-usuario">Área do doador</a></span>
+        <details class="home-menu">
+            <summary class="btn btn-ghost">Menu</summary>
+            <div class="home-menu-panel">
+                <div>
+                    <span class="home-menu-label">Doação</span>
+                    <a href="/mapa">Onde doar</a>
+                </div>
+                <div>
+                    <span class="home-menu-label">Acessos operacionais</span>
+                    <a href="/login-hospital">Acesso hospital</a>
+                    <a href="/login-motorista">Acesso motorista</a>
+                    <a href="/cadastro-operacional">Criar cadastro operacional</a>
+                </div>
+                <div>
+                    <span class="home-menu-label">Rede e entregas</span>
+                    <a href="/rotas">Rotas</a>
+                    <a href="/requisicoes-hospital">Requisições</a>
+                </div>
+                <div>
+                    <span class="home-menu-label">Estoque e monitoramento</span>
+                    <a href="/monitoramento">Monitoramento</a>
+                    <a href="/bolsas-painel">Estoque</a>
+                </div>
+                <div>
+                    <span class="home-menu-label">Desenvolvimento</span>
+                    <a href="/docs">Documentação da API</a>
+                </div>
+            </div>
+        </details>
     </nav>
 </header>
 
@@ -35,7 +57,6 @@
         <p class="lede">Uma central silenciosa para a malha de hemocomponentes: estoque, requisições hospitalares e vigilância de validade — com a serenidade de um ambiente de cuidado.</p>
         <div class="hero-actions">
             <a class="btn btn-primary" href="/doe-agora">Quero doar</a>
-            <a class="btn btn-ghost" href="/dashboard-admin">Painel da equipe</a>
         </div>
     </div>
     <aside class="hero-panel" aria-label="Resumo da unidade">
@@ -159,24 +180,20 @@
         </article>
     </div>
 
-    <div class="section-head">
-        <div>
-            <p class="kicker">Integração</p>
-            <h2>Portas da plataforma</h2>
+    <details class="api-disclosure">
+        <summary>Acessos técnicos da plataforma</summary>
+        <div class="api-grid">
+            <a class="api-link" href="/api/v1/estatisticas/estoque"><span class="chip chip-get">GET</span> /estatisticas/estoque</a>
+            <a class="api-link" href="/api/v1/estatisticas/requisicoes"><span class="chip chip-get">GET</span> /estatisticas/requisicoes</a>
+            <a class="api-link" href="/api/v1/bolsas"><span class="chip chip-get">GET</span> /bolsas</a>
+            <a class="api-link" href="/api/v1/requisicoes"><span class="chip chip-get">GET</span> /requisicoes</a>
+            <a class="api-link" href="/api/v1/hospitais"><span class="chip chip-get">GET</span> /hospitais</a>
+            <a class="api-link" href="#"><span class="chip chip-patch">PATCH</span> /bolsas/{id}/status</a>
+            <a class="api-link" href="#"><span class="chip chip-patch">PATCH</span> /requisicoes/{id}/status</a>
+            <a class="api-link" href="/h2-console">Console H2</a>
+            <a class="api-link" href="/docs">Swagger</a>
         </div>
-        <p>Acesso técnico à malha — com o mesmo cuidado da enfermagem.</p>
-    </div>
-    <div class="api-grid">
-        <a class="api-link" href="/api/v1/estatisticas/estoque"><span class="chip chip-get">GET</span> /estatisticas/estoque</a>
-        <a class="api-link" href="/api/v1/estatisticas/requisicoes"><span class="chip chip-get">GET</span> /estatisticas/requisicoes</a>
-        <a class="api-link" href="/api/v1/bolsas"><span class="chip chip-get">GET</span> /bolsas</a>
-        <a class="api-link" href="/api/v1/requisicoes"><span class="chip chip-get">GET</span> /requisicoes</a>
-        <a class="api-link" href="/api/v1/hospitais"><span class="chip chip-get">GET</span> /hospitais</a>
-        <a class="api-link" href="#"><span class="chip chip-patch">PATCH</span> /bolsas/{id}/status</a>
-        <a class="api-link" href="#"><span class="chip chip-patch">PATCH</span> /requisicoes/{id}/status</a>
-        <a class="api-link" href="/h2-console">Console H2</a>
-        <a class="api-link" href="/docs">Swagger</a>
-    </div>
+    </details>
 </main>
 
 <footer class="site-footer">
