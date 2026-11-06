@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Criar cadastro operacional — HemoFlow</title>
+  <link rel="stylesheet" href="/css/hemoflow.css">
+</head>
+<body>
+<div class="auth-shell">
+  <aside class="auth-story">
+    <a class="brand" href="/" style="color:#fff">
+      <span class="mark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3c-1.8 3.2-6 6.4-6 10.2A6 6 0 0 0 12 21a6 6 0 0 0 6-7.8C18 9.4 13.8 6.2 12 3Z"/><path d="M12 11v6M9 14h6"/></svg></span>
+      <span><strong>HemoFlow</strong><em style="color:#9db5b3">Cadastro operacional</em></span>
+    </a>
+    <div>
+      <p class="quote">Acesso operacional <em>individual.</em></p>
+      <small>Crie sua conta de motorista ou solicite acesso como representante de um hospital.</small>
+    </div>
+    <small>Não compartilhe sua senha.</small>
+  </aside>
+  <main class="auth-form">
+    <div class="auth-card">
+      <p class="kicker">Novo acesso</p>
+      <h1>Criar cadastro</h1>
+      <p class="sub">Motoristas acessam após o cadastro. Contas hospitalares precisam ser aprovadas pela equipe clínica.</p>
+      <form id="cadastroForm" class="form-stack">
+        <label for="nome">Nome completo</label>
+        <input id="nome" autocomplete="name" maxlength="160" required>
+        <label for="usuario">Usuário</label>
+        <input id="usuario" autocomplete="username" maxlength="120" required>
+        <label for="senha">Senha (mínimo de 8 caracteres)</label>
+        <input id="senha" type="password" autocomplete="new-password" minlength="8" maxlength="72" required>
+        <label for="perfil">Perfil</label>
+        <select id="perfil" required>
+          <option value="MOTORISTA">Motorista</option>
+          <option value="HOSPITAL">Hospital</option>
+        </select>
+        <div id="hospitalGroup" hidden>
+          <label for="hospitalId">Hospital</label>
+          <select id="hospitalId">
+            <option value="">Carregando hospitais...</option>
+          </select>
+        </div>
+        <button id="submitButton" class="btn btn-primary btn-full" type="submit">Criar cadastro</button>
+      </form>
+      <div id="mensagem" class="alert" role="status" aria-live="polite"></div>
+      <div class="auth-links">
+        <a id="loginLink" href="/login-motorista">Já tenho cadastro</a>
+        <a href="/">Voltar à central</a>
+      </div>
+    </div>
+  </main>
+</div>
+<script>
+const perfil = document.getElementById('perfil');
+const hospitalGroup = document.getElementById('hospitalGroup');
+const hospitalId = document.getElementById('hospitalId');
+const mensagem = document.getElementById('mensagem');
+const loginLink = document.getElementById('loginLink');
+
+async function carregarHospitais() {
+  const response = await fetch('/api/v1/hospitais');
+  if (!response.ok) throw new Error(`Não foi possível carregar hospitais (HTTP ${response.status}).`);
+  const hospitais = await response.json();
+  hospitalId.replaceChildren(
+    new Option('Selecione seu hospital', ''),
+    ...hospitais.filter(hospital => hospital.ativo)
+      .map(hospital => new Option(hospital.nome, hospital.id))
+  );
+}
+
+function atualizarPerfil() {
+  const hospital = perfil.value === 'HOSPITAL';
+  hospitalGroup.hidden = !hospital;
+  hospitalId.required = hospital;
+  loginLink.href = hospital ? '/login-hospital' : '/login-motorista';
+}
+
+perfil.addEventListener('change', atualizarPerfil);
+atualizarPerfil();
+carregarHospitais().catch(error => {
+  mensagem.textContent = error.message || 'Não foi possível carregar a lista de hospitais.';
+  mensagem.classList.add('show');
+});
+
+document.getElementById('cadastroForm').addEventListener('submit', async event => {
+  event.preventDefault();
+  mensagem.classList.remove('show', 'ok');
+  const button = document.getElementById('submitButton');
+  button.disabled = true;
+  try {
+    const response = await fetch('/api/v1/auth/cadastro-operacional', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        nome: document.getElementById('nome').value,
+        usuario: document.getElementById('usuario').value,
+        senha: document.getElementById('senha').value,
+        perfil: perfil.value,
+        hospitalId: perfil.value === 'HOSPITAL' ? Number(hospitalId.value) : null
+      })
+    });
+    const result = await response.json();
+    if (!response.ok) throw new Error(result.erro || `Falha ao criar cadastro (HTTP ${response.status}).`);
+    if (result.redirect) {
+      window.location.href = result.redirect;
+      return;
+    }
+    mensagem.textContent = result.mensagem || 'Cadastro enviado para aprovação da equipe clínica.';
+    mensagem.classList.add('show', 'ok');
+    event.target.reset();
+    atualizarPerfil();
+  } catch (error) {
+    mensagem.textContent = error.message || 'Não foi possível criar o cadastro.';
+    mensagem.classList.add('show');
+  } finally {
+    button.disabled = false;
+  }
+});
+</script>
+</body>
+</html>

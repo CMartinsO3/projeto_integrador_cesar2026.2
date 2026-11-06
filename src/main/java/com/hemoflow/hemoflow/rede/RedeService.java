@@ -176,6 +176,13 @@ public class RedeService {
         return noRedeRepository.save(no);
     }
 
+    @Transactional
+    public NoRede registrarHeartbeat(Long noId) {
+        NoRede no = buscarNo(noId);
+        no.registrarHeartbeat();
+        return noRedeRepository.save(no);
+    }
+
     private NoRede salvarCoordenadas(NoRede no, Double latitude, Double longitude) {
         no.setLatitude(latitude);
         no.setLongitude(longitude);

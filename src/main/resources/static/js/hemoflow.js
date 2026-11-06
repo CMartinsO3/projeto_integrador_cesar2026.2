@@ -32,8 +32,6 @@ window.HF = {
           const nome = (s.nome || 'Doador').split(' ')[0];
           el.innerHTML = '<a class="btn btn-primary" href="/dashboard-usuario">Olá, ' + nome + '</a>';
           document.querySelectorAll('a[href="/doe-agora"]').forEach(a => { a.style.display = 'none'; });
-        } else if (s.logado && s.role === 'ADMIN') {
-          el.innerHTML = '<a class="btn btn-teal" href="/dashboard-admin">Sala de operações</a>';
         }
       });
     }).catch(() => {});

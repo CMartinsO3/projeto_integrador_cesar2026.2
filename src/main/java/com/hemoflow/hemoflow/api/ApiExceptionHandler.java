@@ -7,6 +7,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
@@ -45,6 +46,18 @@ public class ApiExceptionHandler {
                 422,
                 "Regra de negócio violada",
                 ex.getMessage(),
+                List.of()
+        ));
+    }
+
+    @ExceptionHandler(ResponseStatusException.class)
+    public ResponseEntity<ErroResposta> status(ResponseStatusException ex) {
+        int status = ex.getStatusCode().value();
+        return ResponseEntity.status(ex.getStatusCode()).body(new ErroResposta(
+                LocalDateTime.now(),
+                status,
+                "Acesso negado",
+                ex.getReason() == null ? "A operação não está autorizada" : ex.getReason(),
                 List.of()
         ));
     }

@@ -33,6 +33,10 @@ public class Entrega {
     @JoinColumn(name = "bolsa_id", nullable = false)
     private Bolsa bolsa;
 
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "motorista_id")
+    private ContaOperacional motorista;
+
     @ElementCollection
     @CollectionTable(name = "entrega_rota", joinColumns = @JoinColumn(name = "entrega_id"))
     @OrderColumn(name = "ordem")
@@ -85,6 +89,14 @@ public class Entrega {
 
     public Bolsa getBolsa() {
         return bolsa;
+    }
+
+    public ContaOperacional getMotorista() {
+        return motorista;
+    }
+
+    public void atribuirMotorista(ContaOperacional motorista) {
+        this.motorista = motorista;
     }
 
     public List<Long> getRotaNoIds() {

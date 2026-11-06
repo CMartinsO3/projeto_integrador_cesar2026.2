@@ -11,17 +11,16 @@
   <a class="brand" href="/"><span class="mark" aria-hidden="true">H</span><span><strong>HemoFlow</strong><em>Entrega · demonstração</em></span></a>
   <nav>
     <a href="/">Operações</a>
-    <a href="/requisicoes-hospital">Requisições</a>
     <a class="is-active" href="/motorista">Motorista</a>
-    <a href="/monitoramento">Monitoramento</a>
+    <a id="logoutLink" href="#" style="display:none">Sair</a>
   </nav>
 </header>
 <main class="wrap page-content">
   <section class="section-head">
-    <div><p class="kicker">US 6</p><h1>Acompanhamento da entrega</h1></div>
+    <div><p class="kicker">LOGÍSTICA</p><h1>Acompanhamento da entrega</h1></div>
     <p>Rotas, previsão de chegada, próximo ponto e atualização de status.</p>
   </section>
-  <p class="notice notice-warn">Tela de demonstração sem login. Rotas e estimativas não substituem navegação ou orientação clínica.</p>
+  <p class="notice notice-warn">Acesso restrito. São exibidas apenas entregas atribuídas à conta autenticada. Rotas e estimativas não substituem navegação ou orientação clínica.</p>
   <p id="deliveryStatus" class="msg" role="status" aria-live="polite">Carregando entregas...</p>
   <section id="deliveries" class="grid grid-2"></section>
 </main>
@@ -127,7 +126,26 @@
     status.textContent = entries.length ? `${grouped.size} entrega(s) em acompanhamento.` : 'Não há entregas alocadas ou em trânsito.';
   }
 
-  loadDeliveries().catch(error => { status.textContent = error.message || 'Não foi possível carregar as entregas.'; });
+  async function validarSessao() {
+    const response = await fetch('/api/v1/auth/sessao');
+    if (!response.ok) throw new Error(`Falha ao verificar sessão (HTTP ${response.status}).`);
+    const session = await response.json();
+    if (!session.logado || !['MOTORISTA', 'ADMIN'].includes(session.role)) {
+      window.location.href = '/login-motorista';
+      return false;
+    }
+    return true;
+  }
+
+  document.getElementById('logoutLink').addEventListener('click', async event => {
+    event.preventDefault();
+    await fetch('/api/v1/auth/logout', { method: 'POST' });
+    window.location.href = '/login-motorista';
+  });
+  document.getElementById('logoutLink').style.display = '';
+  validarSessao()
+    .then(autorizado => autorizado && loadDeliveries())
+    .catch(error => { status.textContent = error.message || 'Não foi possível verificar a sessão.'; });
   window.setInterval(() => loadDeliveries().catch(error => { status.textContent = error.message; }), 15000);
 })();
 </script>
