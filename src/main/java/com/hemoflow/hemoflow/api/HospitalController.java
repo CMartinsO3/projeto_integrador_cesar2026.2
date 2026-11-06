@@ -56,7 +56,8 @@ public class HospitalController {
                 com.hemoflow.hemoflow.dominio.TipoNo.HOSPITAL
         );
         Hospital hospital = redeService.criarHospital(noDto);
-        if (dto.latitude() != null && dto.longitude() != null) {
+        if (dto.latitude() != null || dto.longitude() != null) {
+            redeService.atualizarCoordenadasNo(hospital.getLocalizacao().getId(), dto.latitude(), dto.longitude());
             hospital.setLatitude(dto.latitude());
             hospital.setLongitude(dto.longitude());
             hospital = redeService.salvarHospital(hospital);

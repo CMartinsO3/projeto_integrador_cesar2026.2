@@ -3,7 +3,7 @@ package com.hemoflow.hemoflow.dominio;
 public enum Hemocomponente {
     HEMACIAS(120, "Hemácias"),
     PLASMA(120, "Plasma"),
-    PLAQUETAS(90, "Plaquetas"),
+    PLAQUETAS(120, "Plaquetas"),
     CRIOPRECIPITADO(120, "Crioprecipitado");
 
     private final int limiteCadeiaFriaMinutos;

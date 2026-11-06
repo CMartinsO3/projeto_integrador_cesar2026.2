@@ -1,6 +1,8 @@
 package com.hemoflow.hemoflow.rede;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -8,9 +10,11 @@ import org.springframework.transaction.annotation.Transactional;
 import com.hemoflow.hemoflow.api.RecursoNaoEncontradoException;
 import com.hemoflow.hemoflow.api.RegraNegocioException;
 import com.hemoflow.hemoflow.api.dto.NoRedeDTOs;
+import com.hemoflow.hemoflow.grafo.Grafo;
 import com.hemoflow.hemoflow.dominio.Hospital;
 import com.hemoflow.hemoflow.dominio.Ligacao;
 import com.hemoflow.hemoflow.dominio.NoRede;
+import com.hemoflow.hemoflow.dominio.StatusConectividade;
 import com.hemoflow.hemoflow.dominio.TipoNo;
 import com.hemoflow.hemoflow.persistencia.HospitalRepository;
 import com.hemoflow.hemoflow.persistencia.LigacaoRepository;
@@ -33,6 +37,60 @@ public class RedeService {
         this.hospitalRepository = hospitalRepository;
     }
 
+    /**
+     * Monta o grafo a partir dos nós e ligações persistidos e executa o
+     * algoritmo do vizinho mais próximo, escolhendo a ligação de menor tempo
+     * entre os vizinhos ainda não visitados. As ligações são direcionadas.
+     */
+    @Transactional(readOnly = true)
+    public RotaCalculada calcularRotaVizinhoMaisProximo(Long origemId, Long destinoId) {
+        NoRede origem = buscarNo(origemId);
+        NoRede destino = buscarNo(destinoId);
+        Grafo grafo = new Grafo();
+        List<NoRede> nos = noRedeRepository.findAll();
+        Map<String, NoRede> nosPorId = new HashMap<>();
+        for (NoRede no : nos) {
+            String idNo = String.valueOf(no.getId());
+            grafo.adicionarNo(idNo);
+            nosPorId.put(idNo, no);
+        }
+        List<Ligacao> ligacoes = ligacaoRepository.findAll();
+        Map<LigacaoIds, Double> distanciasPorLigacao = new HashMap<>();
+        for (Ligacao ligacao : ligacoes) {
+            Long idOrigem = ligacao.getOrigem().getId();
+            Long idDestino = ligacao.getDestino().getId();
+            grafo.adicionarAresta(
+                    String.valueOf(idOrigem),
+                    String.valueOf(idDestino),
+                    ligacao.getTempoMinutos(),
+                    ligacao.getDistanciaKm());
+            distanciasPorLigacao.putIfAbsent(
+                    new LigacaoIds(idOrigem, idDestino), ligacao.getDistanciaKm());
+        }
+        var resultado = grafo.calcularVizinhoMaisProximo(String.valueOf(origemId), String.valueOf(destinoId));
+        List<NoRede> caminho = resultado.rota().stream()
+                .map(nosPorId::get)
+                .toList();
+        double distanciaTotalKm = 0;
+        for (int i = 1; i < caminho.size(); i++) {
+            Long idOrigem = caminho.get(i - 1).getId();
+            Long idDestino = caminho.get(i).getId();
+            distanciaTotalKm += distanciasPorLigacao.get(new LigacaoIds(idOrigem, idDestino));
+        }
+        return new RotaCalculada(caminho, resultado.custoTotal(), distanciaTotalKm, resultado.encontrado());
+    }
+
+    private record LigacaoIds(Long origemId, Long destinoId) {
+    }
+
+    public record RotaCalculada(
+            List<NoRede> nos, long tempoTotalMinutos, double distanciaTotalKm, boolean encontrada
+    ) {
+        public RotaCalculada(List<NoRede> nos, long tempoTotalMinutos, boolean encontrada) {
+            this(nos, tempoTotalMinutos, 0, encontrada);
+        }
+    }
+
     @Transactional(readOnly = true)
     public List<NoRede> listarNos() {
         return noRedeRepository.findAll();
@@ -49,10 +107,14 @@ public class RedeService {
         if (noRedeRepository.existsByCodigo(dto.codigo())) {
             throw new RegraNegocioException("Já existe nó com código " + dto.codigo());
         }
-        NoRede no = new NoRede(dto.codigo(), dto.nome(), dto.tipo());
+        validarCoordenadas(dto.latitude(), dto.longitude());
+        NoRede no = new NoRede(dto.codigo(), dto.nome(), dto.tipo(), dto.latitude(), dto.longitude());
         no = noRedeRepository.save(no);
         if (dto.tipo() == TipoNo.HOSPITAL) {
-            hospitalRepository.save(new Hospital(dto.nome(), no));
+            Hospital hospital = new Hospital(dto.nome(), no);
+            hospital.setLatitude(dto.latitude());
+            hospital.setLongitude(dto.longitude());
+            hospitalRepository.save(hospital);
         }
         return no;
     }
@@ -65,6 +127,10 @@ public class RedeService {
                 .ifPresent(existente -> {
                     throw new RegraNegocioException("Já existe nó com código " + dto.codigo());
                 });
+        if (dto.latitude() != null || dto.longitude() != null) {
+            validarCoordenadas(dto.latitude(), dto.longitude());
+            salvarCoordenadas(no, dto.latitude(), dto.longitude());
+        }
         no.setCodigo(dto.codigo());
         no.setNome(dto.nome());
         no.setTipo(dto.tipo());
@@ -89,7 +155,49 @@ public class RedeService {
         }
         NoRede origem = buscarNo(origemId);
         NoRede destino = buscarNo(destinoId);
+        if (origem.getLatitude() == null || origem.getLongitude() == null
+                || destino.getLatitude() == null || destino.getLongitude() == null) {
+            throw new RegraNegocioException("Os nós da ligação precisam ter latitude e longitude cadastradas");
+        }
         return ligacaoRepository.save(new Ligacao(origem, destino, tempoMinutos));
+    }
+
+    @Transactional
+    public NoRede atualizarCoordenadasNo(Long noId, Double latitude, Double longitude) {
+        validarCoordenadas(latitude, longitude);
+        NoRede no = buscarNo(noId);
+        return salvarCoordenadas(no, latitude, longitude);
+    }
+
+    @Transactional
+    public NoRede atualizarStatusConectividade(Long noId, StatusConectividade status) {
+        NoRede no = buscarNo(noId);
+        no.atualizarStatusConectividade(status);
+        return noRedeRepository.save(no);
+    }
+
+    private NoRede salvarCoordenadas(NoRede no, Double latitude, Double longitude) {
+        no.setLatitude(latitude);
+        no.setLongitude(longitude);
+        noRedeRepository.save(no);
+        hospitalRepository.findByLocalizacao(no).ifPresent(hospital -> {
+            hospital.setLatitude(latitude);
+            hospital.setLongitude(longitude);
+            hospitalRepository.save(hospital);
+        });
+        return no;
+    }
+
+    private void validarCoordenadas(Double latitude, Double longitude) {
+        if ((latitude == null) != (longitude == null)) {
+            throw new RegraNegocioException("Latitude e longitude devem ser informadas juntas");
+        }
+        if (latitude != null && (!Double.isFinite(latitude) || latitude < -90 || latitude > 90)) {
+            throw new RegraNegocioException("Latitude deve estar entre -90 e 90");
+        }
+        if (longitude != null && (!Double.isFinite(longitude) || longitude < -180 || longitude > 180)) {
+            throw new RegraNegocioException("Longitude deve estar entre -180 e 180");
+        }
     }
 
     @Transactional(readOnly = true)
@@ -131,4 +239,3 @@ public class RedeService {
         return hospitalRepository.save(hospital);
     }
 }
-

@@ -14,9 +14,11 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.hemoflow.hemoflow.api.dto.BolsaDTOs;
+import com.hemoflow.hemoflow.api.dto.NoRedeDTOs;
 import com.hemoflow.hemoflow.api.dto.RequisicaoDTOs;
 import com.hemoflow.hemoflow.dominio.StatusRequisicao;
 import com.hemoflow.hemoflow.estoque.EstoqueService;
+import com.hemoflow.hemoflow.estoque.ProcessadorPedidoService;
 import com.hemoflow.hemoflow.persistencia.RequisicaoRepository;
 
 import jakarta.validation.Valid;
@@ -26,10 +28,16 @@ import jakarta.validation.Valid;
 public class RequisicaoController {
 
     private final EstoqueService estoqueService;
+    private final ProcessadorPedidoService processadorPedidoService;
     private final RequisicaoRepository requisicaoRepository;
 
-    public RequisicaoController(EstoqueService estoqueService, RequisicaoRepository requisicaoRepository) {
+    public RequisicaoController(
+            EstoqueService estoqueService,
+            ProcessadorPedidoService processadorPedidoService,
+            RequisicaoRepository requisicaoRepository
+    ) {
         this.estoqueService = estoqueService;
+        this.processadorPedidoService = processadorPedidoService;
         this.requisicaoRepository = requisicaoRepository;
     }
 
@@ -40,8 +48,16 @@ public class RequisicaoController {
     }
 
     @GetMapping
-    public List<RequisicaoDTOs.Resposta> listar(@RequestParam(required = false) StatusRequisicao status) {
+    public List<RequisicaoDTOs.Resposta> listar(
+            @RequestParam(required = false) StatusRequisicao status,
+            @RequestParam(required = false) Long hospitalId
+    ) {
         var lista = status == null ? requisicaoRepository.findAll() : requisicaoRepository.findByStatus(status);
+        if (hospitalId != null) {
+            lista = lista.stream()
+                    .filter(requisicao -> requisicao.getHospital().getId().equals(hospitalId))
+                    .toList();
+        }
         return lista.stream().map(RequisicaoDTOs.Resposta::de).toList();
     }
 
@@ -55,7 +71,22 @@ public class RequisicaoController {
 
     @PostMapping("/{id}/alocar")
     public List<BolsaDTOs.Resposta> alocar(@PathVariable Long id) {
-        return estoqueService.alocar(id).stream().map(BolsaDTOs.Resposta::de).toList();
+        return processadorPedidoService.processarPedido(id).bolsas().stream().map(BolsaDTOs.Resposta::de).toList();
+    }
+
+    @PostMapping("/{id}/processar")
+    public ProcessamentoPedidoResposta processar(@PathVariable Long id) {
+        var resultado = processadorPedidoService.processarPedido(id);
+        List<EntregaPedidoResposta> entregas = resultado.entregas().stream()
+                .map(entrega -> new EntregaPedidoResposta(
+                        BolsaDTOs.Resposta.de(entrega.bolsa()),
+                        entrega.rota().nos().stream().map(NoRedeDTOs.Resposta::de).toList(),
+                        entrega.rota().tempoTotalMinutos(),
+                        entrega.rota().distanciaTotalKm(),
+                        entrega.alertaCadeiaFria()))
+                .toList();
+        return new ProcessamentoPedidoResposta(resultado.requisicao().getId(),
+                resultado.requisicao().getStatus(), entregas);
     }
 
     @PatchMapping("/{id}/status")
@@ -63,5 +94,19 @@ public class RequisicaoController {
             @PathVariable Long id,
             @Valid @RequestBody RequisicaoDTOs.AtualizacaoStatus dto) {
         return RequisicaoDTOs.Resposta.de(estoqueService.transicionarStatusRequisicao(id, dto.status()));
+    }
+
+    public record ProcessamentoPedidoResposta(
+            Long requisicaoId, StatusRequisicao status, List<EntregaPedidoResposta> entregas
+    ) {
+    }
+
+    public record EntregaPedidoResposta(
+            BolsaDTOs.Resposta bolsa,
+            List<NoRedeDTOs.Resposta> rota,
+            long tempoTotalMinutos,
+            double distanciaTotalKm,
+            boolean alertaCadeiaFria
+    ) {
     }
 }

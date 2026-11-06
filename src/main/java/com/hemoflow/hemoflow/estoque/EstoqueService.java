@@ -9,10 +9,12 @@ import java.util.Random;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.beans.factory.annotation.Autowired;
 
 import com.hemoflow.hemoflow.api.RecursoNaoEncontradoException;
 import com.hemoflow.hemoflow.api.RegraNegocioException;
 import com.hemoflow.hemoflow.dominio.Bolsa;
+import com.hemoflow.hemoflow.dominio.Entrega;
 import com.hemoflow.hemoflow.dominio.Hospital;
 import com.hemoflow.hemoflow.dominio.NoRede;
 import com.hemoflow.hemoflow.dominio.Requisicao;
@@ -22,6 +24,7 @@ import com.hemoflow.hemoflow.persistencia.BolsaRepository;
 import com.hemoflow.hemoflow.persistencia.HospitalRepository;
 import com.hemoflow.hemoflow.persistencia.NoRedeRepository;
 import com.hemoflow.hemoflow.persistencia.RequisicaoRepository;
+import com.hemoflow.hemoflow.rede.RedeService;
 
 @Service
 public class EstoqueService {
@@ -31,19 +34,40 @@ public class EstoqueService {
     private final HospitalRepository hospitalRepository;
     private final RequisicaoRepository requisicaoRepository;
     private final IndiceEstoque indiceEstoque;
+    private final ProcessadorPedidoService processadorPedidoService;
 
+    @Autowired
     public EstoqueService(
             BolsaRepository bolsaRepository,
             NoRedeRepository noRedeRepository,
             HospitalRepository hospitalRepository,
             RequisicaoRepository requisicaoRepository,
-            IndiceEstoque indiceEstoque
+            IndiceEstoque indiceEstoque,
+            ProcessadorPedidoService processadorPedidoService
     ) {
         this.bolsaRepository = bolsaRepository;
         this.noRedeRepository = noRedeRepository;
         this.hospitalRepository = hospitalRepository;
         this.requisicaoRepository = requisicaoRepository;
         this.indiceEstoque = indiceEstoque;
+        this.processadorPedidoService = processadorPedidoService;
+    }
+
+    public EstoqueService(
+            BolsaRepository bolsaRepository,
+            NoRedeRepository noRedeRepository,
+            HospitalRepository hospitalRepository,
+            RequisicaoRepository requisicaoRepository,
+            IndiceEstoque indiceEstoque,
+            RedeService redeService
+    ) {
+        this(bolsaRepository, noRedeRepository, hospitalRepository, requisicaoRepository, indiceEstoque,
+                new ProcessadorPedidoService(
+                        requisicaoRepository,
+                        bolsaRepository,
+                        indiceEstoque,
+                        redeService,
+                        new com.hemoflow.hemoflow.config.DemoMonitoramentoProperties()));
     }
 
     // -------------------------------------------------------------------------
@@ -118,54 +142,12 @@ public class EstoqueService {
     }
 
     /**
-     * Aloca bolsas disponíveis para uma requisição pendente.
-     *
-     * <p>U1: seleção por ordem de cadastro (sem FEFO nem compatibilidade ABO/Rh).
-     * Essas regras serão incorporadas na Unidade 2.</p>
+     * Aloca bolsas compatíveis, priorizando FEFO e verificando se existe rota
+     * na rede cadastrada entre a localização da bolsa e o hospital solicitante.
      */
     @Transactional(noRollbackFor = RegraNegocioException.class)
     public List<Bolsa> alocar(Long requisicaoId) {
-        Requisicao requisicao = requisicaoRepository.findById(requisicaoId)
-                .orElseThrow(() -> new RecursoNaoEncontradoException("Requisição não encontrada: " + requisicaoId));
-        if (requisicao.getStatus() != StatusRequisicao.PENDENTE
-                && requisicao.getStatus() != StatusRequisicao.AGUARDANDO_ESTOQUE) {
-            throw new RegraNegocioException("Requisição em status " + requisicao.getStatus() + " não pode ser alocada");
-        }
-
-        // Bolsas que venceram enquanto esperavam saem do índice
-        indiceEstoque.descartarVencidas();
-
-        // U1: filtra apenas por hemocomponente e status DISPONIVEL
-        // Compatibilidade ABO/Rh será aplicada na Unidade 2 (CompatibilidadeAboRh)
-        List<Bolsa> candidatas = bolsaRepository.findByStatusAndHemocomponente(
-                        StatusBolsa.DISPONIVEL,
-                        requisicao.getHemocomponente()
-                ).stream()
-                .filter(b -> !b.isVencida())
-                .toList();
-
-        if (candidatas.size() < requisicao.getQuantidade()) {
-            requisicao.setStatus(StatusRequisicao.AGUARDANDO_ESTOQUE);
-            requisicaoRepository.save(requisicao);
-            throw new RegraNegocioException(
-                    "Estoque insuficiente: necessários " + requisicao.getQuantidade()
-                            + ", disponíveis " + candidatas.size()
-            );
-        }
-
-        // U1: seleção simples (as primeiras N bolsas da lista)
-        List<Bolsa> alocadas = new ArrayList<>();
-        for (int i = 0; i < requisicao.getQuantidade(); i++) {
-            Bolsa bolsa = candidatas.get(i);
-            bolsa.setStatus(StatusBolsa.ALOCADA);
-            alocadas.add(bolsa);
-        }
-
-        bolsaRepository.saveAll(alocadas);
-        alocadas.forEach(indiceEstoque::retirarAposCommit);
-        requisicao.setStatus(StatusRequisicao.ALOCADA);
-        requisicaoRepository.save(requisicao);
-        return alocadas;
+        return processadorPedidoService.processarPedido(requisicaoId).bolsas();
     }
 
     @Transactional
@@ -173,6 +155,32 @@ public class EstoqueService {
         Requisicao requisicao = requisicaoRepository.findById(id)
                 .orElseThrow(() -> new RecursoNaoEncontradoException("Requisição não encontrada: " + id));
         validarTransicaoRequisicao(requisicao.getStatus(), novoStatus);
+
+        if (novoStatus == StatusRequisicao.EM_TRANSITO || novoStatus == StatusRequisicao.ENTREGUE) {
+            if (requisicao.getEntregas().isEmpty()) {
+                throw new RegraNegocioException("A requisição não possui entregas roteadas para acompanhar");
+            }
+            StatusBolsa statusEsperado = novoStatus == StatusRequisicao.EM_TRANSITO
+                    ? StatusBolsa.ALOCADA
+                    : StatusBolsa.EM_TRANSITO;
+            StatusBolsa statusNovo = novoStatus == StatusRequisicao.EM_TRANSITO
+                    ? StatusBolsa.EM_TRANSITO
+                    : StatusBolsa.ENTREGUE;
+            List<Bolsa> bolsas = requisicao.getEntregas().stream().map(Entrega::getBolsa).toList();
+            if (bolsas.stream().anyMatch(bolsa -> bolsa.getStatus() != statusEsperado)) {
+                throw new RegraNegocioException(
+                        "As bolsas da requisição não estão todas no status esperado " + statusEsperado);
+            }
+            bolsas.forEach(bolsa -> bolsa.setStatus(statusNovo));
+            bolsaRepository.saveAll(bolsas);
+        } else if (novoStatus == StatusRequisicao.CANCELADA
+                && requisicao.getStatus() == StatusRequisicao.ALOCADA) {
+            List<Bolsa> bolsas = requisicao.getEntregas().stream().map(Entrega::getBolsa).toList();
+            bolsas.forEach(bolsa -> bolsa.setStatus(StatusBolsa.DISPONIVEL));
+            bolsaRepository.saveAll(bolsas);
+            bolsas.forEach(indiceEstoque::registrarAposCommit);
+        }
+
         requisicao.setStatus(novoStatus);
         return requisicaoRepository.save(requisicao);
     }
@@ -184,7 +192,8 @@ public class EstoqueService {
     private void validarTransicaoBolsa(StatusBolsa atual, StatusBolsa novo) {
         boolean valida = switch (atual) {
             case DISPONIVEL  -> novo == StatusBolsa.ALOCADA    || novo == StatusBolsa.DESCARTADA;
-            case ALOCADA     -> novo == StatusBolsa.EM_TRANSITO || novo == StatusBolsa.DESCARTADA;
+            case ALOCADA     -> novo == StatusBolsa.EM_TRANSITO || novo == StatusBolsa.DESCARTADA
+                                       || novo == StatusBolsa.DISPONIVEL;
             case EM_TRANSITO -> novo == StatusBolsa.ENTREGUE   || novo == StatusBolsa.DESCARTADA;
             case ENTREGUE, DESCARTADA -> false;
         };
@@ -219,7 +228,7 @@ public class EstoqueService {
     private String transicoesPossiveisBolsa(StatusBolsa atual) {
         return switch (atual) {
             case DISPONIVEL  -> "[ALOCADA, DESCARTADA]";
-            case ALOCADA     -> "[EM_TRANSITO, DESCARTADA]";
+            case ALOCADA     -> "[EM_TRANSITO, DESCARTADA, DISPONIVEL (somente se a requisição for cancelada)]";
             case EM_TRANSITO -> "[ENTREGUE, DESCARTADA]";
             case ENTREGUE, DESCARTADA -> "nenhuma (status terminal)";
         };
@@ -315,4 +324,3 @@ public class EstoqueService {
         }).toList();
     }
 }
-

@@ -52,6 +52,7 @@ public class DadosIniciais implements CommandLineRunner {
     @Transactional
     public void run(String... args) {
         if (hospitalRepository.count() > 0) {
+            sincronizarCoordenadasDosNos();
             return;
         }
 
@@ -154,9 +155,24 @@ public class DadosIniciais implements CommandLineRunner {
     }
 
     private Hospital criarHospital(String nome, NoRede no, double lat, double lng) {
+        no.setLatitude(lat);
+        no.setLongitude(lng);
+        noRedeRepository.save(no);
         Hospital h = hospitalRepository.save(new Hospital(nome, no));
         h.setLatitude(lat);
         h.setLongitude(lng);
         return hospitalRepository.save(h);
+    }
+
+    private void sincronizarCoordenadasDosNos() {
+        hospitalRepository.findAll().forEach(hospital -> {
+            NoRede no = hospital.getLocalizacao();
+            if ((no.getLatitude() == null || no.getLongitude() == null)
+                    && hospital.getLatitude() != null && hospital.getLongitude() != null) {
+                no.setLatitude(hospital.getLatitude());
+                no.setLongitude(hospital.getLongitude());
+                noRedeRepository.save(no);
+            }
+        });
     }
 }

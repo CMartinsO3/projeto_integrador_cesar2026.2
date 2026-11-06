@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Requisições hospitalares — HemoFlow</title>
+  <link rel="stylesheet" href="/css/hemoflow.css">
+</head>
+<body>
+<header class="topbar">
+  <a class="brand" href="/"><span class="mark" aria-hidden="true">H</span><span><strong>HemoFlow</strong><em>Portal hospitalar · demonstração</em></span></a>
+  <nav>
+    <a href="/">Operações</a>
+    <a class="is-active" href="/requisicoes-hospital">Requisições</a>
+    <a href="/rotas">Rotas</a>
+    <a href="/motorista">Motorista</a>
+    <a href="/monitoramento">Monitoramento</a>
+  </nav>
+</header>
+<main class="wrap page-content">
+  <section class="section-head">
+    <div><p class="kicker">US 2 · US 10</p><h1>Requisições hospitalares</h1></div>
+    <p>Crie pedidos e acompanhe o status registrado pelo hemocentro.</p>
+  </section>
+  <p class="notice notice-warn">Tela didática sem autenticação. Os hospitais e pedidos exibidos são dados do ambiente de demonstração.</p>
+  <div class="grid grid-2">
+    <section class="card">
+      <h2>Criar requisição</h2>
+      <form id="requestForm" class="form-stack">
+        <label for="hospitalId">Hospital solicitante</label>
+        <select id="hospitalId" required><option value="">Carregando hospitais...</option></select>
+        <div class="row-2">
+          <div><label for="bloodType">Tipo sanguíneo</label><select id="bloodType" required></select></div>
+          <div><label for="component">Hemocomponente</label><select id="component" required></select></div>
+        </div>
+        <div class="row-2">
+          <div><label for="quantity">Quantidade de bolsas</label><input id="quantity" type="number" min="1" value="1" required></div>
+          <div><label for="deliveryWindow">Janela de entrega</label><input id="deliveryWindow" type="datetime-local" required></div>
+        </div>
+        <button class="btn btn-primary" type="submit" id="submitRequest">Enviar requisição</button>
+      </form>
+      <p id="formStatus" class="msg" role="status" aria-live="polite"></p>
+    </section>
+    <section class="card">
+      <h2>Consultar requisições</h2>
+      <label for="hospitalFilter">Filtrar por hospital</label>
+      <select id="hospitalFilter"><option value="">Selecione um hospital</option></select>
+      <p id="listStatus" class="msg" role="status" aria-live="polite">Selecione o hospital para consultar os pedidos.</p>
+      <div class="table-wrap">
+        <table class="data-table">
+          <thead><tr><th>Pedido</th><th>Componente</th><th>Qtd.</th><th>Janela</th><th>Status</th></tr></thead>
+          <tbody id="requestRows"></tbody>
+        </table>
+      </div>
+    </section>
+  </div>
+</main>
+<script th:inline="none">
+(() => {
+  const bloodTypes = ['A_POS', 'A_NEG', 'B_POS', 'B_NEG', 'AB_POS', 'AB_NEG', 'O_POS', 'O_NEG'];
+  const components = ['HEMACIAS', 'PLASMA', 'PLAQUETAS', 'CRIOPRECIPITADO'];
+  const labels = {
+    PENDENTE: 'Pendente',
+    AGUARDANDO_ESTOQUE: 'Aguardando estoque',
+    ALOCADA: 'Alocada',
+    EM_TRANSITO: 'Em trânsito',
+    ENTREGUE: 'Entregue',
+    CANCELADA: 'Cancelada'
+  };
+  const hospitalSelect = document.getElementById('hospitalId');
+  const filterSelect = document.getElementById('hospitalFilter');
+  const statusForm = document.getElementById('formStatus');
+  const statusList = document.getElementById('listStatus');
+  const rows = document.getElementById('requestRows');
+
+  function setOptions(select, values, placeholder) {
+    select.replaceChildren(new Option(placeholder, ''));
+    values.forEach(([label, value]) => select.add(new Option(label, value)));
+  }
+
+  function formatDate(value) {
+    return new Date(value).toLocaleString('pt-BR');
+  }
+
+  async function loadHospitals() {
+    const response = await fetch('/api/v1/hospitais');
+    if (!response.ok) throw new Error(`Falha ao carregar hospitais (HTTP ${response.status}).`);
+    const hospitals = (await response.json()).filter(hospital => hospital.ativo);
+    const options = hospitals.map(hospital => [`${hospital.nome} (#${hospital.id})`, hospital.id]);
+    setOptions(hospitalSelect, options, 'Selecione um hospital');
+    setOptions(filterSelect, options, 'Selecione um hospital');
+  }
+
+  async function loadRequests(hospitalId) {
+    rows.replaceChildren();
+    if (!hospitalId) {
+      statusList.textContent = 'Selecione o hospital para consultar os pedidos.';
+      return;
+    }
+    statusList.textContent = 'Carregando requisições...';
+    const response = await fetch(`/api/v1/requisicoes?hospitalId=${encodeURIComponent(hospitalId)}`);
+    if (!response.ok) throw new Error(`Falha ao consultar requisições (HTTP ${response.status}).`);
+    const requests = await response.json();
+    requests.forEach(request => {
+      const row = document.createElement('tr');
+      [
+        `#${request.id}`,
+        `${request.tipoSanguineo} · ${request.hemocomponente}`,
+        String(request.quantidade),
+        formatDate(request.janelaEntrega),
+        labels[request.status] || request.status
+      ].forEach(value => {
+        const cell = document.createElement('td');
+        cell.textContent = value;
+        row.append(cell);
+      });
+      rows.append(row);
+    });
+    statusList.textContent = requests.length ? `${requests.length} requisição(ões).` : 'Nenhuma requisição para este hospital.';
+  }
+
+  setOptions(document.getElementById('bloodType'), bloodTypes.map(value => [value.replace('_', ' '), value]), 'Selecione');
+  setOptions(document.getElementById('component'), components.map(value => [value, value]), 'Selecione');
+  const now = new Date();
+  now.setHours(now.getHours() + 4);
+  const localDate = new Date(now.getTime() - now.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+  const windowInput = document.getElementById('deliveryWindow');
+  windowInput.min = new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+  windowInput.value = localDate;
+
+  document.getElementById('requestForm').addEventListener('submit', async event => {
+    event.preventDefault();
+    statusForm.textContent = 'Enviando requisição...';
+    const button = document.getElementById('submitRequest');
+    button.disabled = true;
+    try {
+      const response = await fetch('/api/v1/requisicoes', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          hospitalId: Number(hospitalSelect.value),
+          tipoSanguineo: document.getElementById('bloodType').value,
+          hemocomponente: document.getElementById('component').value,
+          quantidade: Number(document.getElementById('quantity').value),
+          janelaEntrega: windowInput.value
+        })
+      });
+      if (!response.ok) throw new Error(`Falha ao enviar requisição (HTTP ${response.status}).`);
+      const created = await response.json();
+      statusForm.textContent = `Requisição #${created.id} registrada com status ${labels[created.status] || created.status}.`;
+      filterSelect.value = hospitalSelect.value;
+      await loadRequests(filterSelect.value);
+    } catch (error) {
+      statusForm.textContent = error.message || 'Não foi possível enviar a requisição.';
+      statusForm.classList.add('error');
+    } finally {
+      button.disabled = false;
+    }
+  });
+
+  filterSelect.addEventListener('change', () => {
+    loadRequests(filterSelect.value).catch(error => {
+      statusList.textContent = error.message || 'Não foi possível consultar os pedidos.';
+    });
+  });
+  loadHospitals().catch(error => {
+    statusForm.textContent = error.message || 'Não foi possível carregar hospitais.';
+    statusForm.classList.add('error');
+  });
+})();
+</script>
+</body>
+</html>

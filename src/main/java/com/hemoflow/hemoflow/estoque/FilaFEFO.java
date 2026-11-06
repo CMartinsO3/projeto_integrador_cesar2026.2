@@ -101,6 +101,12 @@ public class FilaFEFO {
         return descartadas;
     }
 
+    /** Retorna uma cópia dos itens válidos, preservando a ordem FEFO. */
+    public List<Bolsa> listarValidas() {
+        descartarVencidas();
+        return fila.paraLista();
+    }
+
     public boolean estaVazia() {
         return fila.estaVazia();
     }

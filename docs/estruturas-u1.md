@@ -12,7 +12,7 @@
 | **Requisições** hospitalares | Fila (FIFO) | `FilaSimples<Requisicao>` | `c_structures/fila.cpp` | Quem pediu primeiro deve ser atendido primeiro. Enfileirar e desenfileirar são O(1). |
 | **Histórico de operações** | Pilha (LIFO) | `PilhaSimples<String>` | `c_structures/pilha.cpp` | A operação mais recente é a primeira a ser consultada ou descartada. |
 
-Fora desta entrega (Unidade 2): FEFO (fila de prioridade), compatibilidade ABO/Rh, tabela hash e grafo/Dijkstra.
+Fora desta entrega (Unidade 2): FEFO (fila de prioridade), compatibilidade ABO/Rh, tabela hash e roteamento em grafo pelo vizinho mais próximo.
 
 ---
 

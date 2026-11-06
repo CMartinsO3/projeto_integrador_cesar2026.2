@@ -28,6 +28,18 @@ public class PainelController {
     @GetMapping("/mapa")
     public String mapa() { return "mapa-doacao"; }
 
+    @GetMapping("/rotas")
+    public String rotas() { return "rotas"; }
+
+    @GetMapping("/requisicoes-hospital")
+    public String requisicoesHospital() { return "requisicoes-hospital"; }
+
+    @GetMapping("/motorista")
+    public String motorista() { return "motorista"; }
+
+    @GetMapping("/monitoramento")
+    public String monitoramento() { return "monitoramento"; }
+
     @GetMapping("/bolsas-painel")
     public String painelBolsas() { return "painel-bolsas"; }
 
@@ -43,5 +55,3 @@ public class PainelController {
     @GetMapping("/dashboard-usuario")
     public String dashboardUsuario() { return "dashboard-usuario"; }
 }
-
-

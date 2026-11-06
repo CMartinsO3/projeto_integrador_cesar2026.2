@@ -2,6 +2,7 @@ package com.hemoflow.hemoflow.api.dto;
 
 import com.hemoflow.hemoflow.dominio.Ligacao;
 import com.hemoflow.hemoflow.dominio.NoRede;
+import com.hemoflow.hemoflow.dominio.StatusConectividade;
 import com.hemoflow.hemoflow.dominio.TipoNo;
 
 import jakarta.validation.constraints.NotBlank;
@@ -14,14 +15,32 @@ public final class NoRedeDTOs {
     public record Cadastro(
             @NotBlank String codigo,
             @NotBlank String nome,
-            @NotNull TipoNo tipo
+            @NotNull TipoNo tipo,
+            Double latitude,
+            Double longitude
     ) {
+        public Cadastro(String codigo, String nome, TipoNo tipo) {
+            this(codigo, nome, tipo, null, null);
+        }
     }
 
-    public record Resposta(Long id, String codigo, String nome, TipoNo tipo) {
+    public record Resposta(
+            Long id,
+            String codigo,
+            String nome,
+            TipoNo tipo,
+            Double latitude,
+            Double longitude,
+            StatusConectividade statusConectividade,
+            java.time.LocalDateTime atualizadoStatusEm
+    ) {
         public static Resposta de(NoRede no) {
-            return new Resposta(no.getId(), no.getCodigo(), no.getNome(), no.getTipo());
+            return new Resposta(no.getId(), no.getCodigo(), no.getNome(), no.getTipo(),
+                    no.getLatitude(), no.getLongitude(), no.getStatusConectividade(), no.getAtualizadoStatusEm());
         }
+    }
+
+    public record AtualizacaoStatusConectividade(@NotNull StatusConectividade status) {
     }
 
     public record LigacaoCadastro(
@@ -37,7 +56,8 @@ public final class NoRedeDTOs {
             String origemCodigo,
             Long destinoId,
             String destinoCodigo,
-            int tempoMinutos
+            int tempoMinutos,
+            double distanciaKm
     ) {
         public static LigacaoResposta de(Ligacao ligacao) {
             return new LigacaoResposta(
@@ -46,7 +66,8 @@ public final class NoRedeDTOs {
                     ligacao.getOrigem().getCodigo(),
                     ligacao.getDestino().getId(),
                     ligacao.getDestino().getCodigo(),
-                    ligacao.getTempoMinutos()
+                    ligacao.getTempoMinutos(),
+                    ligacao.getDistanciaKm()
             );
         }
     }

@@ -8,6 +8,7 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "no_rede")
@@ -23,17 +24,36 @@ public class NoRede {
     @Column(nullable = false)
     private String nome;
 
+    @Column
+    private Double latitude;
+
+    @Column
+    private Double longitude;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private TipoNo tipo;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, columnDefinition = "varchar(32) default 'ONLINE'")
+    private StatusConectividade statusConectividade = StatusConectividade.ONLINE;
+
+    @Column(nullable = false, columnDefinition = "timestamp default current_timestamp")
+    private LocalDateTime atualizadoStatusEm = LocalDateTime.now();
 
     protected NoRede() {
     }
 
     public NoRede(String codigo, String nome, TipoNo tipo) {
+        this(codigo, nome, tipo, null, null);
+    }
+
+    public NoRede(String codigo, String nome, TipoNo tipo, Double latitude, Double longitude) {
         this.codigo = codigo;
         this.nome = nome;
         this.tipo = tipo;
+        this.latitude = latitude;
+        this.longitude = longitude;
     }
 
     public Long getId() {
@@ -56,11 +76,40 @@ public class NoRede {
         this.nome = nome;
     }
 
+    public Double getLatitude() {
+        return latitude;
+    }
+
+    public void setLatitude(Double latitude) {
+        this.latitude = latitude;
+    }
+
+    public Double getLongitude() {
+        return longitude;
+    }
+
+    public void setLongitude(Double longitude) {
+        this.longitude = longitude;
+    }
+
     public TipoNo getTipo() {
         return tipo;
     }
 
     public void setTipo(TipoNo tipo) {
         this.tipo = tipo;
+    }
+
+    public StatusConectividade getStatusConectividade() {
+        return statusConectividade;
+    }
+
+    public LocalDateTime getAtualizadoStatusEm() {
+        return atualizadoStatusEm;
+    }
+
+    public void atualizarStatusConectividade(StatusConectividade statusConectividade) {
+        this.statusConectividade = statusConectividade;
+        this.atualizadoStatusEm = LocalDateTime.now();
     }
 }

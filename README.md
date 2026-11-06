@@ -28,7 +28,7 @@ O HemoFlow unifica em uma única plataforma web:
 * **Estruturas de Dados & Algoritmos:**
   * **Grafos e Caminhos Mínimos:** Roteirização e logística de entregas
   * **Lista, Fila e Pilha (Unidade 1):** estoque de bolsas, requisições em ordem de chegada e histórico de operações — [detalhes](./docs/estruturas-u1.md)
-  * **Planejado para a Unidade 2:** Filas de Prioridade & Tabela Hash (FEFO) e matching de compatibilidade ABO/Rh
+  * **Unidade 2:** buscas sequencial, binária e por hash; Bubble, Selection, Insertion e Merge Sort; FEFO por inserção ordenada; índice de estoque por tabela hash; matriz ABO/Rh; e roteamento pelo vizinho mais próximo — [algoritmos e equivalência C++/Java](./docs/algoritmos-u2.md)
 * **Análise & Estatística:** Estatística descritiva e probabilidade aplicadas ao estoque/demanda
 * **Infraestrutura & Redes:** Concorrência, CI/CD, Nuvem e Simulação de Telemetria/Comunicação de Rede
 
@@ -87,9 +87,9 @@ Para garantir um escopo controlado e seguro, o projeto adota os seguintes limite
 
 ### 📋 Histórias de Usuário Implementadas
 
-> **História 1: Cálculo de Rota Otimizada (Caminho Mínimo)**
+> **História 1: Construção de Rota pelo Vizinho Mais Próximo**
 > * *Como* administrador logístico da Hemorrede
-> * *Eu quero* calcular a rota mais rápida (Dijkstra) entre a origem e o destino
+> * *Eu quero* construir uma rota entre a origem do pedido e o destino escolhendo o vizinho ainda não visitado com menor tempo em cada etapa
 > * *Para que* as bolsas de sangue sejam entregues dentro do tempo limite da cadeia fria, garantindo a viabilidade do hemocomponente.
 
 > **História 2: Alocação Inteligente de Estoque (FEFO)**
@@ -180,14 +180,15 @@ $ cd hemoflow
 | Painel | GET | `/` |
 | Topologia (nós + ligações) | GET | `/api/v1/topologia` |
 | Nós da malha | GET/POST | `/api/v1/nos-rede` |
-| Caminho mínimo (Dijkstra) | GET | `/api/v1/rotas/caminho-minimo?origemId=&destinoId=` |
+| Rota gulosa pelo vizinho mais próximo | GET | `/api/v1/rotas/vizinho-mais-proximo?origemId=&destinoId=` |
 | Bolsas | GET/POST | `/api/v1/bolsas` |
 | Requisições | GET/POST | `/api/v1/requisicoes` |
-| Alocação (U1: ordem de cadastro) | POST | `/api/v1/requisicoes/{id}/alocar` |
+| Processamento integrado (hash, compatibilidade, FEFO e rota) | POST | `/api/v1/requisicoes/{id}/processar` |
+| Alocação (compatibilidade, FEFO e disponibilidade de rota) | POST | `/api/v1/requisicoes/{id}/alocar` |
 | H2 Console | GET | `/h2-console` (JDBC: `jdbc:h2:mem:hemoflow`) |
 
 Exemplo de rota Hemocentro → Hospital C (via nó intermediário, 35 min):
 
 ```bash
-curl "http://localhost:8080/api/v1/rotas/caminho-minimo?origemId=1&destinoId=4"
+curl "http://localhost:8080/api/v1/rotas/vizinho-mais-proximo?origemId=1&destinoId=4"
 ```
