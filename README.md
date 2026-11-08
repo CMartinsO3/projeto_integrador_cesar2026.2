@@ -134,6 +134,27 @@ Screencast mostrando, pelo Swagger (`/docs`), a aplicação Spring Boot em execu
 Screencast com a explicação do código da aplicação Spring Boot, cobrindo a implementação das histórias de criação de requisição e consulta de status: Controller, DTOs, Service, entidade, Repository, tratamento de erros e regras de transição de status.
 
 📺 **Assista no YouTube:** [Link do vídeo](https://youtu.be/O2WbMlvpl-Q)
+
+### 🚀 Entrega 4
+
+### 📋 Histórias de Usuário Implementadas
+
+> **História 8: Monitoramento de Rede**
+> * *Como* gestor de operações
+> * *Eu quero* visualizar o status de conectividade dos dispositivos de telemetria em um painel
+> * *Para que* eu saiba se estou recebendo dados confiáveis durante o trajeto.
+
+> **História 9: Indicadores de Estoque e Demanda**
+> * *Como* gestor
+> * *Eu quero* visualizar indicadores estatísticos de estoque e demanda por tipo sanguíneo
+> * *Para que* eu possa antecipar riscos de desabastecimento antes que aconteçam.
+
+### Demonstração de uso (histórias implementadas)
+
+Screencast mostrando a aplicação em execução: indicadores de estoque e demanda na página inicial, na sala de operações e na análise estatística, criação de uma requisição hospitalar refletida nos indicadores e, no monitoramento de rede, alteração manual do status dos dispositivos (Instável, Offline e Online) e envio de heartbeat pelo Swagger.
+
+📺 **Assista no YouTube:** [Link do vídeo](https://youtu.be/F8dCcsg-74Y)
+
 <!--
 ### 🚀 Entrega 02
 * Artefato 1: [link]
