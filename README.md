@@ -155,6 +155,12 @@ Screencast mostrando a aplicação em execução: indicadores de estoque e deman
 
 📺 **Assista no YouTube:** [Link do vídeo](https://youtu.be/F8dCcsg-74Y)
 
+### Explicação do código
+
+Screencast com a aplicação Spring Boot em execução, mostrando o comportamento das histórias de monitoramento de rede e de indicadores de estoque e demanda: painel de dispositivos, endpoint de heartbeat e análise estatística.
+
+📺 **Assista no YouTube:** [Link do vídeo](https://youtu.be/rMbS_oYdPL8)
+
 <!--
 ### 🚀 Entrega 02
 * Artefato 1: [link]
