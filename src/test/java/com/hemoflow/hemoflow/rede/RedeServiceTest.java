@@ -1,6 +1,7 @@
 package com.hemoflow.hemoflow.rede;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -123,5 +124,46 @@ class RedeServiceTest {
 
         Hospital atualizado = redeService.buscarHospital(hospital.getId());
         assertTrue(!atualizado.isAtivo());
+    }
+
+    @Test
+    @DisplayName("Dijkstra encontra o menor caminho ponderado no Grafo")
+    void dijkstraDeveEncontrarMenorCaminhoPonderado() {
+        com.hemoflow.hemoflow.grafo.Grafo grafo = new com.hemoflow.hemoflow.grafo.Grafo();
+        // A -> B (peso 10)
+        // A -> C (peso 2)
+        // C -> B (peso 3)
+        // Menor caminho A -> B deve ser A -> C -> B (custo 5), e não o direto de peso 10
+        grafo.adicionarAresta("A", "B", 10, 10.0);
+        grafo.adicionarAresta("A", "C", 2, 2.0);
+        grafo.adicionarAresta("C", "B", 3, 3.0);
+
+        var resultado = grafo.calcularDijkstra("A", "B");
+        assertTrue(resultado.encontrado());
+        assertEquals(5, resultado.tempoTotalMinutos());
+        assertEquals(5.0, resultado.distanciaTotalKm(), 0.01);
+        assertEquals(java.util.List.of("A", "C", "B"), resultado.rota());
+    }
+
+    @Test
+    @DisplayName("calcularLatenciaECaminhosMinimos retorna lista de ligações e caminhos a partir do hemocentro")
+    void calcularLatenciaECaminhosMinimosDeveRetornarRotas() {
+        var dto = redeService.calcularLatenciaECaminhosMinimos();
+        assertNotNull(dto);
+        assertNotNull(dto.hemocentro());
+        assertFalse(dto.ligacoes().isEmpty());
+        assertFalse(dto.caminhosMinimos().isEmpty());
+    }
+
+    @Test
+    @DisplayName("obterStatusRedeServidor retorna informações coerentes de ambiente e malha")
+    void obterStatusRedeServidorDeveRetornarStatusCompleto() {
+        var status = redeService.obterStatusRedeServidor();
+        assertNotNull(status.uptime());
+        assertTrue(status.uptimeMs() >= 0);
+        assertNotNull(status.versaoJava());
+        assertEquals(8080, status.porta());
+        assertTrue(status.numeroNos() >= 1);
+        assertTrue(status.numeroLigacoes() >= 1);
     }
 }

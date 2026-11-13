@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.hemoflow.hemoflow.api.dto.NoRedeDTOs;
+import com.hemoflow.hemoflow.api.dto.RedePainelDTOs;
 import com.hemoflow.hemoflow.config.DemoMonitoramentoProperties;
 import com.hemoflow.hemoflow.rede.RedeService;
 
@@ -93,6 +94,19 @@ public class RedeController {
                 monitoramentoProperties.getLimiteRotaMinutos());
     }
 
+    @GetMapping("/rotas/caminho-minimo")
+    public RotaVizinhoResposta calcularCaminhoMinimo(
+            @RequestParam Long origemId, @RequestParam Long destinoId) {
+        var rota = redeService.calcularRotaDijkstra(origemId, destinoId);
+        return new RotaVizinhoResposta(
+                rota.nos().stream().map(NoRedeDTOs.Resposta::de).toList(),
+                rota.tempoTotalMinutos(),
+                rota.distanciaTotalKm(),
+                rota.encontrada(),
+                rota.tempoTotalMinutos() > monitoramentoProperties.getLimiteRotaMinutos(),
+                monitoramentoProperties.getLimiteRotaMinutos());
+    }
+
     @GetMapping("/ligacoes")
     public List<NoRedeDTOs.LigacaoResposta> listarLigacoes() {
         return redeService.listarLigacoes().stream().map(NoRedeDTOs.LigacaoResposta::de).toList();
@@ -104,6 +118,16 @@ public class RedeController {
         return NoRedeDTOs.LigacaoResposta.de(
                 redeService.criarLigacao(dto.origemId(), dto.destinoId(), dto.tempoMinutos())
         );
+    }
+
+    @GetMapping("/rede/status")
+    public RedePainelDTOs.StatusRedeServidorDTO statusRede() {
+        return redeService.obterStatusRedeServidor();
+    }
+
+    @GetMapping("/rede/latencia-entre-nos")
+    public RedePainelDTOs.LatenciaERotasDTO latenciaEntreNos() {
+        return redeService.calcularLatenciaECaminhosMinimos();
     }
 
     public record RotaVizinhoResposta(

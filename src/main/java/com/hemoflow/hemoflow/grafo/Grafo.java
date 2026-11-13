@@ -1,9 +1,14 @@
 package com.hemoflow.hemoflow.grafo;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.PriorityQueue;
+import java.util.Set;
 
 import com.hemoflow.hemoflow.algoritmos.RoteadorVizinhoMaisProximo;
 
@@ -46,4 +51,99 @@ public class Grafo {
         }
         return RoteadorVizinhoMaisProximo.calcular(copia, origem, destino);
     }
+
+    public record ResultadoDijkstra(
+            List<String> rota,
+            int tempoTotalMinutos,
+            double distanciaTotalKm,
+            boolean encontrado
+    ) {}
+
+    /**
+     * Calcula o caminho mínimo usando o algoritmo de Dijkstra com fila de prioridade.
+     */
+    public ResultadoDijkstra calcularDijkstra(String origem, String destino) {
+        if (!adjacencias.containsKey(origem) || !adjacencias.containsKey(destino)) {
+            return new ResultadoDijkstra(List.of(), 0, 0.0, false);
+        }
+        if (origem.equals(destino)) {
+            return new ResultadoDijkstra(List.of(origem), 0, 0.0, true);
+        }
+
+        Map<String, Integer> distancias = new HashMap<>();
+        Map<String, String> predecessores = new HashMap<>();
+        Set<String> visitados = new HashSet<>();
+
+        for (String no : adjacencias.keySet()) {
+            distancias.put(no, Integer.MAX_VALUE);
+        }
+        distancias.put(origem, 0);
+
+        PriorityQueue<PassoDijkstra> fila = new PriorityQueue<>(
+                Comparator.comparingInt(PassoDijkstra::distanciaAcumulada)
+                        .thenComparing(PassoDijkstra::noId));
+        fila.add(new PassoDijkstra(origem, 0));
+
+        while (!fila.isEmpty()) {
+            PassoDijkstra atual = fila.poll();
+            String u = atual.noId();
+
+            if (!visitados.add(u)) {
+                continue;
+            }
+            if (u.equals(destino)) {
+                break;
+            }
+
+            int distU = distancias.getOrDefault(u, Integer.MAX_VALUE);
+            if (distU == Integer.MAX_VALUE) {
+                continue;
+            }
+
+            for (Aresta aresta : getVizinhos(u)) {
+                String v = aresta.getDestino();
+                int peso = aresta.getPeso();
+                if (visitados.contains(v)) {
+                    continue;
+                }
+                int novaDist = distU + peso;
+                if (novaDist < distancias.getOrDefault(v, Integer.MAX_VALUE)) {
+                    distancias.put(v, novaDist);
+                    predecessores.put(v, u);
+                    fila.add(new PassoDijkstra(v, novaDist));
+                }
+            }
+        }
+
+        int custoFinal = distancias.getOrDefault(destino, Integer.MAX_VALUE);
+        if (custoFinal == Integer.MAX_VALUE) {
+            return new ResultadoDijkstra(List.of(), 0, 0.0, false);
+        }
+
+        List<String> caminho = new ArrayList<>();
+        String passo = destino;
+        while (passo != null) {
+            caminho.add(passo);
+            passo = predecessores.get(passo);
+        }
+        Collections.reverse(caminho);
+
+        double distanciaTotalKm = 0.0;
+        for (int i = 0; i < caminho.size() - 1; i++) {
+            String de = caminho.get(i);
+            String para = caminho.get(i + 1);
+            for (Aresta a : getVizinhos(de)) {
+                if (a.getDestino().equals(para)) {
+                    if (a.getDistanciaKm() != null) {
+                        distanciaTotalKm += a.getDistanciaKm();
+                    }
+                    break;
+                }
+            }
+        }
+
+        return new ResultadoDijkstra(caminho, custoFinal, distanciaTotalKm, true);
+    }
+
+    private record PassoDijkstra(String noId, int distanciaAcumulada) {}
 }

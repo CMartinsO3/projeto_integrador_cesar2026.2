@@ -1,15 +1,21 @@
 package com.hemoflow.hemoflow.rede;
 
+import java.lang.management.ManagementFactory;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.hemoflow.hemoflow.api.RecursoNaoEncontradoException;
 import com.hemoflow.hemoflow.api.RegraNegocioException;
 import com.hemoflow.hemoflow.api.dto.NoRedeDTOs;
+import com.hemoflow.hemoflow.api.dto.RedePainelDTOs;
 import com.hemoflow.hemoflow.grafo.Grafo;
 import com.hemoflow.hemoflow.dominio.Hospital;
 import com.hemoflow.hemoflow.dominio.Ligacao;
@@ -26,15 +32,33 @@ public class RedeService {
     private final NoRedeRepository noRedeRepository;
     private final LigacaoRepository ligacaoRepository;
     private final HospitalRepository hospitalRepository;
+    private final MetricasRedeService metricasRedeService;
+    private final Environment environment;
+    private final int serverPort;
+
+    @Autowired
+    public RedeService(
+            NoRedeRepository noRedeRepository,
+            LigacaoRepository ligacaoRepository,
+            HospitalRepository hospitalRepository,
+            MetricasRedeService metricasRedeService,
+            Environment environment,
+            @Value("${server.port:8080}") int serverPort
+    ) {
+        this.noRedeRepository = noRedeRepository;
+        this.ligacaoRepository = ligacaoRepository;
+        this.hospitalRepository = hospitalRepository;
+        this.metricasRedeService = metricasRedeService;
+        this.environment = environment;
+        this.serverPort = serverPort;
+    }
 
     public RedeService(
             NoRedeRepository noRedeRepository,
             LigacaoRepository ligacaoRepository,
             HospitalRepository hospitalRepository
     ) {
-        this.noRedeRepository = noRedeRepository;
-        this.ligacaoRepository = ligacaoRepository;
-        this.hospitalRepository = hospitalRepository;
+        this(noRedeRepository, ligacaoRepository, hospitalRepository, new MetricasRedeService(), null, 8080);
     }
 
     /**
@@ -78,6 +102,33 @@ public class RedeService {
             distanciaTotalKm += distanciasPorLigacao.get(new LigacaoIds(idOrigem, idDestino));
         }
         return new RotaCalculada(caminho, resultado.custoTotal(), distanciaTotalKm, resultado.encontrado());
+    }
+
+    @Transactional(readOnly = true)
+    public RotaCalculada calcularRotaDijkstra(Long origemId, Long destinoId) {
+        buscarNo(origemId);
+        buscarNo(destinoId);
+        Grafo grafo = new Grafo();
+        List<NoRede> nos = noRedeRepository.findAll();
+        Map<String, NoRede> nosPorId = new HashMap<>();
+        for (NoRede no : nos) {
+            String idNo = String.valueOf(no.getId());
+            grafo.adicionarNo(idNo);
+            nosPorId.put(idNo, no);
+        }
+        List<Ligacao> ligacoes = ligacaoRepository.findAll();
+        for (Ligacao ligacao : ligacoes) {
+            grafo.adicionarAresta(
+                    String.valueOf(ligacao.getOrigem().getId()),
+                    String.valueOf(ligacao.getDestino().getId()),
+                    ligacao.getTempoMinutos(),
+                    ligacao.getDistanciaKm());
+        }
+        var resultado = grafo.calcularDijkstra(String.valueOf(origemId), String.valueOf(destinoId));
+        List<NoRede> caminho = resultado.rota().stream()
+                .map(nosPorId::get)
+                .toList();
+        return new RotaCalculada(caminho, resultado.tempoTotalMinutos(), resultado.distanciaTotalKm(), resultado.encontrado());
     }
 
     private record LigacaoIds(Long origemId, Long destinoId) {
@@ -244,5 +295,110 @@ public class RedeService {
     @Transactional
     public Hospital salvarHospital(Hospital hospital) {
         return hospitalRepository.save(hospital);
+    }
+
+    @Transactional(readOnly = true)
+    public RedePainelDTOs.StatusRedeServidorDTO obterStatusRedeServidor() {
+        long uptimeMs = ManagementFactory.getRuntimeMXBean().getUptime();
+        long segundosTotais = uptimeMs / 1000;
+        long h = segundosTotais / 3600;
+        long m = (segundosTotais % 3600) / 60;
+        long s = segundosTotais % 60;
+        String uptimeFormatado = String.format("%02dh %02dm %02ds", h, m, s);
+
+        String versaoJava = System.getProperty("java.version");
+        String perfilAtivo = "default";
+        if (environment != null && environment.getActiveProfiles().length > 0) {
+            perfilAtivo = String.join(", ", environment.getActiveProfiles());
+        }
+
+        long totalNos = noRedeRepository.count();
+        long totalLigacoes = ligacaoRepository.count();
+        List<RedePainelDTOs.EstatisticaRotaDTO> estatisticas = metricasRedeService != null
+                ? metricasRedeService.obterEstatisticas()
+                : List.of();
+
+        return new RedePainelDTOs.StatusRedeServidorDTO(
+                uptimeFormatado,
+                uptimeMs,
+                versaoJava,
+                serverPort,
+                perfilAtivo,
+                totalNos,
+                totalLigacoes,
+                estatisticas
+        );
+    }
+
+    @Transactional(readOnly = true)
+    public RedePainelDTOs.LatenciaERotasDTO calcularLatenciaECaminhosMinimos() {
+        List<NoRede> nos = noRedeRepository.findAll();
+        List<Ligacao> ligacoes = ligacaoRepository.findAll();
+
+        Grafo grafo = new Grafo();
+        Map<String, NoRede> nosPorId = new HashMap<>();
+        for (NoRede no : nos) {
+            String idStr = String.valueOf(no.getId());
+            grafo.adicionarNo(idStr);
+            nosPorId.put(idStr, no);
+        }
+        for (Ligacao lig : ligacoes) {
+            grafo.adicionarAresta(
+                    String.valueOf(lig.getOrigem().getId()),
+                    String.valueOf(lig.getDestino().getId()),
+                    lig.getTempoMinutos(),
+                    lig.getDistanciaKm());
+        }
+
+        List<RedePainelDTOs.LigacaoLatenciaDTO> ligacoesDTO = ligacoes.stream()
+                .map(l -> new RedePainelDTOs.LigacaoLatenciaDTO(
+                        l.getId(),
+                        l.getOrigem().getId(),
+                        l.getOrigem().getCodigo(),
+                        l.getOrigem().getNome(),
+                        l.getDestino().getId(),
+                        l.getDestino().getCodigo(),
+                        l.getDestino().getNome(),
+                        l.getTempoMinutos(),
+                        l.getDistanciaKm()))
+                .toList();
+
+        NoRede hemocentro = nos.stream()
+                .filter(n -> n.getTipo() == TipoNo.HEMOCENTRO)
+                .findFirst()
+                .orElse(null);
+
+        List<RedePainelDTOs.CaminhoMinimoHospitalDTO> caminhosMinimos = new ArrayList<>();
+        if (hemocentro != null) {
+            List<NoRede> hospitais = nos.stream()
+                    .filter(n -> n.getTipo() == TipoNo.HOSPITAL)
+                    .toList();
+
+            for (NoRede hosp : hospitais) {
+                var res = grafo.calcularDijkstra(
+                        String.valueOf(hemocentro.getId()),
+                        String.valueOf(hosp.getId()));
+
+                List<NoRedeDTOs.Resposta> rotaNos = res.rota().stream()
+                        .map(nosPorId::get)
+                        .map(NoRedeDTOs.Resposta::de)
+                        .toList();
+
+                caminhosMinimos.add(new RedePainelDTOs.CaminhoMinimoHospitalDTO(
+                        hosp.getId(),
+                        hosp.getCodigo(),
+                        hosp.getNome(),
+                        rotaNos,
+                        res.tempoTotalMinutos(),
+                        res.distanciaTotalKm(),
+                        res.encontrado()));
+            }
+        }
+
+        return new RedePainelDTOs.LatenciaERotasDTO(
+                hemocentro != null ? NoRedeDTOs.Resposta.de(hemocentro) : null,
+                ligacoesDTO,
+                caminhosMinimos
+        );
     }
 }
