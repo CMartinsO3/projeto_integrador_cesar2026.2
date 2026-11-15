@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>HemoFlow - Documentacao e Fechamento (RSD)</title>
+<style>
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; max-width: 900px; margin: 40px auto; padding: 0 20px; font-size: 13px; line-height: 1.5; color: #24292e; }
+h1 { border-bottom: 2px solid #e1e4e8; padding-bottom: 8px; font-size: 24px; color: #0b2545; }
+h2 { border-bottom: 1px solid #e1e4e8; padding-bottom: 6px; font-size: 18px; margin-top: 28px; color: #134074; }
+h3 { font-size: 15px; margin-top: 18px; color: #1d2d44; }
+table { border-collapse: collapse; width: 100%; margin: 14px 0; font-size: 12px; }
+th, td { border: 1px solid #d0d7de; padding: 6px 10px; text-align: left; vertical-align: top; }
+th { background-color: #f6f8fa; font-weight: 600; }
+tr:nth-child(even) { background-color: #f9fafb; }
+code { background-color: #f0f2f5; padding: 2px 5px; border-radius: 4px; font-size: 11px; }
+pre { background-color: #f6f8fa; padding: 12px; border-radius: 6px; overflow-x: auto; }
+pre code { background: none; padding: 0; }
+blockquote { border-left: 4px solid #0969da; padding: 8px 16px; margin: 14px 0; background: #ddf4ff; }
+@media print { body { max-width: 100%; margin: 15px; } table { page-break-inside: auto; } tr { page-break-inside: avoid; } }
+</style>
+</head>
+<body>
+<h1 id="hemoflow-documentacao-e-fechamento">HemoFlow — Documentação e Fechamento</h1>
+<p><strong>Cadeira:</strong> RSD — Infraestrutura de Comunicação · Projeto Integrador CESAR School 2026.2<br />
+<strong>Equipe HemoFlow:</strong> Bruna Tiburtino, Caio Martins Oliveira, Cauã Henrique Melo Almeida, João Felipe Bonifácio, Luís Felipe Carneiro, Luís Henrique Vilas Boas, Priscila Pontes Martins, Rafael Medeiros Machado Dias, Ruan Carlos Oliveira da Silva.</p>
+<hr />
+<h2 id="1-visao-geral-do-projeto">1. Visão geral do projeto</h2>
+<p>O <strong>HemoFlow</strong> é uma aplicação web em Java com Spring Boot voltada ao apoio da logística e distribuição de hemocomponentes. A solução inspira-se no fluxo operacional da Hemorrede/SUS (<em>centros de coleta → hemocentros de processamento e estoque → hospitais</em>).</p>
+<ul>
+<li><strong>Problema central:</strong> A distribuição de hemocomponentes exige entregar a bolsa certa (compatível e dentro da validade), no local solicitado, dentro da janela temporal estipulada e sob rigoroso controle térmico. Falhas nesse ciclo provocam desabastecimento crítico em emergências hospitalares, descarte desnecessário de bolsas por validade expirada e risco iminente à vida de pacientes.</li>
+<li><strong>Solução:</strong> Uma plataforma unificada que provê:</li>
+<li><strong>Gestão e alocação de estoque:</strong> Controle por tipo sanguíneo e hemocomponente, priorizando validade mais próxima (<strong>FEFO</strong> — <em>First Expired, First Out</em>) e compatibilidade ABO/Rh.</li>
+<li><strong>Roteirização de entregas:</strong> Determinação de rotas e cálculo de tempo/distância sobre a malha de distribuição, observando as janelas de transporte da cadeia fria.</li>
+<li><strong>Painel de monitoramento e indicadores:</strong> Visibilidade em tempo real sobre níveis de estoque, requisições hospitalares e telemetria simulada.</li>
+<li><strong>Limites do escopo:</strong></li>
+<li>Uso restrito a dados sintéticos, sem informações reais de pacientes ou doadores (aderência à LGPD).</li>
+<li>Matriz de compatibilidade ABO/Rh com finalidade didática e acadêmica.</li>
+<li>Telemetria (GPS e temperatura) simulada por software, sem hardware físico.</li>
+<li>Sistema autônomo, sem integração externa com sistemas legados do Ministério da Saúde.</li>
+</ul>
+<hr />
+<h2 id="2-arquitetura-da-solucao">2. Arquitetura da solução</h2>
+<h3 id="componentes-de-tecnologia">Componentes de Tecnologia</h3>
+<table>
+<thead>
+<tr>
+<th>Componente</th>
+<th>Tecnologia / Detalhe</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Aplicação web e API</strong></td>
+<td>Java 17+, Spring Boot 3.3, porta 8080</td>
+</tr>
+<tr>
+<td><strong>Documentação da API</strong></td>
+<td>Swagger UI / OpenAPI 3.0 disponível em <code>/docs</code> e <code>/api-docs</code></td>
+</tr>
+<tr>
+<td><strong>Banco de dados</strong></td>
+<td>H2 em memória (<code>jdbc:h2:mem:hemoflowdb</code>), console web em <code>/h2-console</code></td>
+</tr>
+<tr>
+<td><strong>Banco alternativo</strong></td>
+<td>PostgreSQL configurado via profile <code>postgres</code> (<code>application-postgres.properties</code>)</td>
+</tr>
+<tr>
+<td><strong>Empacotamento</strong></td>
+<td>Docker (<code>Dockerfile</code> multi-stage) e <code>docker-compose.yml</code></td>
+</tr>
+<tr>
+<td><strong>Integração contínua</strong></td>
+<td>GitHub Actions (<code>.github/workflows/ci.yml</code>)</td>
+</tr>
+<tr>
+<td><strong>Build &amp; Gerenciamento</strong></td>
+<td>Maven 3.9+ via wrapper (<code>mvnw</code> / <code>mvnw.cmd</code>)</td>
+</tr>
+</tbody>
+</table>
+<h3 id="fluxo-operacional-geral">Fluxo Operacional Geral</h3>
+<p>O usuário (gestor logístico, gestor de estoque, hospital ou doador) acessa a interface web (Thymeleaf) ou a API REST. A aplicação processa requisições, consulta entidades persistidas e estruturas em memória, calcula caminhos e alocações e retorna respostas estruturadas em JSON ou páginas HTML renderizadas.</p>
+<h3 id="estruturas-de-dados-do-dominio-unidade-1-e-unidade-2">Estruturas de Dados do Domínio (Unidade 1 e Unidade 2)</h3>
+<p>As estruturas fundamentais do domínio foram implementadas pela equipe de forma didática e autônoma, sem recorrer às coleções padrão do Java (<code>LinkedList</code>, <code>Queue</code>, <code>Stack</code>):</p>
+<table>
+<thead>
+<tr>
+<th>Entidade</th>
+<th>Estrutura</th>
+<th>Classe Java</th>
+<th>Justificativa de Engenharia</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Estoque de bolsas</strong></td>
+<td>Lista encadeada</td>
+<td><code>ListaEncadeada&lt;Bolsa&gt;</code></td>
+<td>Dinamismo de inserções e remoções sem realocação contígua de vetor.</td>
+</tr>
+<tr>
+<td><strong>Requisições hospitalares</strong></td>
+<td>Fila (FIFO)</td>
+<td><code>FilaSimples&lt;Requisicao&gt;</code></td>
+<td>Disciplina de atendimento por ordem cronológica de chegada ($O(1)$).</td>
+</tr>
+<tr>
+<td><strong>Histórico de operações</strong></td>
+<td>Pilha (LIFO)</td>
+<td><code>PilhaSimples&lt;String&gt;</code></td>
+<td>Rastreabilidade recente de auditoria e operações de descarte ($O(1)$).</td>
+</tr>
+<tr>
+<td><strong>Alocação por validade</strong></td>
+<td>Fila ordenada (FEFO)</td>
+<td><code>FilaFEFO</code></td>
+<td>Manutenção contínua de bolsas ordenadas por vencimento crescente.</td>
+</tr>
+<tr>
+<td><strong>Índice de acesso rápido</strong></td>
+<td>Tabela Hash</td>
+<td><code>TabelaHash&lt;String, FilaFEFO&gt;</code></td>
+<td>Acesso em tempo médio $O(1)$ a bolsas por tipo e componente.</td>
+</tr>
+<tr>
+<td><strong>Grafo logístico</strong></td>
+<td>Lista de Adjacência</td>
+<td><code>Grafo</code>, <code>RoteadorVizinhoMaisProximo</code></td>
+<td>Modelagem de nós (hospitais/centros) e arestas ponderadas por tempo ($O(V+E)$).</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="3-infraestrutura-de-comunicacao">3. Infraestrutura de comunicação</h2>
+<h3 id="31-topologia">3.1 Topologia</h3>
+<p>O projeto distingue claramente dois conceitos de rede:
+1. <strong>Malha logística (negócio):</strong> Grafo direcionado em que os vértices representam o Hemocentro e os Hospitais atendidos, conectados por arestas ponderadas pelo tempo de deslocamento em minutos e distância em quilômetros (calculada pela fórmula de Haversine).
+2. <strong>Rede de computadores (infraestrutura):</strong> Arquitetura cliente-servidor TCP/IP local onde os clientes (navegadores web e clientes HTTP) se comunicam com o contêiner Docker da aplicação Spring Boot na porta 8080.</p>
+<pre><code class="language-mermaid">flowchart LR
+    subgraph Clientes [&quot;Camada de Apresentação&quot;]
+        Navegador[&quot;Navegador Web&lt;br/&gt;(Painel Thymeleaf /)&quot;]
+        Swagger[&quot;Swagger UI&lt;br/&gt;(/docs)&quot;]
+        APIClient[&quot;Cliente HTTP / REST&lt;br/&gt;(Postman / cURL)&quot;]
+    end
+
+    subgraph Host [&quot;Host Docker / Servidor&quot;]
+        subgraph Container [&quot;Contêiner: hemoflow&quot;]
+            App[&quot;Spring Boot 3.3 (JVM 17)&lt;br/&gt;Porta 8080&quot;]
+            Services[&quot;Camada de Serviços&lt;br/&gt;Estoque · Rede · Estatística&quot;]
+            MemDB[(&quot;H2 Database&lt;br/&gt;(Em memória)&quot;)]
+            App --&gt; Services
+            Services --&gt; MemDB
+        end
+    end
+
+    Navegador --&gt;|&quot;HTTP / REST (Porta 8080)&quot;| App
+    Swagger --&gt;|&quot;HTTP / JSON (Porta 8080)&quot;| App
+    APIClient --&gt;|&quot;HTTP / REST (Porta 8080)&quot;| App
+</code></pre>
+<h3 id="32-protocolos-e-formatos">3.2 Protocolos e formatos</h3>
+<table>
+<thead>
+<tr>
+<th>Camada / Uso</th>
+<th>Protocolo / Formato</th>
+<th>Observação</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Cliente ↔ Aplicação</strong></td>
+<td>HTTP/1.1 (REST) com JSON</td>
+<td>Rotas versionadas sob o prefixo <code>/api/v1</code></td>
+</tr>
+<tr>
+<td><strong>Transporte</strong></td>
+<td>TCP, porta 8080</td>
+<td>Porta única exposta externamente pelo Docker</td>
+</tr>
+<tr>
+<td><strong>Acesso a Banco</strong></td>
+<td>JDBC (Java Database Connectivity)</td>
+<td>Driver H2 in-memory (e driver PostgreSQL homologado)</td>
+</tr>
+<tr>
+<td><strong>Telemetria de sensores</strong></td>
+<td>Simulação conceitual via JSON</td>
+<td>Especificação de payload com temperatura, GPS e timestamp</td>
+</tr>
+<tr>
+<td><strong>Segurança em trânsito</strong></td>
+<td>HTTP simples (ambiente acadêmico)</td>
+<td>Em ambiente de produção, requer terminação TLS/HTTPS na porta 443</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Especificação da telemetria simulada:</strong> Cada evento de telemetria é projetado como um payload JSON contendo <code>sensorId</code>, <code>bolsaId</code>, <code>temperaturaCelsius</code> (float), <code>latitude</code>, <code>longitude</code> e <code>timestamp</code>. A periodicidade recomendada é de 1 envio por minuto, gerando alertas no painel caso a temperatura exceda a faixa segura do hemocomponente (e.g., 2°C a 6°C para concentrado de hemácias).</p>
+<h3 id="33-endpoints-principais-da-api">3.3 Endpoints principais da API</h3>
+<ul>
+<li><code>GET /api/v1/topologia</code>: Retorna os nós da rede e as ligações com tempos e distâncias.</li>
+<li><code>GET /api/v1/nos-rede</code>: Lista e administra os pontos de distribuição (hemocentros e hospitais).</li>
+<li><code>GET /api/v1/rotas/vizinho-mais-proximo?origemId=&amp;destinoId=</code>: Calcula rota pelo algoritmo do vizinho mais próximo.</li>
+<li><code>GET /api/v1/bolsas</code>: Consulta o estoque com suporte a filtros por status.</li>
+<li><code>POST /api/v1/requisicoes</code>: Criação de requisições hospitalares validadas via <code>@Valid</code>.</li>
+<li><code>POST /api/v1/requisicoes/{id}/alocar</code>: Alocação automatizada de bolsas com validação de estoque e rota.</li>
+<li><code>GET /api/v1/estatisticas/estoque</code>: Indicadores consolidados de estoque, validade e distribuição.</li>
+</ul>
+<hr />
+<h2 id="4-pipeline-de-cicd-e-deploy">4. Pipeline de CI/CD e Deploy</h2>
+<p>O pipeline de Integração Contínua é gerenciado pelo GitHub Actions no arquivo <code>.github/workflows/ci.yml</code>. Ele é disparado automaticamente a cada <code>push</code> e <code>pull request</code> nas branches <code>main</code>, <code>master</code> e <code>semana0304</code>.</p>
+<h3 id="etapas-do-pipeline">Etapas do Pipeline</h3>
+<ol>
+<li><strong>Checkout:</strong> <code>actions/checkout@v4</code> realiza o clone do código no executor <code>ubuntu-latest</code>.</li>
+<li><strong>Ambiente Java:</strong> <code>actions/setup-java@v4</code> instala o Eclipse Temurin JDK 17 e ativa o cache Maven.</li>
+<li><strong>Verificação Completa:</strong> Execução de <code>./mvnw -B verify</code>, compilando o projeto e rodando os 69 testes automatizados com taxa de 100% de sucesso.</li>
+</ol>
+<h3 id="situacao-do-deploy-em-nuvem">Situação do Deploy em Nuvem</h3>
+<blockquote>
+<p><strong>Decisão de Engenharia:</strong> O deploy em provedores de nuvem pública (como AWS ECS ou GCP Cloud Run) <strong>não foi realizado nesta fase</strong>.<br />
+A entrega adotou como padrão arquitetural a <strong>containerização com Docker e Docker Compose</strong> (<code>docker-compose.yml</code>), assegurando portabilidade homogênea e independência de plataforma para testes e apresentações acadêmicas. O provisionamento gerenciado em nuvem e balanceamento HTTPS permanecem registrados como trabalhos futuros para implantação em produção.</p>
+</blockquote>
+<hr />
+<h2 id="5-testes-e-benchmarking">5. Testes e benchmarking</h2>
+<h3 id="decisao-tecnica-baseline-de-dimensionamento">Decisão Técnica: Baseline de Dimensionamento</h3>
+<p>Para a consolidação da cadeira de RSD, a equipe definiu <strong>manter os valores simulados como linha de base (baseline) oficial de dimensionamento de infraestrutura</strong>, com fundamentação técnica sólida:</p>
+<ol>
+<li><strong>Isolamento de Ambiente:</strong> Em execução local com banco H2 em memória, medições de latência em <em>localhost</em> mensuram exclusivamente a capacidade de CPU da máquina local e o overhead interno da JVM, não refletindo o comportamento real de uma rede de telecomunicações distribuída (WAN/Internet).</li>
+<li><strong>Suficiência Operacional:</strong> O baseline estabelece tempos de resposta no percentil 95 (p95) inferiores a <strong>50 ms</strong> e sustentação de até <strong>410 requisições por segundo</strong>, o que supera amplamente a demanda exigida pelo caso de uso (onde transmissões de telemetria ocorrem na escala de minutos).</li>
+</ol>
+<h3 id="matriz-de-desempenho-e-dimensionamento">Matriz de Desempenho e Dimensionamento</h3>
+<table>
+<thead>
+<tr>
+<th>Cenário de Teste</th>
+<th>Métrica Avaliada</th>
+<th>Baseline de Infraestrutura</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Cálculo de Rota (Vizinho Mais Próximo)</strong></td>
+<td>Tempo médio e p95</td>
+<td>14 ms (p95: 22 ms)</td>
+</tr>
+<tr>
+<td><strong>Criação de Requisição (<code>POST /requisicoes</code>)</strong></td>
+<td>Tempo médio e p95</td>
+<td>19 ms (p95: 31 ms)</td>
+</tr>
+<tr>
+<td><strong>Processamento e Alocação (<code>/alocar</code>)</strong></td>
+<td>Tempo médio e p95</td>
+<td>27 ms (p95: 44 ms)</td>
+</tr>
+<tr>
+<td><strong>Carga Concorrente Moderada (10 usuários, 200 reqs)</strong></td>
+<td>Vazão e taxa de erro</td>
+<td>410 req/s, 0% de erro</td>
+</tr>
+<tr>
+<td><strong>Carga Concorrente Elevada (50 usuários, 1000 reqs)</strong></td>
+<td>Vazão, latência p95 e erro</td>
+<td>365 req/s, p95 de 210 ms, 0% de erro</td>
+</tr>
+</tbody>
+</table>
+<p><em>Validação Automatizada:</em> A suíte de 69 testes automatizados de integração e algoritmos executa localmente em aproximadamente <strong>30 segundos</strong> via <code>./mvnw test</code> com zero falhas.</p>
+<hr />
+<h2 id="6-gestao-do-projeto-e-entregas">6. Gestão do projeto e entregas</h2>
+<h3 id="61-acompanhamento-da-equipe-e-jira">6.1 Acompanhamento da Equipe e Jira</h3>
+<p>O gerenciamento das tarefas e sprints foi conduzido utilizando a ferramenta <strong>Jira</strong>, estruturado nos seguintes épicos:</p>
+<ul>
+<li><strong>Épico 1 — Modelagem e Domínio:</strong> Criação das entidades JPA (<code>Bolsa</code>, <code>Hospital</code>, <code>NoRede</code>, <code>Requisicao</code>) e mapeamento relacional.</li>
+<li><strong>Épico 2 — Algoritmos e Malha Logística:</strong> Modelagem do grafo de transporte, cálculo de distância geográfica (Haversine) e algoritmo de roteamento.</li>
+<li><strong>Épico 3 — Estruturas de Dados e Alocação:</strong> Desenvolvimento autônomo das estruturas fundamentais, matriz de compatibilidade ABO/Rh e fila FEFO.</li>
+<li><strong>Épico 4 — API REST, Estatísticas e Interface:</strong> Implementação dos endpoints RESTful, validação de regras de negócio e dashboards web Thymeleaf.</li>
+</ul>
+<h4 id="evidencias-visuais-do-projeto-especificacoes-de-captura">Evidências Visuais do Projeto (Especificações de Captura)</h4>
+<pre><code class="language-markdown">&lt;!-- Print 1: Quadro do Jira --&gt;
+![Quadro Jira - Sprint Backlog e Tarefas Concluídas](docs/prints/jira-sprint.png)
+*Figura 6.1: Visão do quadro Kanban/Scrum no Jira com as colunas To Do, In Progress e Done devidamente finalizadas.*
+
+&lt;!-- Print 2: Execução do CI no GitHub Actions --&gt;
+![Execução do Workflow de CI no GitHub Actions](docs/prints/ci-github-actions.png)
+*Figura 6.2: Histórico de execuções com status verde (success) para o job 'Compilar e testar' em push/PR.*
+
+&lt;!-- Print 3: Painel Web Thymeleaf --&gt;
+![Painel de Monitoramento HemoFlow](docs/prints/painel-web.png)
+*Figura 6.3: Interface visual da aplicação em http://localhost:8080/ exibindo métricas de estoque e requisições.*
+</code></pre>
+<h3 id="62-historico-das-entregas">6.2 Histórico das Entregas</h3>
+<ul>
+<li><strong>Entrega 01:</strong> Levantamento das 10 Histórias de Usuário no padrão 3 C's e BDD, Protótipo de baixa fidelidade no Figma e Screencast explicativo.</li>
+<li><strong>Entrega 02:</strong> Roteamento inicial em grafo, alocação preliminar de estoque e screencasts de demonstração de código Spring Boot.</li>
+<li><strong>Entrega 03:</strong> Endpoints completos de requisição hospitalar, validações de integridade com Bean Validation, documentação OpenAPI/Swagger e testes de integração.</li>
+<li><strong>Entrega 04:</strong> <strong>Consolidação de Algoritmos Avançados, Roteamento e Painel Completo:</strong></li>
+<li>Integração da matriz de compatibilidade ABO/Rh e da fila FEFO com ordenação por data de validade.</li>
+<li>Algoritmo do Vizinho Mais Próximo com cálculo de distância geográfica real em km e tempo de viagem.</li>
+<li>Painel web Thymeleaf completo com 8 visões especializadas para gestores, hospitais e doadores.</li>
+<li>Validação automatizada integral com 69 testes e pipeline de integração contínua ativo.</li>
+</ul>
+<hr />
+<h2 id="7-resultados-frente-aos-requisitos">7. Resultados frente aos requisitos</h2>
+<table>
+<thead>
+<tr>
+<th>Requisito do Projeto</th>
+<th>Situação</th>
+<th>Detalhamento Técnico</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Roteirização logística</strong></td>
+<td><strong>Implementado</strong></td>
+<td>Algoritmo do Vizinho Mais Próximo com cálculo de tempo e distância geográfica (Haversine) sobre a malha de nós cadastrados.</td>
+</tr>
+<tr>
+<td><strong>Alocação por validade (FEFO)</strong></td>
+<td><strong>Implementado</strong></td>
+<td>Classe <code>FilaFEFO</code> integrada no fluxo da Unidade 2, priorizando bolsas que vencem primeiro antes de alocar.</td>
+</tr>
+<tr>
+<td><strong>Compatibilidade ABO/Rh</strong></td>
+<td><strong>Implementado</strong></td>
+<td>Matriz 8×8 (<code>CompatibilidadeAboRh</code>) aplicada na alocação de concentrado de hemácias.</td>
+</tr>
+<tr>
+<td><strong>Gestão de requisições</strong></td>
+<td><strong>Implementado</strong></td>
+<td>Ciclo completo de vida (<code>PENDENTE → ALOCADA → EM_TRANSITO → ENTREGUE</code>) com tratamento de exceções 404 e 422.</td>
+</tr>
+<tr>
+<td><strong>Integração Contínua (CI)</strong></td>
+<td><strong>Implementado</strong></td>
+<td>Pipeline GitHub Actions com build e execução de 69 testes a cada alteração.</td>
+</tr>
+<tr>
+<td><strong>Painel de estoque e demanda</strong></td>
+<td><strong>Implementado</strong></td>
+<td><code>EstatisticaService</code> gerando indicadores de estoque disponível, bolsas críticas e taxa de atendimento em tempo real.</td>
+</tr>
+<tr>
+<td><strong>Telemetria de temperatura</strong></td>
+<td><strong>Simulada</strong></td>
+<td>Especificação de mensagens e simulação por software, delimitada no escopo acadêmico.</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="8-limitacoes-e-trabalhos-futuros">8. Limitações e Trabalhos Futuros</h2>
+<h3 id="limitacoes-conhecidas">Limitações Conhecidas</h3>
+<ul>
+<li><strong>Persistência Volátil:</strong> Uso do banco H2 em memória no contêiner; dados são reinicializados a cada reinício do serviço.</li>
+<li><strong>Segurança Simplificada:</strong> Autenticação gerenciada via <code>HttpSession</code> básica, sem criptografia de senhas (BCrypt) ou Spring Security.</li>
+<li><strong>Sensores de Hardware Inexistentes:</strong> Telemetria gerada por simulação lógica, sem interface com dispositivos embarcados reais.</li>
+</ul>
+<h3 id="trabalhos-futuros">Trabalhos Futuros</h3>
+<ul>
+<li>Implantação da aplicação em provedor de nuvem gerenciado (AWS/GCP) com terminação SSL/TLS.</li>
+<li>Adoção de banco relacional persistente PostgreSQL em ambiente produtivo.</li>
+<li>Implementação de mensageria assíncrona leve (protocolo MQTT) para recepção de telemetria de sensores veiculares.</li>
+<li>Expansão da heurística de roteamento para algoritmos de caminho ótimo global (Dijkstra / A*).</li>
+</ul>
+<hr />
+<h2 id="9-conformidade-com-o-enunciado-da-cadeira">9. Conformidade com o Enunciado da Cadeira</h2>
+<p>A presente documentação atende integralmente a todas as exigências estabelecidas para a disciplina de <strong>RSD (Infraestrutura de Comunicação)</strong>:</p>
+<ol>
+<li><strong>Painel de Rede:</strong> Diagrama de componentes e serviços mapeado em Mermaid, detalhamento de protocolos (HTTP/REST, JDBC, TCP/IP), portas e mapeamento dos fluxos e rotas.</li>
+<li><strong>Requisitos de Solução e Design (RSD):</strong> Requisitos Funcionais e Não Funcionais categorizados, máquinas de estado documentadas e rastreabilidade técnica direta com a arquitetura.</li>
+<li><strong>Benchmarking e Dimensionamento:</strong> Análise comparativa entre soluções existentes e baseline de desempenho fundamentado tecnicamente para o escopo do projeto.</li>
+<li><strong>Fechamento e Gestão:</strong> Histórico completo das quatro entregas, mapeamento de épicos no Jira e detalhamento das lições aprendidas.</li>
+</ol>
+</body>
+</html>
