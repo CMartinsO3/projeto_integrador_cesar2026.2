@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+<aside th:fragment="sidebar(ativo)" class="side" aria-label="Navegação operacional">
+  <a class="brand" th:href="@{/}" aria-label="HemoFlow">
+    <span class="mark" aria-hidden="true">H</span>
+    <span><strong>HemoFlow</strong><em>Equipe</em></span>
+  </a>
+  <nav>
+    <a th:classappend="${ativo == 'operacoes'} ? ' is-active'" th:href="@{/dashboard-admin}">Operações</a>
+    <a th:classappend="${ativo == 'contas'} ? ' is-active'" th:href="@{/contas-operacionais}">Contas</a>
+    <a th:classappend="${ativo == 'bolsas'} ? ' is-active'" th:href="@{/bolsas-painel}">Bolsas</a>
+    <a th:classappend="${ativo == 'requisicoes'} ? ' is-active'" th:href="@{/requisicoes-hospital}">Requisições</a>
+    <a th:classappend="${ativo == 'motorista'} ? ' is-active'" th:href="@{/motorista}">Motorista</a>
+    <a th:classappend="${ativo == 'monitoramento'} ? ' is-active'" th:href="@{/monitoramento}">Monitoramento</a>
+    <a th:classappend="${ativo == 'estatisticas'} ? ' is-active'" th:href="@{/estatisticas}">Estatísticas</a>
+  </nav>
+  <div class="who">
+    <b data-session-name>Usuário operacional</b>
+    <span data-session-role>Administrador</span>
+  </div>
+</aside>
+</body>
+</html>

@@ -1,0 +1,14 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+<div th:fragment="feedback" id="feedbackRegion" class="toast-region" aria-live="polite" aria-atomic="false"></div>
+<dialog th:fragment="confirmDialog" id="confirmDialog" class="confirm-dialog" aria-labelledby="confirmTitle">
+  <h2 id="confirmTitle">Confirmar ação</h2>
+  <p id="confirmMessage"></p>
+  <div class="confirm-actions">
+    <button id="confirmCancel" class="btn btn-ghost" type="button">Cancelar</button>
+    <button id="confirmAccept" class="btn btn-danger" type="button">Confirmar</button>
+  </div>
+</dialog>
+</body>
+</html>

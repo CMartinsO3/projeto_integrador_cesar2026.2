@@ -1,78 +1,30 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Acesso operacional — HemoFlow</title>
-  <link rel="stylesheet" href="/css/hemoflow.css">
-</head>
-<body>
-<div class="auth-shell">
+<html xmlns:th="http://www.thymeleaf.org" lang="pt-BR">
+<head th:replace="~{fragments/head :: head('Acesso operacional — HemoFlow','operacional')}"></head>
+<body class="operational-layout" data-auth-profile="">
+<a class="skip-link" href="#conteudo">Ir ao conteúdo</a>
+<main id="conteudo" class="auth-shell">
   <aside class="auth-story">
-    <a class="brand" href="/" style="color:#fff">
-      <span class="mark" aria-hidden="true">H</span>
-      <span><strong>HemoFlow</strong><em style="color:#9db5b3">Acesso restrito</em></span>
-    </a>
-    <div>
-      <p class="quote">Acesso operacional <em>individual.</em></p>
-      <small id="descricao">Entre com o usuário e a senha que você criou no cadastro operacional. Contas hospitalares precisam ser aprovadas pela equipe clínica.</small>
-    </div>
-    <small>Não compartilhe sua senha.</small>
+    <a class="brand" th:href="@{/}" aria-label="HemoFlow — página inicial"><span class="mark" aria-hidden="true">H</span><span><strong>HemoFlow</strong><em>Acesso restrito</em></span></a>
+    <p style="font-family:var(--font-serif);font-size:2.3rem">Acesso operacional individual.</p>
   </aside>
-  <main class="auth-form">
-    <div class="auth-card">
-      <p class="kicker" id="perfilLabel">Acesso operacional</p>
-      <h1 id="titulo">Entrar</h1>
-      <form id="loginForm" class="form-stack">
-        <label for="usuario">Usuário</label>
-        <input id="usuario" autocomplete="username" required>
-        <label for="senha">Senha</label>
-        <input id="senha" type="password" autocomplete="current-password" required>
-        <button class="btn btn-primary btn-full" type="submit">Entrar</button>
-      </form>
-      <div id="erro" class="alert" role="alert"></div>
-      <div class="auth-links">
-        <a href="/cadastro-operacional">Criar meu cadastro</a>
-        <a id="alternarPerfil" href="/login-motorista">Acesso motorista</a>
-        <a href="/login-admin">Administração</a>
-        <a href="/">Voltar à central</a>
-      </div>
-    </div>
-  </main>
-</div>
-<script>
-const isDriver = window.location.pathname === '/login-motorista';
-document.title = `${isDriver ? 'Motorista' : 'Hospital'} — HemoFlow`;
-document.getElementById('perfilLabel').textContent = isDriver ? 'Motorista' : 'Hospital';
-document.getElementById('titulo').textContent = isDriver ? 'Acompanhamento de entrega' : 'Requisições hospitalares';
-document.getElementById('descricao').textContent = isDriver
-  ? 'Entre com o usuário e a senha que você criou no cadastro operacional.'
-  : 'Entre com o usuário e a senha que você criou no cadastro operacional. Contas hospitalares precisam ser aprovadas pela equipe clínica.';
-document.getElementById('alternarPerfil').href = isDriver ? '/login-hospital' : '/login-motorista';
-document.getElementById('alternarPerfil').textContent = isDriver ? 'Acesso hospital' : 'Acesso motorista';
-
-document.getElementById('loginForm').addEventListener('submit', async event => {
-  event.preventDefault();
-  const error = document.getElementById('erro');
-  error.classList.remove('show');
-  try {
-    const response = await fetch('/api/v1/auth/login-operacional', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        usuario: document.getElementById('usuario').value,
-        senha: document.getElementById('senha').value,
-        perfil: isDriver ? 'MOTORISTA' : 'HOSPITAL'
-      })
-    });
-    const result = await response.json();
-    if (!response.ok) throw new Error(result.erro || `Falha no login (HTTP ${response.status}).`);
-    window.location.href = result.redirect;
-  } catch (failure) {
-    error.textContent = failure.message || 'Não foi possível entrar.';
-    error.classList.add('show');
-  }
-});
-</script>
+  <section class="auth-form" aria-labelledby="operacionalTitulo">
+    <form class="auth-card" data-auth-login data-testid="login-operacional-form">
+      <p class="kicker" data-operational-profile>Perfil operacional</p>
+      <h1 id="operacionalTitulo" data-operational-title>Entrar</h1>
+      <div class="field"><label for="usuario">Usuário</label><input id="usuario" name="usuario" autocomplete="username" required data-testid="login-operacional-usuario"></div>
+      <div class="field" style="margin-top:1rem"><label for="senha">Senha</label><input id="senha" name="senha" type="password" autocomplete="current-password" required data-testid="login-operacional-senha"></div>
+      <button class="btn btn-primary btn-full" type="submit" style="margin-top:1.25rem" data-testid="login-operacional-submit">Entrar</button>
+      <nav class="auth-links" aria-label="Troca de perfil">
+        <a th:href="@{/cadastro-operacional}">Criar meu cadastro</a>
+        <a id="perfilAlternativo" href="/login-hospital">Acesso alternativo</a>
+        <a th:href="@{/login-admin}">Administração</a>
+        <a th:href="@{/}">Voltar à central</a>
+      </nav>
+    </form>
+  </section>
+</main>
+<div th:replace="~{fragments/feedback :: feedback}"></div>
+<script type="module" th:src="@{/js/auth.js}"></script>
 </body>
 </html>

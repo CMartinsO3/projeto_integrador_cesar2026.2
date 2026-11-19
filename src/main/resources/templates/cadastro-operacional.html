@@ -1,123 +1,33 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Criar cadastro operacional — HemoFlow</title>
-  <link rel="stylesheet" href="/css/hemoflow.css">
-</head>
-<body>
-<div class="auth-shell">
+<html xmlns:th="http://www.thymeleaf.org" lang="pt-BR">
+<head th:replace="~{fragments/head :: head('Criar cadastro operacional — HemoFlow','operacional')}"></head>
+<body class="operational-layout" data-auth-profile="OPERACIONAL">
+<a class="skip-link" href="#conteudo">Ir ao conteúdo</a>
+<main id="conteudo" class="auth-shell">
   <aside class="auth-story">
-    <a class="brand" href="/" style="color:#fff">
-      <span class="mark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3c-1.8 3.2-6 6.4-6 10.2A6 6 0 0 0 12 21a6 6 0 0 0 6-7.8C18 9.4 13.8 6.2 12 3Z"/><path d="M12 11v6M9 14h6"/></svg></span>
-      <span><strong>HemoFlow</strong><em style="color:#9db5b3">Cadastro operacional</em></span>
-    </a>
-    <div>
-      <p class="quote">Acesso operacional <em>individual.</em></p>
-      <small>Crie sua conta de motorista ou solicite acesso como representante de um hospital.</small>
-    </div>
-    <small>Não compartilhe sua senha.</small>
+    <a class="brand" th:href="@{/}" aria-label="HemoFlow — página inicial"><span class="mark" aria-hidden="true">H</span><span><strong>HemoFlow</strong><em>Cadastro operacional</em></span></a>
+    <p style="font-family:var(--font-serif);font-size:2.3rem">Acesso operacional individual.</p>
   </aside>
-  <main class="auth-form">
-    <div class="auth-card">
+  <section class="auth-form" aria-labelledby="cadastroTitulo">
+    <form class="auth-card" data-auth-cadastro data-testid="cadastro-operacional-form">
       <p class="kicker">Novo acesso</p>
-      <h1>Criar cadastro</h1>
-      <p class="sub">Motoristas acessam após o cadastro. Contas hospitalares precisam ser aprovadas pela equipe clínica.</p>
-      <form id="cadastroForm" class="form-stack">
-        <label for="nome">Nome completo</label>
-        <input id="nome" autocomplete="name" maxlength="160" required>
-        <label for="usuario">Usuário</label>
-        <input id="usuario" autocomplete="username" maxlength="120" required>
-        <label for="senha">Senha (mínimo de 8 caracteres)</label>
-        <input id="senha" type="password" autocomplete="new-password" minlength="8" maxlength="72" required>
-        <label for="perfil">Perfil</label>
-        <select id="perfil" required>
-          <option value="MOTORISTA">Motorista</option>
-          <option value="HOSPITAL">Hospital</option>
-        </select>
-        <div id="hospitalGroup" hidden>
-          <label for="hospitalId">Hospital</label>
-          <select id="hospitalId">
-            <option value="">Carregando hospitais...</option>
-          </select>
-        </div>
-        <button id="submitButton" class="btn btn-primary btn-full" type="submit">Criar cadastro</button>
-      </form>
-      <div id="mensagem" class="alert" role="status" aria-live="polite"></div>
-      <div class="auth-links">
-        <a id="loginLink" href="/login-motorista">Já tenho cadastro</a>
-        <a href="/">Voltar à central</a>
+      <h1 id="cadastroTitulo">Criar cadastro</h1>
+      <div class="form-stack">
+        <div class="field"><label for="nome">Nome completo</label><input id="nome" name="nome" autocomplete="name" maxlength="160" required data-testid="cadastro-operacional-nome"></div>
+        <div class="field"><label for="usuario">Usuário</label><input id="usuario" name="usuario" autocomplete="username" maxlength="120" required data-testid="cadastro-operacional-usuario"></div>
+        <div class="field"><label for="senha">Senha (mínimo de 8 caracteres)</label><input id="senha" name="senha" type="password" minlength="8" maxlength="72" autocomplete="new-password" required data-testid="cadastro-operacional-senha"></div>
+        <div class="field"><label for="perfil">Perfil</label><select id="perfil" name="perfil" required data-testid="cadastro-operacional-perfil"><option value="MOTORISTA">Motorista</option><option value="HOSPITAL">Hospital</option></select></div>
+        <div class="field" id="hospitalGroup" hidden><label for="hospitalId">Hospital</label><select id="hospitalId" name="hospitalId" data-testid="cadastro-operacional-hospital"><option value="">Carregando hospitais...</option></select></div>
       </div>
-    </div>
-  </main>
-</div>
-<script>
-const perfil = document.getElementById('perfil');
-const hospitalGroup = document.getElementById('hospitalGroup');
-const hospitalId = document.getElementById('hospitalId');
-const mensagem = document.getElementById('mensagem');
-const loginLink = document.getElementById('loginLink');
-
-async function carregarHospitais() {
-  const response = await fetch('/api/v1/hospitais');
-  if (!response.ok) throw new Error(`Não foi possível carregar hospitais (HTTP ${response.status}).`);
-  const hospitais = await response.json();
-  hospitalId.replaceChildren(
-    new Option('Selecione seu hospital', ''),
-    ...hospitais.filter(hospital => hospital.ativo)
-      .map(hospital => new Option(hospital.nome, hospital.id))
-  );
-}
-
-function atualizarPerfil() {
-  const hospital = perfil.value === 'HOSPITAL';
-  hospitalGroup.hidden = !hospital;
-  hospitalId.required = hospital;
-  loginLink.href = hospital ? '/login-hospital' : '/login-motorista';
-}
-
-perfil.addEventListener('change', atualizarPerfil);
-atualizarPerfil();
-carregarHospitais().catch(error => {
-  mensagem.textContent = error.message || 'Não foi possível carregar a lista de hospitais.';
-  mensagem.classList.add('show');
-});
-
-document.getElementById('cadastroForm').addEventListener('submit', async event => {
-  event.preventDefault();
-  mensagem.classList.remove('show', 'ok');
-  const button = document.getElementById('submitButton');
-  button.disabled = true;
-  try {
-    const response = await fetch('/api/v1/auth/cadastro-operacional', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        nome: document.getElementById('nome').value,
-        usuario: document.getElementById('usuario').value,
-        senha: document.getElementById('senha').value,
-        perfil: perfil.value,
-        hospitalId: perfil.value === 'HOSPITAL' ? Number(hospitalId.value) : null
-      })
-    });
-    const result = await response.json();
-    if (!response.ok) throw new Error(result.erro || `Falha ao criar cadastro (HTTP ${response.status}).`);
-    if (result.redirect) {
-      window.location.href = result.redirect;
-      return;
-    }
-    mensagem.textContent = result.mensagem || 'Cadastro enviado para aprovação da equipe clínica.';
-    mensagem.classList.add('show', 'ok');
-    event.target.reset();
-    atualizarPerfil();
-  } catch (error) {
-    mensagem.textContent = error.message || 'Não foi possível criar o cadastro.';
-    mensagem.classList.add('show');
-  } finally {
-    button.disabled = false;
-  }
-});
-</script>
+      <button class="btn btn-primary btn-full" type="submit" style="margin-top:1.25rem" data-testid="cadastro-operacional-submit">Criar cadastro</button>
+      <nav class="auth-links" aria-label="Acesso existente">
+        <a id="loginLink" th:href="@{/login-motorista}" data-testid="cadastro-operacional-login">Já tenho cadastro</a>
+        <a th:href="@{/}">Voltar à central</a>
+      </nav>
+    </form>
+  </section>
+</main>
+<div th:replace="~{fragments/feedback :: feedback}"></div>
+<script type="module" th:src="@{/js/auth.js}"></script>
 </body>
 </html>
