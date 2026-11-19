@@ -8,11 +8,11 @@
   <section class="section-head"><div><p class="kicker">Rede e telemetria</p><h1>Temperatura e conectividade</h1></div><p>Dados simulados exclusivamente para demonstração.</p></section>
   <p class="notice notice-danger" data-testid="monitoramento-aviso-demo"><strong>Somente demonstração:</strong> faixas fictícias de 20–30 °C não servem para decisão clínica.</p>
   <section class="card">
-    <div class="section-head"><div><h2>Leituras das bolsas em trânsito</h2><p id="temperatureStatus" aria-live="polite">Carregando...</p></div><div class="hero-actions"><button id="normalSample" class="btn btn-ghost" type="button" data-testid="monitoramento-simular-normal">Leitura normal</button><button id="alertSample" class="btn btn-danger" type="button" data-testid="monitoramento-simular-alerta">Demonstrar alerta térmico</button></div></div>
+    <div class="section-head"><div><h2>Leituras das bolsas em trânsito</h2><p id="temperatureStatus" aria-live="polite">Carregando...</p></div><div class="hero-actions"><button id="normalSample" class="btn btn-ghost" type="button" data-testid="monitoramento-simular-normal">Leitura normal</button><button id="alertSample" class="btn btn-danger" type="button" data-testid="monitoramento-simular-alerta">Demonstrar alerta térmico</button><button id="toggleSimulation" class="btn btn-ghost" type="button" data-testid="monitoramento-simulacao-toggle">Pausar simulação automática</button></div></div>
     <div class="table-wrap"><table class="data-table"><thead><tr><th>Bolsa</th><th>Componente</th><th>Temperatura</th><th>Faixa fictícia</th><th>Estado</th><th>Registrada em</th></tr></thead><tbody id="temperatureRows" data-testid="monitoramento-leituras"></tbody></table></div>
   </section>
   <section class="card" style="margin-top:1rem">
-    <h2>Dispositivos da rede</h2>
+    <div class="section-head"><div><h2>Dispositivos da rede</h2><p id="heartbeatStatus" aria-live="polite">Heartbeat automático ligado (a cada 30 s).</p></div><div class="hero-actions"><button id="toggleHeartbeat" class="btn btn-ghost" type="button" data-testid="monitoramento-heartbeat-toggle">Pausar heartbeat</button></div></div>
     <div class="table-wrap"><table class="data-table"><thead><tr><th>Dispositivo</th><th>Status</th><th>Atualizado</th><th>Alterar status</th></tr></thead><tbody id="deviceRows" data-testid="monitoramento-dispositivos"></tbody></table></div>
   </section>
   <section class="card" style="margin-top:1rem"><h2>Faixas configuradas</h2><div class="table-wrap"><table class="data-table"><thead><tr><th>Componente</th><th>Limites fictícios</th></tr></thead><tbody id="rangeRows"></tbody></table></div></section>

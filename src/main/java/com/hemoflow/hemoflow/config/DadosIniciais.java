@@ -38,8 +38,7 @@ public class DadosIniciais implements CommandLineRunner {
             AgendamentoRepository agendamentoRepository,
             AdministradorRepository administradorRepository,
             DoacaoRealizadaRepository doacaoRealizadaRepository,
-            LeituraTemperaturaRepository leituraTemperaturaRepository
-    ) {
+            LeituraTemperaturaRepository leituraTemperaturaRepository) {
         this.noRedeRepository = noRedeRepository;
         this.ligacaoRepository = ligacaoRepository;
         this.hospitalRepository = hospitalRepository;
@@ -65,92 +64,118 @@ public class DadosIniciais implements CommandLineRunner {
         administradorRepository.save(new Administrador("admin", "admin", "Administrador HemoFlow"));
 
         // ── Nós de rede ────────────────────────────────────────────────────────
-        NoRede nHemope   = noRedeRepository.save(new NoRede("HEMOPE",  "HEMOPE",                               TipoNo.HEMOCENTRO));
-        NoRede nHr       = noRedeRepository.save(new NoRede("HR",      "Hospital da Restauracao",              TipoNo.HOSPITAL));
-        NoRede nImip     = noRedeRepository.save(new NoRede("IMIP",    "IMIP",                                 TipoNo.HOSPITAL));
-        NoRede nHuoc     = noRedeRepository.save(new NoRede("HUOC",    "Hospital Universitario Oswaldo Cruz",  TipoNo.HOSPITAL));
-        NoRede nAgamen   = noRedeRepository.save(new NoRede("HAM",     "Hospital Agamenon Magalhaes",          TipoNo.HOSPITAL));
-        NoRede nBarao    = noRedeRepository.save(new NoRede("HBL",     "Hospital Barao de Lucena",             TipoNo.HOSPITAL));
-        NoRede nGetul    = noRedeRepository.save(new NoRede("HGV",     "Hospital Getulio Vargas",              TipoNo.HOSPITAL));
-        NoRede nPelopid  = noRedeRepository.save(new NoRede("HPS",     "Hospital Pelopidas Silveira",          TipoNo.HOSPITAL));
-        NoRede nPortug   = noRedeRepository.save(new NoRede("RHP",     "Real Hospital Portugues",              TipoNo.HOSPITAL));
-        NoRede nEsperan  = noRedeRepository.save(new NoRede("HE",      "Hospital Esperanca",                   TipoNo.HOSPITAL));
-        NoRede nSantaJ   = noRedeRepository.save(new NoRede("HSJ",     "Hospital Santa Joana",                 TipoNo.HOSPITAL));
-        NoRede nMariaL   = noRedeRepository.save(new NoRede("HML",     "Hospital Maria Lucinda",               TipoNo.HOSPITAL));
+        NoRede nHemope = noRedeRepository.save(new NoRede("HEMOPE", "HEMOPE", TipoNo.HEMOCENTRO));
+        NoRede nHr = noRedeRepository.save(new NoRede("HR", "Hospital da Restauracao", TipoNo.HOSPITAL));
+        NoRede nImip = noRedeRepository.save(new NoRede("IMIP", "IMIP", TipoNo.HOSPITAL));
+        NoRede nHuoc = noRedeRepository
+                .save(new NoRede("HUOC", "Hospital Universitario Oswaldo Cruz", TipoNo.HOSPITAL));
+        NoRede nAgamen = noRedeRepository.save(new NoRede("HAM", "Hospital Agamenon Magalhaes", TipoNo.HOSPITAL));
+        NoRede nBarao = noRedeRepository.save(new NoRede("HBL", "Hospital Barao de Lucena", TipoNo.HOSPITAL));
+        NoRede nGetul = noRedeRepository.save(new NoRede("HGV", "Hospital Getulio Vargas", TipoNo.HOSPITAL));
+        NoRede nPelopid = noRedeRepository.save(new NoRede("HPS", "Hospital Pelopidas Silveira", TipoNo.HOSPITAL));
+        NoRede nPortug = noRedeRepository.save(new NoRede("RHP", "Real Hospital Portugues", TipoNo.HOSPITAL));
+        NoRede nEsperan = noRedeRepository.save(new NoRede("HE", "Hospital Esperanca", TipoNo.HOSPITAL));
+        NoRede nSantaJ = noRedeRepository.save(new NoRede("HSJ", "Hospital Santa Joana", TipoNo.HOSPITAL));
+        NoRede nMariaL = noRedeRepository.save(new NoRede("HML", "Hospital Maria Lucinda", TipoNo.HOSPITAL));
 
         // ── Ligações ───────────────────────────────────────────────────────────
-        ligacaoRepository.save(new Ligacao(nHemope, nHr,      5));
-        ligacaoRepository.save(new Ligacao(nHemope, nImip,    5));
-        ligacaoRepository.save(new Ligacao(nHemope, nHuoc,    4));
+        ligacaoRepository.save(new Ligacao(nHemope, nHr, 5));
+        ligacaoRepository.save(new Ligacao(nHemope, nImip, 5));
+        ligacaoRepository.save(new Ligacao(nHemope, nHuoc, 4));
         ligacaoRepository.save(new Ligacao(nHemope, nAgamen, 10));
-        ligacaoRepository.save(new Ligacao(nHemope, nBarao,   8));
-        ligacaoRepository.save(new Ligacao(nHemope, nGetul,   7));
+        ligacaoRepository.save(new Ligacao(nHemope, nBarao, 8));
+        ligacaoRepository.save(new Ligacao(nHemope, nGetul, 7));
         ligacaoRepository.save(new Ligacao(nHemope, nPelopid, 9));
-        ligacaoRepository.save(new Ligacao(nHemope, nPortug,  6));
-        ligacaoRepository.save(new Ligacao(nHemope, nEsperan,12));
-        ligacaoRepository.save(new Ligacao(nHemope, nSantaJ,  8));
+        ligacaoRepository.save(new Ligacao(nHemope, nPortug, 6));
+        ligacaoRepository.save(new Ligacao(nHemope, nEsperan, 12));
+        ligacaoRepository.save(new Ligacao(nHemope, nSantaJ, 8));
         ligacaoRepository.save(new Ligacao(nHemope, nMariaL, 15));
-        ligacaoRepository.save(new Ligacao(nHr,     nImip,    3));
+        ligacaoRepository.save(new Ligacao(nHr, nImip, 3));
+        // Ligação didática de longa duração (> limite de 120 min): demonstra o alerta de
+        // cadeia fria e uma rota de 3 pontos (HEMOPE → HUOC → Agamenon).
+        ligacaoRepository.save(new Ligacao(nHuoc, nAgamen, 130));
 
         // ── Hospitais com coordenadas reais de Recife ─────────────────────────
-        Hospital hemope   = criarHospital("HEMOPE",                              nHemope,  -8.0630, -34.8712);
-        Hospital hr       = criarHospital("Hospital da Restauracao",             nHr,      -8.0609, -34.9119);
-        Hospital imip     = criarHospital("IMIP",                                nImip,    -8.0640, -34.9099);
-        Hospital huoc     = criarHospital("Hospital Universitario Oswaldo Cruz", nHuoc,    -8.0635, -34.8994);
-        Hospital agamen   = criarHospital("Hospital Agamenon Magalhaes",         nAgamen,  -8.0298, -34.9268);
-        Hospital barao    = criarHospital("Hospital Barao de Lucena",            nBarao,   -8.0832, -34.9201);
-        Hospital getul    = criarHospital("Hospital Getulio Vargas",             nGetul,   -8.0522, -34.9244);
-        Hospital pelopid  = criarHospital("Hospital Pelopidas Silveira",         nPelopid, -8.0557, -34.9027);
-        Hospital portug   = criarHospital("Real Hospital Portugues",             nPortug,  -8.0478, -34.9001);
-        Hospital esperan  = criarHospital("Hospital Esperanca",                  nEsperan, -8.0600, -34.8843);
-        Hospital santaJ   = criarHospital("Hospital Santa Joana",                nSantaJ,  -8.0462, -34.8979);
-        criarHospital("Hospital Maria Lucinda",                                  nMariaL,  -8.1030, -34.9350);
+        Hospital hemope = criarHospital("HEMOPE", nHemope, -8.052789, -34.897936);
+        Hospital hr = criarHospital("Hospital da Restauracao", nHr, -8.053226, -34.897743);
+        Hospital imip = criarHospital("IMIP", nImip, -8.066705, -34.890340);
+        Hospital huoc = criarHospital("Hospital Universitario Oswaldo Cruz", nHuoc, -8.047627, -34.887683);
+        Hospital agamen = criarHospital("Hospital Agamenon Magalhaes", nAgamen, -8.030281, -34.907715);
+        Hospital barao = criarHospital("Hospital Barao de Lucena", nBarao, -8.038766, -34.939255);
+        Hospital getul = criarHospital("Hospital Getulio Vargas", nGetul, -8.051059, -34.922269);
+        Hospital pelopid = criarHospital("Hospital Pelopidas Silveira", nPelopid, -8.072500, -34.950163);
+        Hospital portug = criarHospital("Real Hospital Portugues", nPortug, -8.062773, -34.897919);
+        Hospital esperan = criarHospital("Hospital Esperanca", nEsperan, -8.066921, -34.894884);
+        Hospital santaJ = criarHospital("Hospital Santa Joana", nSantaJ, -8.052325, -34.898442);
+        criarHospital("Hospital Maria Lucinda", nMariaL, -8.035638, -34.907500);
 
         // ── Bolsas de estoque normal ───────────────────────────────────────────
         LocalDate hoje = LocalDate.now();
-        bolsaRepository.save(new Bolsa(TipoSanguineo.O_NEG,  Hemocomponente.HEMACIAS,        hoje.minusDays(20), hoje.plusDays(15),  "L-001", nHemope));
-        bolsaRepository.save(new Bolsa(TipoSanguineo.O_POS,  Hemocomponente.HEMACIAS,        hoje.minusDays(10), hoje.plusDays(20),  "L-002", nHemope));
-        bolsaRepository.save(new Bolsa(TipoSanguineo.A_POS,  Hemocomponente.PLAQUETAS,       hoje.minusDays(2),  hoje.plusDays(5),   "L-003", nHemope));
-        bolsaRepository.save(new Bolsa(TipoSanguineo.AB_POS, Hemocomponente.PLASMA,          hoje.minusDays(30), hoje.plusDays(330), "L-004", nHemope));
-        bolsaRepository.save(new Bolsa(TipoSanguineo.B_NEG,  Hemocomponente.HEMACIAS,        hoje.minusDays(5),  hoje.plusDays(25),  "L-005", nHr));
-        bolsaRepository.save(new Bolsa(TipoSanguineo.A_NEG,  Hemocomponente.PLASMA,          hoje.minusDays(8),  hoje.plusDays(60),  "L-006", nImip));
-        bolsaRepository.save(new Bolsa(TipoSanguineo.B_POS,  Hemocomponente.CRIOPRECIPITADO, hoje.minusDays(3),  hoje.plusDays(90),  "L-007", nHuoc));
-        bolsaRepository.save(new Bolsa(TipoSanguineo.AB_NEG, Hemocomponente.HEMACIAS,        hoje.minusDays(15), hoje.plusDays(10),  "L-008", nAgamen));
+        bolsaRepository.save(new Bolsa(TipoSanguineo.O_NEG, Hemocomponente.HEMACIAS, hoje.minusDays(20),
+                hoje.plusDays(15), "L-001", nHemope));
+        bolsaRepository.save(new Bolsa(TipoSanguineo.O_POS, Hemocomponente.HEMACIAS, hoje.minusDays(10),
+                hoje.plusDays(20), "L-002", nHemope));
+        bolsaRepository.save(new Bolsa(TipoSanguineo.A_POS, Hemocomponente.PLAQUETAS, hoje.minusDays(2),
+                hoje.plusDays(5), "L-003", nHemope));
+        bolsaRepository.save(new Bolsa(TipoSanguineo.AB_POS, Hemocomponente.PLASMA, hoje.minusDays(30),
+                hoje.plusDays(330), "L-004", nHemope));
+        bolsaRepository.save(new Bolsa(TipoSanguineo.B_NEG, Hemocomponente.HEMACIAS, hoje.minusDays(5),
+                hoje.plusDays(25), "L-005", nHr));
+        bolsaRepository.save(new Bolsa(TipoSanguineo.A_NEG, Hemocomponente.PLASMA, hoje.minusDays(8), hoje.plusDays(60),
+                "L-006", nImip));
+        bolsaRepository.save(new Bolsa(TipoSanguineo.B_POS, Hemocomponente.CRIOPRECIPITADO, hoje.minusDays(3),
+                hoje.plusDays(90), "L-007", nHuoc));
+        bolsaRepository.save(new Bolsa(TipoSanguineo.AB_NEG, Hemocomponente.HEMACIAS, hoje.minusDays(15),
+                hoje.plusDays(10), "L-008", nAgamen));
 
         // ── Bolsas CRÍTICAS (próximas do vencimento) ─────────────────────────
-        bolsaRepository.save(new Bolsa(TipoSanguineo.O_NEG,  Hemocomponente.HEMACIAS,  hoje.minusDays(24), hoje.plusDays(1),  "VENC-001", nHemope));
-        bolsaRepository.save(new Bolsa(TipoSanguineo.A_POS,  Hemocomponente.PLAQUETAS, hoje.minusDays(4),  hoje.plusDays(2),  "VENC-002", nHr));
-        bolsaRepository.save(new Bolsa(TipoSanguineo.B_NEG,  Hemocomponente.PLASMA,    hoje.minusDays(28), hoje.plusDays(3),  "VENC-003", nImip));
-        bolsaRepository.save(new Bolsa(TipoSanguineo.AB_POS, Hemocomponente.HEMACIAS,  hoje.minusDays(22), hoje.plusDays(4),  "VENC-004", nHemope));
+        bolsaRepository.save(new Bolsa(TipoSanguineo.O_NEG, Hemocomponente.HEMACIAS, hoje.minusDays(24),
+                hoje.plusDays(1), "VENC-001", nHemope));
+        bolsaRepository.save(new Bolsa(TipoSanguineo.A_POS, Hemocomponente.PLAQUETAS, hoje.minusDays(4),
+                hoje.plusDays(2), "VENC-002", nHr));
+        bolsaRepository.save(new Bolsa(TipoSanguineo.B_NEG, Hemocomponente.PLASMA, hoje.minusDays(28), hoje.plusDays(3),
+                "VENC-003", nImip));
+        bolsaRepository.save(new Bolsa(TipoSanguineo.AB_POS, Hemocomponente.HEMACIAS, hoje.minusDays(22),
+                hoje.plusDays(4), "VENC-004", nHemope));
         // Bolsa já vencida (para teste de filtragem)
-        bolsaRepository.save(new Bolsa(TipoSanguineo.O_POS,  Hemocomponente.HEMACIAS,  hoje.minusDays(30), hoje.minusDays(2), "VENC-000", nHemope));
+        bolsaRepository.save(new Bolsa(TipoSanguineo.O_POS, Hemocomponente.HEMACIAS, hoje.minusDays(30),
+                hoje.minusDays(2), "VENC-000", nHemope));
 
         // ── Bolsas EM TRÂNSITO ────────────────────────────────────────────────
-        Bolsa t1 = bolsaRepository.save(new Bolsa(TipoSanguineo.O_NEG,  Hemocomponente.HEMACIAS,  hoje.minusDays(5),  hoje.plusDays(20), "TRANS-001", nHr));
-        Bolsa t2 = bolsaRepository.save(new Bolsa(TipoSanguineo.A_POS,  Hemocomponente.PLAQUETAS, hoje.minusDays(3),  hoje.plusDays(4),  "TRANS-002", nImip));
-        Bolsa t3 = bolsaRepository.save(new Bolsa(TipoSanguineo.B_POS,  Hemocomponente.PLASMA,    hoje.minusDays(10), hoje.plusDays(45), "TRANS-003", nAgamen));
-        t1.setStatus(StatusBolsa.EM_TRANSITO); bolsaRepository.save(t1);
-        t2.setStatus(StatusBolsa.EM_TRANSITO); bolsaRepository.save(t2);
-        t3.setStatus(StatusBolsa.EM_TRANSITO); bolsaRepository.save(t3);
+        Bolsa t1 = bolsaRepository.save(new Bolsa(TipoSanguineo.O_NEG, Hemocomponente.HEMACIAS, hoje.minusDays(5),
+                hoje.plusDays(20), "TRANS-001", nHr));
+        Bolsa t2 = bolsaRepository.save(new Bolsa(TipoSanguineo.A_POS, Hemocomponente.PLAQUETAS, hoje.minusDays(3),
+                hoje.plusDays(4), "TRANS-002", nImip));
+        Bolsa t3 = bolsaRepository.save(new Bolsa(TipoSanguineo.B_POS, Hemocomponente.PLASMA, hoje.minusDays(10),
+                hoje.plusDays(45), "TRANS-003", nAgamen));
+        t1.setStatus(StatusBolsa.EM_TRANSITO);
+        bolsaRepository.save(t1);
+        t2.setStatus(StatusBolsa.EM_TRANSITO);
+        bolsaRepository.save(t2);
+        t3.setStatus(StatusBolsa.EM_TRANSITO);
+        bolsaRepository.save(t3);
 
         // ── Requisição de amostra ──────────────────────────────────────────────
-        requisicaoRepository.save(new Requisicao(hemope, TipoSanguineo.A_POS, Hemocomponente.HEMACIAS, 1, LocalDateTime.now().plusHours(6)));
+        requisicaoRepository.save(new Requisicao(hemope, TipoSanguineo.A_POS, Hemocomponente.HEMACIAS, 1,
+                LocalDateTime.now().plusHours(6)));
 
         // ── Histórico sintético (14 dias) para as análises estatísticas ───────
         // Semente fixa → dados reprodutíveis. Apenas ENTREGUE/CANCELADA, para não
         // poluir as filas operacionais. Demanda com leve tendência de alta.
         Random rnd = new Random(2026);
         Random entregaRnd = new Random(77);
-        Hospital[] hospitais = {hemope, hr, imip, huoc, agamen, barao, getul, pelopid, portug, esperan, santaJ};
+        Hospital[] hospitais = { hemope, hr, imip, huoc, agamen, barao, getul, pelopid, portug, esperan, santaJ };
         TipoSanguineo[] tipos = {
                 TipoSanguineo.O_POS, TipoSanguineo.O_POS, TipoSanguineo.O_POS, TipoSanguineo.A_POS, TipoSanguineo.A_POS,
                 TipoSanguineo.B_POS, TipoSanguineo.O_NEG, TipoSanguineo.O_NEG, TipoSanguineo.A_NEG,
-                TipoSanguineo.B_NEG, TipoSanguineo.AB_POS, TipoSanguineo.AB_NEG};
+                TipoSanguineo.B_NEG, TipoSanguineo.AB_POS, TipoSanguineo.AB_NEG };
         for (int dia = 14; dia >= 1; dia--) {
             int nReq = 1 + rnd.nextInt(3) + (14 - dia) / 5;
             for (int i = 0; i < nReq; i++) {
-                LocalDateTime solicitada = LocalDateTime.now().minusDays(dia).withHour(8 + rnd.nextInt(9)).withMinute(rnd.nextInt(60));
-                Requisicao r = new Requisicao(hospitais[rnd.nextInt(hospitais.length)], tipos[rnd.nextInt(tipos.length)],
+                LocalDateTime solicitada = LocalDateTime.now().minusDays(dia).withHour(8 + rnd.nextInt(9))
+                        .withMinute(rnd.nextInt(60));
+                Requisicao r = new Requisicao(hospitais[rnd.nextInt(hospitais.length)],
+                        tipos[rnd.nextInt(tipos.length)],
                         Hemocomponente.HEMACIAS, 1 + rnd.nextInt(4), solicitada.plusHours(4 + rnd.nextInt(20)));
                 r.definirDataSolicitacao(solicitada);
                 boolean entregue = rnd.nextInt(10) < 8;
@@ -168,10 +193,11 @@ public class DadosIniciais implements CommandLineRunner {
         // ── Descartes históricos (taxa de descarte por vencimento) ────────────
         // Bolsas já vencidas e descartadas (motivo VENCIMENTO deduzido pela validade)
         // e duas descartadas por outro motivo, para a análise de descarte.
-        TipoSanguineo[] tiposDescarte = {TipoSanguineo.O_POS, TipoSanguineo.O_POS, TipoSanguineo.A_POS,
-                TipoSanguineo.B_NEG, TipoSanguineo.AB_POS, TipoSanguineo.O_NEG};
+        TipoSanguineo[] tiposDescarte = { TipoSanguineo.O_POS, TipoSanguineo.O_POS, TipoSanguineo.A_POS,
+                TipoSanguineo.B_NEG, TipoSanguineo.AB_POS, TipoSanguineo.O_NEG };
         for (int i = 0; i < tiposDescarte.length; i++) {
-            Bolsa d = new Bolsa(tiposDescarte[i], Hemocomponente.HEMACIAS, hoje.minusDays(60 + i), hoje.minusDays(18 - i),
+            Bolsa d = new Bolsa(tiposDescarte[i], Hemocomponente.HEMACIAS, hoje.minusDays(60 + i),
+                    hoje.minusDays(18 - i),
                     "DESC-" + (i + 1), nHemope);
             d.setStatus(StatusBolsa.DESCARTADA);
             bolsaRepository.save(d);
@@ -183,32 +209,43 @@ public class DadosIniciais implements CommandLineRunner {
             bolsaRepository.save(o);
         }
         // ── Leituras de temperatura simuladas (faixa fictícia 20–30 °C) ───────
-        Bolsa[] emTransito = {t1, t2, t3};
+        Bolsa[] emTransito = { t1, t2, t3 };
         for (int i = 0; i < 24; i++) {
             double temp = Math.round((25.0 + rnd.nextGaussian() * 2.6) * 10.0) / 10.0;
-            leituraTemperaturaRepository.save(new LeituraTemperatura(emTransito[i % 3], temp, 20, 30, temp < 20 || temp > 30));
+            leituraTemperaturaRepository
+                    .save(new LeituraTemperatura(emTransito[i % 3], temp, 20, 30, temp < 20 || temp > 30));
         }
         // ── Campanhas ─────────────────────────────────────────────────────────
-        campanhaRepository.save(new Campanha("Doe Sangue - Vida Nova",     "Campanha emergencial por estoque critico de O negativo.",    hoje,             hoje.plusDays(30),  hemope,  "O_NEG,O_POS"));
-        campanhaRepository.save(new Campanha("Hemope em Acao",             "Venha salvar vidas no maior hemocentro de Pernambuco.",      hoje,             hoje.plusDays(60),  hemope,  "Todos"));
-        campanhaRepository.save(new Campanha("Mutirao do IMIP",            "Doacao coletiva especial para pacientes pediatricos.",       hoje.plusDays(7), hoje.plusDays(45),  imip,    "A_POS,A_NEG,O_POS"));
-        campanhaRepository.save(new Campanha("SOS Estoque Barao de Lucena","Reserva critica de hemacias — venha ajudar!",               hoje,             hoje.plusDays(15),  barao,   "O_NEG,B_NEG"));
-        campanhaRepository.save(new Campanha("Natal Solidario",            "Campanha de fim de ano do Hospital Portugues.",             hoje.plusDays(90),hoje.plusDays(120), portug,  "Todos"));
+        campanhaRepository
+                .save(new Campanha("Doe Sangue - Vida Nova", "Campanha emergencial por estoque critico de O negativo.",
+                        hoje, hoje.plusDays(30), hemope, "O_NEG,O_POS"));
+        campanhaRepository.save(new Campanha("Hemope em Acao", "Venha salvar vidas no maior hemocentro de Pernambuco.",
+                hoje, hoje.plusDays(60), hemope, "Todos"));
+        campanhaRepository.save(new Campanha("Mutirao do IMIP", "Doacao coletiva especial para pacientes pediatricos.",
+                hoje.plusDays(7), hoje.plusDays(45), imip, "A_POS,A_NEG,O_POS"));
+        campanhaRepository.save(new Campanha("SOS Estoque Barao de Lucena",
+                "Reserva critica de hemacias — venha ajudar!", hoje, hoje.plusDays(15), barao, "O_NEG,B_NEG"));
+        campanhaRepository.save(new Campanha("Natal Solidario", "Campanha de fim de ano do Hospital Portugues.",
+                hoje.plusDays(90), hoje.plusDays(120), portug, "Todos"));
 
         // ── Doadores de amostra ───────────────────────────────────────────────
-        Doador maria = doadorRepository.save(new Doador("Maria Silva", "maria@exemplo.com", "senha123", TipoSanguineo.O_NEG, LocalDate.of(1990,  5, 15)));
-        Doador joao  = doadorRepository.save(new Doador("Joao Santos", "joao@exemplo.com",  "senha123", TipoSanguineo.A_POS, LocalDate.of(1985, 11, 22)));
+        Doador maria = doadorRepository.save(new Doador("Maria Silva", "maria@exemplo.com", "senha123",
+                TipoSanguineo.O_NEG, LocalDate.of(1990, 5, 15)));
+        Doador joao = doadorRepository.save(new Doador("Joao Santos", "joao@exemplo.com", "senha123",
+                TipoSanguineo.A_POS, LocalDate.of(1985, 11, 22)));
 
         // ── Histórico de doações dos doadores ────────────────────────────────
-        doacaoRealizadaRepository.save(new DoacaoRealizada(maria, hemope,  hoje.minusDays(120), 450));
-        doacaoRealizadaRepository.save(new DoacaoRealizada(maria, imip,    hoje.minusDays(240), 450));
-        doacaoRealizadaRepository.save(new DoacaoRealizada(maria, hemope,  hoje.minusDays(360), 450));
-        doacaoRealizadaRepository.save(new DoacaoRealizada(joao,  hr,      hoje.minusDays(90),  450));
-        doacaoRealizadaRepository.save(new DoacaoRealizada(joao,  agamen,  hoje.minusDays(180), 450));
+        doacaoRealizadaRepository.save(new DoacaoRealizada(maria, hemope, hoje.minusDays(120), 450));
+        doacaoRealizadaRepository.save(new DoacaoRealizada(maria, imip, hoje.minusDays(240), 450));
+        doacaoRealizadaRepository.save(new DoacaoRealizada(maria, hemope, hoje.minusDays(360), 450));
+        doacaoRealizadaRepository.save(new DoacaoRealizada(joao, hr, hoje.minusDays(90), 450));
+        doacaoRealizadaRepository.save(new DoacaoRealizada(joao, agamen, hoje.minusDays(180), 450));
 
         // ── Agendamentos de amostra ───────────────────────────────────────────
-        agendamentoRepository.save(new Agendamento(maria, hemope,  LocalDateTime.now().plusDays(7).withHour(9).withMinute(0)));
-        agendamentoRepository.save(new Agendamento(joao,  esperan, LocalDateTime.now().plusDays(14).withHour(14).withMinute(30)));
+        agendamentoRepository
+                .save(new Agendamento(maria, hemope, LocalDateTime.now().plusDays(7).withHour(9).withMinute(0)));
+        agendamentoRepository
+                .save(new Agendamento(joao, esperan, LocalDateTime.now().plusDays(14).withHour(14).withMinute(30)));
     }
 
     private Hospital criarHospital(String nome, NoRede no, double lat, double lng) {

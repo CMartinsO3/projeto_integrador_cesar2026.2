@@ -28,7 +28,10 @@ async function carregarBolsas() {
   try {
     const bolsas = await apiRequest("/api/v1/bolsas" + (status ? `?status=${encodeURIComponent(status)}` : ""));
     tbody.replaceChildren();
-    const filtered = bolsas.filter(bolsa => !type || bolsa.tipoSanguineo === type);
+    // FEFO: o que vence primeiro aparece primeiro
+    const filtered = bolsas
+      .filter(bolsa => !type || bolsa.tipoSanguineo === type)
+      .sort((a, b) => String(a.dataValidade).localeCompare(String(b.dataValidade)) || a.id - b.id);
     if (!filtered.length) {
       const row = document.createElement("tr");
       const cell = document.createElement("td");
@@ -47,15 +50,24 @@ async function carregarBolsas() {
         bloodLabel(bolsa.tipoSanguineo),
         componentLabel(bolsa.hemocomponente),
         bolsa.lote || "—",
-        formatDate(bolsa.dataValidade, { dateStyle:"medium", timeStyle:undefined }),
-        statusLabel(bolsa.status)
+        bolsa.dataValidade ? String(bolsa.dataValidade).split("-").reverse().join("/") : "—",
+        bolsa.vencida && bolsa.status === "DISPONIVEL" ? "Vencida" : statusLabel(bolsa.status)
       ].forEach(value => {
         const cell = document.createElement("td");
         cell.textContent = value;
         row.append(cell);
       });
       const actionCell = document.createElement("td");
-      if (bolsa.status === "DISPONIVEL") {
+      if (bolsa.status === "DISPONIVEL" && bolsa.vencida) {
+        row.className = "row-alert";
+        const discard = document.createElement("button");
+        discard.type = "button";
+        discard.className = "btn btn-sm btn-danger";
+        discard.textContent = "Descartar";
+        discard.dataset.testid = `bolsas-linha-${bolsa.id}-descartar`;
+        discard.addEventListener("click", () => darBaixa(bolsa.id, "DESCARTE", discard));
+        actionCell.append(discard);
+      } else if (bolsa.status === "DISPONIVEL") {
         const transfusion = document.createElement("button");
         transfusion.type = "button";
         transfusion.className = "btn btn-sm btn-teal";

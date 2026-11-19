@@ -180,3 +180,6 @@ table.data tbody tr:hover td, table.data-table tbody tr:hover td { background: #
   .confirm-actions { flex-direction: column-reverse; }
   .confirm-actions .btn { width: 100%; }
 }
+
+/* Linhas em alerta (alerta térmico, bolsa vencida) */
+tr.row-alert > td { background: #fbe9e7; color: #7c2720; font-weight: 600; }
