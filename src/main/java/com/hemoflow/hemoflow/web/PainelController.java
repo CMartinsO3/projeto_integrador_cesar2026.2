@@ -43,7 +43,7 @@ public class PainelController {
     @GetMapping("/monitoramento")
     public String monitoramento() { return "monitoramento"; }
 
-    @GetMapping("/bolsas-painel")
+    @GetMapping({"/bolsas-painel", "/painel-bolsas"})
     public String painelBolsas() { return "painel-bolsas"; }
 
     @GetMapping("/login-admin")

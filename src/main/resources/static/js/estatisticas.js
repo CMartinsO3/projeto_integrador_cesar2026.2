@@ -44,13 +44,26 @@ async function loadEstatisticas() {
     const demandaBody = document.getElementById("demandaRows");
     const q = demanda.quantidadePorRequisicao;
     addRows(demandaBody,[
-      ["Média",formatNumber(q.media)],
-      ["Mediana",formatNumber(q.mediana)],
-      ["Desvio padrão",formatNumber(q.desvioPadrao)],
-      ["Máximo",formatNumber(q.maximo)]
+      ["Amostra (n)",formatNumber(q.n)],
+      ["Média",formatNumber(q.media,{maximumFractionDigits:2})],
+      ["Mediana",formatNumber(q.mediana,{maximumFractionDigits:2})],
+      ["Moda",formatNumber(q.moda,{maximumFractionDigits:2})],
+      ["Mínimo · Q1 · Q3 · Máximo",[q.minimo,q.q1,q.q3,q.maximo].map(v => formatNumber(v,{maximumFractionDigits:2})).join(" · ")],
+      ["Amplitude",formatNumber(q.amplitude,{maximumFractionDigits:2})],
+      ["Variância",formatNumber(q.variancia,{maximumFractionDigits:2})],
+      ["Desvio padrão",formatNumber(q.desvioPadrao,{maximumFractionDigits:2})],
+      ["Coeficiente de variação",q.coeficienteVariacaoPercent == null ? "—" : `${formatNumber(q.coeficienteVariacaoPercent,{maximumFractionDigits:1})}%`],
+      ["IC 95% da média",`${formatNumber(q.icInferior95,{maximumFractionDigits:2})} a ${formatNumber(q.icSuperior95,{maximumFractionDigits:2})}`]
     ]);
 
     const descarteBody = document.getElementById("descarteRows");
+    const descarteResumo = document.getElementById("descarteResumo");
+    if (descarteResumo) {
+      descarteResumo.textContent = `Taxa geral: ${formatNumber(descarte.taxaPercent,{maximumFractionDigits:1})}% ` +
+        `(${formatNumber(descarte.descartadasPorVencimento)} de ${formatNumber(descarte.totalColetadas)} bolsas descartadas por vencimento; ` +
+        `IC 95%: ${formatNumber(descarte.icInferior95,{maximumFractionDigits:1})}% a ${formatNumber(descarte.icSuperior95,{maximumFractionDigits:1})}%). ` +
+        `Outros motivos: ${formatNumber(descarte.descartadasOutrosMotivos)} · vencidas ainda não descartadas: ${formatNumber(descarte.vencidasNaoDescartadas)}.`;
+    }
     descarte.porTipo.forEach(item => addRows(descarteBody,[[
       String(item.tipoSanguineo).replace("_POS","+").replace("_NEG","−"),
       formatNumber(item.coletadas),

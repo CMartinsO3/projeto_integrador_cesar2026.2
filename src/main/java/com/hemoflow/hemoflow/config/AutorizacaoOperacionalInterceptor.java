@@ -79,11 +79,15 @@ public class AutorizacaoOperacionalInterceptor implements HandlerInterceptor {
             return Set.of("MOTORISTA", "ADMIN");
         }
         if (path.equals("/dashboard-admin") || path.equals("/contas-operacionais")
-                || path.equals("/bolsas-painel") || path.equals("/monitoramento")
+                || path.equals("/bolsas-painel") || path.equals("/painel-bolsas")
+                || path.equals("/monitoramento")
                 || path.startsWith("/api/v1/bolsas")
                 || path.startsWith("/api/v1/nos-rede")
                 || path.startsWith("/api/v1/monitoramento")
                 || path.equals("/api/v1/auth/usuarios")) {
+            return Set.of("ADMIN");
+        }
+        if (path.matches("/api/v1/requisicoes/\\d+/(processar|alocar|status)")) {
             return Set.of("ADMIN");
         }
         if (path.equals("/api/v1/requisicoes") || path.matches("/api/v1/requisicoes/\\d+")) {

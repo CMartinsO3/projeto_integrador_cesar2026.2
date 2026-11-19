@@ -19,6 +19,8 @@ const form = document.getElementById("requestForm");
 const hospitalSelect = document.getElementById("hospitalId");
 const filterSelect = document.getElementById("hospitalFilter");
 const requestRows = document.getElementById("requestRows");
+let currentRole = null;
+let refreshTimer = null;
 
 function setOptions(select, values, placeholder) {
   if (!select) return;
@@ -32,6 +34,7 @@ async function loadHospitals() {
     window.location.href = "/login-hospital";
     return;
   }
+  currentRole = session.role;
   let hospitals;
   if (session.role === "HOSPITAL") {
     hospitals = [{ id: session.hospitalId, nome: session.hospitalNome, ativo:true }];
@@ -49,16 +52,37 @@ async function loadHospitals() {
   }
 }
 
+async function processRequest(requestId, button) {
+  await withBusy(button, async () => {
+    try {
+      const result = await apiRequest(`/api/v1/requisicoes/${requestId}/processar`, { method:"POST" });
+      const details = result.entregas.map(entrega =>
+        `bolsa ${entrega.bolsa.lote} (${bloodLabel(entrega.bolsa.tipoSanguineo)}, vence ${String(entrega.bolsa.dataValidade).split("-").reverse().join("/")}) · ` +
+        `${entrega.rota.map(no => no.codigo).join(" → ")} · ${entrega.tempoTotalMinutos} min` +
+        (entrega.alertaCadeiaFria ? " · ALERTA cadeia fria" : "")
+      ).join("; ");
+      toast(`Requisição #${requestId} ${statusLabel(result.status)}: ${details}.`, "success");
+    } catch (error) {
+      toast(error.message, "error");
+    }
+    await loadRequests(filterSelect?.value);
+  });
+}
+
 async function loadRequests(hospitalId) {
   if (!requestRows) return;
-  requestRows.replaceChildren();
-  if (!hospitalId) return;
+  if (!hospitalId) {
+    requestRows.replaceChildren();
+    return;
+  }
   try {
     const requests = await apiRequest(`/api/v1/requisicoes?hospitalId=${encodeURIComponent(hospitalId)}`);
+    requests.sort((a, b) => b.id - a.id);
+    requestRows.replaceChildren();
     if (!requests.length) {
       const row = document.createElement("tr");
       const cell = document.createElement("td");
-      cell.colSpan = 5;
+      cell.colSpan = 6;
       cell.className = "empty";
       cell.textContent = "Nenhuma requisição para este hospital.";
       row.append(cell);
@@ -78,6 +102,19 @@ async function loadRequests(hospitalId) {
           cell.textContent = value;
           row.append(cell);
         });
+        const actionCell = document.createElement("td");
+        if (currentRole === "ADMIN" && ["PENDENTE","AGUARDANDO_ESTOQUE"].includes(request.status)) {
+          const process = document.createElement("button");
+          process.type = "button";
+          process.className = "btn btn-sm btn-teal";
+          process.textContent = "Processar";
+          process.dataset.testid = `requisicoes-linha-${request.id}-processar`;
+          process.addEventListener("click", () => processRequest(request.id, process));
+          actionCell.append(process);
+        } else {
+          actionCell.textContent = "—";
+        }
+        row.append(actionCell);
         requestRows.append(row);
       });
     }
@@ -126,4 +163,8 @@ if (form) {
     window.location.href = "/login-hospital";
   });
   loadHospitals().catch(error => toast(error.message, "error"));
+  // Atualiza o status das requisições sem precisar recarregar a página
+  refreshTimer = window.setInterval(() => {
+    if (!document.hidden && filterSelect?.value) loadRequests(filterSelect.value);
+  }, 10000);
 }

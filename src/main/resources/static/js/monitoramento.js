@@ -10,6 +10,8 @@ let timer = null;
 let heartbeatTimer = null;
 let errors = 0;
 const knownAlerts = new Set();
+let autoSimulation = true;
+let heartbeatEnabled = true;
 
 function setTextRow(body, cells) {
   const row = document.createElement("tr");
@@ -109,7 +111,7 @@ async function loadPanel(generateReading = false) {
 }
 
 async function sendHeartbeats() {
-  if (document.hidden) return;
+  if (document.hidden || !heartbeatEnabled) return;
   try {
     const devices = await apiRequest("/api/v1/monitoramento");
     await Promise.all(devices.dispositivos.map(device =>
@@ -124,7 +126,7 @@ function schedule() {
   if (timer) window.clearTimeout(timer);
   if (document.hidden) return;
   timer = window.setTimeout(async () => {
-    await loadPanel(true);
+    await loadPanel(autoSimulation);
     schedule();
   }, intervalMs);
 }
@@ -135,6 +137,25 @@ document.getElementById("normalSample")?.addEventListener("click", () =>
 document.getElementById("alertSample")?.addEventListener("click", () =>
   apiRequest("/api/v1/monitoramento/leituras/simular?forcarAlerta=true", {method:"POST"})
     .then(() => loadPanel(false)).catch(error => toast(error.message,"error")));
+
+const simulationButton = document.getElementById("toggleSimulation");
+simulationButton?.addEventListener("click", () => {
+  autoSimulation = !autoSimulation;
+  simulationButton.textContent = autoSimulation ? "Pausar simulação automática" : "Retomar simulação automática";
+  toast(autoSimulation
+    ? "Simulação automática retomada: nova leitura a cada ciclo."
+    : "Simulação automática pausada: as leituras ficam como estão.", "info");
+});
+const heartbeatButton = document.getElementById("toggleHeartbeat");
+heartbeatButton?.addEventListener("click", () => {
+  heartbeatEnabled = !heartbeatEnabled;
+  heartbeatButton.textContent = heartbeatEnabled ? "Pausar heartbeat" : "Retomar heartbeat";
+  const status = document.getElementById("heartbeatStatus");
+  if (status) status.textContent = heartbeatEnabled
+    ? "Heartbeat automático ligado (a cada 30 s)."
+    : `Heartbeat pausado às ${new Date().toLocaleTimeString("pt-BR")}: sem sinal por 120 s, o servidor marca os dispositivos como OFFLINE.`;
+  if (heartbeatEnabled) sendHeartbeats().then(() => loadPanel(false));
+});
 
 document.addEventListener("visibilitychange", () => {
   if (document.hidden) {

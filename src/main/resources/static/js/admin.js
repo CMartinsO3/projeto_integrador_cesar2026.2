@@ -58,7 +58,8 @@ async function dashboardAdmin() {
     const status = document.getElementById("filtroStatusBolsas").value;
     const body = document.getElementById("tbBolsas");
     try {
-      const bags = await apiRequest("/api/v1/bolsas" + (status ? `?status=${encodeURIComponent(status)}` : ""));
+      const bags = (await apiRequest("/api/v1/bolsas" + (status ? `?status=${encodeURIComponent(status)}` : "")))
+        .sort((a, b) => String(a.dataValidade).localeCompare(String(b.dataValidade)) || a.id - b.id);
       body.replaceChildren();
       if (!status) {
         document.getElementById("cntDisp").textContent = bags.filter(bag => bag.status === "DISPONIVEL").length;
@@ -207,12 +208,15 @@ async function contasOperacionais() {
           body:JSON.stringify({motoristaId:Number(motoristaId)})
         });
         toast("Entrega atribuída ao motorista.", "success");
+        await loadAll();
       } catch (error) { toast(error.message,"error"); }
     });
   });
   document.getElementById("contaPerfil").addEventListener("change", event => {
     document.getElementById("contaHospital").disabled = event.target.value !== "HOSPITAL";
   });
+  window.addEventListener("focus", () => loadAll());
+  document.addEventListener("visibilitychange", () => { if (!document.hidden) loadAll(); });
   await loadAll();
 }
 

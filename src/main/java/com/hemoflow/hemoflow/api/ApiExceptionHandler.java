@@ -62,6 +62,18 @@ public class ApiExceptionHandler {
         ));
     }
 
+    @ExceptionHandler(org.springframework.web.servlet.resource.NoResourceFoundException.class)
+    public ResponseEntity<ErroResposta> paginaInexistente(
+            org.springframework.web.servlet.resource.NoResourceFoundException ex) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new ErroResposta(
+                LocalDateTime.now(),
+                404,
+                "Recurso não encontrado",
+                "Endereço inexistente: /" + ex.getResourcePath(),
+                List.of()
+        ));
+    }
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErroResposta> interno(Exception ex) {
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new ErroResposta(
