@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+<header th:fragment="navbar(ativo, contexto)" class="topbar">
+  <a class="brand" th:href="@{/}" aria-label="HemoFlow — página inicial">
+    <span class="mark" aria-hidden="true">H</span>
+    <span><strong>HemoFlow</strong><em th:text="${contexto == 'operacional' ? 'Área operacional' : 'Hemorrede clínica'}">Hemorrede clínica</em></span>
+  </a>
+  <nav aria-label="Navegação principal">
+    <a th:classappend="${ativo == 'inicio'} ? ' is-active'" th:href="@{/}">Início</a>
+    <a th:if="${contexto == 'publica'}" th:classappend="${ativo == 'mapa'} ? ' is-active'" th:href="@{/mapa}">
+      <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true"><path d="M12 21s6-5.1 6-11a6 6 0 1 0-12 0c0 5.9 6 11 6 11Z"/><circle cx="12" cy="10" r="2"/></svg>
+      <span>Onde doar</span>
+    </a>
+    <a th:if="${contexto == 'publica'}" class="btn donor-access" th:href="@{/login-usuario}">
+      <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true"><path d="M12 3c-1.8 3.2-6 6.4-6 10.2A6 6 0 0 0 12 21a6 6 0 0 0 6-7.8C18 9.4 13.8 6.2 12 3Z"/><path d="M12 11v6M9 14h6"/></svg>
+      <span>Área do doador</span>
+    </a>
+    <a th:if="${contexto == 'operacional'}" th:classappend="${ativo == 'bolsas'} ? ' is-active'" th:href="@{/bolsas-painel}">Estoque</a>
+    <a th:if="${contexto == 'operacional'}" th:classappend="${ativo == 'requisicoes'} ? ' is-active'" th:href="@{/requisicoes-hospital}">Requisições</a>
+    <a th:if="${contexto == 'operacional'}" th:classappend="${ativo == 'motorista'} ? ' is-active'" th:href="@{/motorista}">Motorista</a>
+    <a th:if="${contexto == 'operacional'}" th:classappend="${ativo == 'monitoramento'} ? ' is-active'" th:href="@{/monitoramento}">Monitoramento</a>
+  </nav>
+</header>
+</body>
+</html>

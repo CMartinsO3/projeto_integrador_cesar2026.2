@@ -1,13 +1,8 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org" lang="pt-BR">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>HemoFlow — Visão geral</title>
-    <link rel="stylesheet" href="/css/hemoflow.css">
-</head>
+<head th:replace="~{fragments/head :: head('HemoFlow — Visão geral','publica')}"></head>
 <body>
-<a class="skip" href="#conteudo">Ir ao conteúdo</a>
+<a class="skip-link" href="#conteudo">Ir ao conteúdo</a>
 <header class="topbar home-topbar">
     <a class="brand" href="/">
         <span class="mark" aria-hidden="true">
@@ -15,23 +10,20 @@
         </span>
         <span><strong>HemoFlow</strong><em>Hemorrede clínica</em></span>
     </a>
-<<<<<<< HEAD
     <nav aria-label="Navegação principal">
-=======
-    <nav>
-        <a class="is-active" href="/">Operações</a>
-        <a href="/mapa">Onde doar</a>
-        <a href="/rotas">Rotas</a>
-        <a href="/requisicoes-hospital">Requisições</a>
-        <a href="/monitoramento">Monitoramento</a>
-        <a href="/estatisticas">Estatística</a>
-        <a href="/bolsas-painel">Estoque</a>
-        <a href="/docs">API</a>
->>>>>>> 0f2d9ad (Corrige avisos do compilador e adiciona testes de estatística)
-        <a class="btn btn-ghost" href="/login-admin">Equipe clínica</a>
-        <span data-auth-nav><a class="btn btn-primary" href="/login-usuario">Área do doador</a></span>
+        <a class="btn btn-ghost nav-clinic" href="/login-admin">
+            <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true"><path d="M12 3v18M3 12h18"/><circle cx="12" cy="12" r="8"/></svg>
+            <span>Equipe clínica</span>
+        </a>
+        <span data-auth-nav><a class="btn donor-access" href="/login-usuario">
+            <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true"><path d="M12 3c-1.8 3.2-6 6.4-6 10.2A6 6 0 0 0 12 21a6 6 0 0 0 6-7.8C18 9.4 13.8 6.2 12 3Z"/><path d="M12 11v6M9 14h6"/></svg>
+            <span>Área do doador</span>
+        </a></span>
         <details class="home-menu">
-            <summary class="btn btn-ghost">Menu</summary>
+            <summary class="btn btn-ghost nav-menu">
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
+                <span>Menu</span>
+            </summary>
             <div class="home-menu-panel">
                 <div>
                     <span class="home-menu-label">Doação</span>
@@ -205,34 +197,14 @@
             <a class="api-link" href="/h2-console">Console H2</a>
             <a class="api-link" href="/docs">Swagger</a>
         </div>
-<<<<<<< HEAD
     </details>
-=======
-        <p>Acesso técnico à malha — com o mesmo cuidado da enfermagem.</p>
-    </div>
-    <div class="api-grid">
-        <a class="api-link" href="/api/v1/estatisticas/estoque"><span class="chip chip-get">GET</span> /estatisticas/estoque</a>
-        <a class="api-link" href="/api/v1/estatisticas/requisicoes"><span class="chip chip-get">GET</span> /estatisticas/requisicoes</a>
-        <a class="api-link" href="/estatisticas"><span class="chip chip-get">PÁG</span> /estatisticas (painel)</a>
-        <a class="api-link" href="/api/v1/estatisticas/demanda"><span class="chip chip-get">GET</span> /estatisticas/demanda</a>
-        <a class="api-link" href="/api/v1/estatisticas/probabilidade"><span class="chip chip-get">GET</span> /estatisticas/probabilidade</a>
-        <a class="api-link" href="/api/v1/estatisticas/risco"><span class="chip chip-get">GET</span> /estatisticas/risco</a>
-        <a class="api-link" href="/api/v1/estatisticas/temperatura"><span class="chip chip-get">GET</span> /estatisticas/temperatura</a>
-        <a class="api-link" href="/api/v1/bolsas"><span class="chip chip-get">GET</span> /bolsas</a>
-        <a class="api-link" href="/api/v1/requisicoes"><span class="chip chip-get">GET</span> /requisicoes</a>
-        <a class="api-link" href="/api/v1/hospitais"><span class="chip chip-get">GET</span> /hospitais</a>
-        <a class="api-link" href="#"><span class="chip chip-patch">PATCH</span> /bolsas/{id}/status</a>
-        <a class="api-link" href="#"><span class="chip chip-patch">PATCH</span> /requisicoes/{id}/status</a>
-        <a class="api-link" href="/h2-console">Console H2</a>
-        <a class="api-link" href="/docs">Swagger</a>
-    </div>
->>>>>>> 0f2d9ad (Corrige avisos do compilador e adiciona testes de estatística)
+    </details>
 </main>
 
 <footer class="site-footer">
     <span>HemoFlow · CESAR School · dados sintéticos, respeito clínico.</span>
     <span>Cadeia fria monitorada · Recife</span>
 </footer>
-<script src="/js/hemoflow.js"></script>
+<script type="module" src="/js/public.js"></script>
 </body>
 </html>
