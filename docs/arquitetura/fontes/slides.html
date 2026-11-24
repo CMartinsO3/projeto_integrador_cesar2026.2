@@ -1,0 +1,258 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>HemoFlow — Remodelagem arquitetural (slides)</title>
+<style>
+  @page { size: 1280px 720px; margin: 0; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: #2a2020; font-family: "Segoe UI", Arial, sans-serif; color: #1d1b1b; }
+  .s { width: 1280px; height: 720px; background: #fbf8f7; position: relative; overflow: hidden; padding: 54px 70px 48px 84px; break-after: page; margin: 0 auto 24px; }
+  @media print { .s { margin: 0; } }
+  .s::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 14px; background: #b3121f; }
+  .tag { color: #b3121f; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; font-size: 15px; margin-bottom: 8px; }
+  h1 { font-size: 54px; line-height: 1.08; margin: 0 0 18px; }
+  h2 { font-size: 34px; margin: 0 0 18px; line-height: 1.15; }
+  p, li { font-size: 21px; line-height: 1.45; }
+  ul { margin: 0; padding-left: 26px; } li { margin: 6px 0; }
+  b.r { color: #b3121f; }
+  .num { position: absolute; right: 40px; bottom: 22px; font-size: 13px; color: #9a8f8d; }
+  .fig { position: absolute; left: 84px; right: 54px; top: 128px; bottom: 40px; display: flex; align-items: center; justify-content: center; }
+  .fig img { max-width: 100%; max-height: 100%; }
+  .sub { font-size: 22px; color: #6b6262; }
+  table { border-collapse: collapse; width: 100%; font-size: 17px; }
+  th { background: #7d0c15; color: #fff; text-align: left; padding: 8px 10px; }
+  td { padding: 7px 10px; border-bottom: 1px solid #e6dcda; vertical-align: top; }
+  .n { text-align: right; white-space: nowrap; }
+  .pill { display: inline-block; padding: 2px 10px; border-radius: 12px; color: #fff; font-size: 13px; font-weight: 700; }
+  .core { background: #b3121f; } .sup { background: #1a7a76; } .gen { background: #6b7280; }
+  .grid3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+  .card { background: #fff; border: 1px solid #e6dcda; border-top: 6px solid #b3121f; border-radius: 12px; padding: 18px 20px; }
+  .card h3 { margin: 0 0 6px; font-size: 22px; } .card p { font-size: 17px; margin: 4px 0; }
+  .card.alvo { border-color: #b3121f; box-shadow: 0 0 0 3px #b3121f33; }
+  .valor { font-size: 34px; font-weight: 800; color: #b3121f; margin: 6px 0 2px; }
+  pre { font: 15.5px/1.42 Consolas, monospace; background: #211a1a; color: #f3e9e7; padding: 16px 20px; border-radius: 12px; margin: 0; }
+  pre .k { color: #ff8a8a; font-weight: 700; } pre .s2 { color: #b5e8a0; }
+  .fases { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; margin-top: 10px; }
+  .fase { background: #fff; border-radius: 12px; border: 1px solid #e6dcda; padding: 18px; }
+  .fase .t { font-size: 14px; font-weight: 700; color: #b3121f; letter-spacing: .08em; }
+  .fase h3 { margin: 6px 0; font-size: 22px; } .fase p { font-size: 16.5px; margin: 0; }
+  .barra { display: flex; align-items: center; gap: 14px; margin: 10px 0; font-size: 18px; }
+  .barra .rot { width: 230px; } .barra .tr { flex: 1; background: #efe7e5; border-radius: 6px; height: 34px; }
+  .barra .v { height: 34px; border-radius: 6px; color: #fff; font-weight: 700; line-height: 34px; padding-left: 12px; white-space: nowrap; font-size: 16px; }
+  .capa { background: #1d1414; color: #fff; }
+  .capa::before { width: 100%; height: 14px; bottom: auto; }
+  .capa .sub { color: #d6cbc9; }
+</style>
+</head>
+<body>
+
+<!-- 1 -->
+<section class="s capa">
+  <div style="position:absolute;left:84px;top:170px;right:80px">
+    <div class="tag" style="color:#ff8a8a">Projeto Integrador · CESAR School 2026.2</div>
+    <h1>🩸 HemoFlow<br>Planejamento da remodelagem</h1>
+    <p class="sub">DDD · modelo tático com Gherkin · três camadas · microsserviços · três cenários com orçamento</p>
+  </div>
+  <div style="position:absolute;left:84px;bottom:56px;right:80px;font-size:15px;color:#b9adab;line-height:1.6">
+    Bruna Tiburtino · Caio Martins Oliveira · Cauã Henrique Melo Almeida · João Felipe Bonifácio · Luís Felipe Carneiro ·
+    Luís Henrique Vilas Boas · Priscila Pontes · Rafael Medeiros · Ruan Carlos Oliveira — 24/11/2026
+  </div>
+</section>
+
+<!-- 2 -->
+<section class="s">
+  <div class="tag">Ponto de partida</div>
+  <h2>Um monólito que funciona, mas já sente o peso</h2>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:40px">
+    <div>
+      <p style="font-weight:700;margin:0 0 6px">Hoje</p>
+      <ul>
+        <li>Spring Boot 3 + Thymeleaf + REST <code>/api/v1</code></li>
+        <li>Um PostgreSQL para tudo</li>
+        <li>ABO/Rh, FEFO, Dijkstra e cadeia fria funcionando</li>
+        <li>Docker → GHCR → Render, com gate de testes</li>
+      </ul>
+    </div>
+    <div>
+      <p style="font-weight:700;margin:0 0 6px">Problemas</p>
+      <ul>
+        <li><b class="r">Termos ambíguos:</b> “Hospital” é solicitante <i>e</i> nó do grafo</li>
+        <li><b class="r">Regras espalhadas:</b> controller acessa repositório</li>
+        <li><b class="r">Escala desigual:</b> telemetria × cadastro</li>
+        <li><b class="r">Dados acoplados:</b> todo módulo lê toda tabela</li>
+      </ul>
+    </div>
+  </div>
+  <div class="num">2</div>
+</section>
+
+<!-- 3 -->
+<section class="s">
+  <div class="tag">DDD estratégico · 1/4</div>
+  <h2>Subdomínios: onde está o diferencial</h2>
+  <div class="fig"><img src="../diagramas/01-subdominios.svg"></div>
+  <div class="num">3</div>
+</section>
+
+<!-- 4 -->
+<section class="s">
+  <div class="tag">DDD estratégico · 2/4</div>
+  <h2>Oito bounded contexts</h2>
+  <table>
+    <tr><th style="width:22%">Contexto</th><th style="width:10%">Tipo</th><th>Responsabilidade</th></tr>
+    <tr><td><b>Alocação</b></td><td><span class="pill core">Core</span></td><td>Escolher e reservar bolsas compatíveis (ABO/Rh) priorizando FEFO</td></tr>
+    <tr><td><b>Logística e Rede</b></td><td><span class="pill core">Core</span></td><td>Rede, rota de menor tempo, limite de cadeia fria, guia e entrega</td></tr>
+    <tr><td>Captação</td><td><span class="pill sup">Suporte</span></td><td>Doadores, agendamentos, campanhas e doações</td></tr>
+    <tr><td>Estoque</td><td><span class="pill sup">Suporte</span></td><td>Inventário físico de bolsas, validade, reservas e descarte</td></tr>
+    <tr><td>Requisições Hospitalares</td><td><span class="pill sup">Suporte</span></td><td>Pedido do hospital e acompanhamento</td></tr>
+    <tr><td>Telemetria</td><td><span class="pill sup">Suporte</span></td><td>Leituras de temperatura/GPS e alertas</td></tr>
+    <tr><td>Indicadores</td><td><span class="pill sup">Suporte</span></td><td>Read model estatístico (CQRS)</td></tr>
+    <tr><td>Identidade e Acesso</td><td><span class="pill gen">Genérico</span></td><td>Login, perfis e tokens (Keycloak/Cognito)</td></tr>
+  </table>
+  <div class="num">4</div>
+</section>
+
+<!-- 5 -->
+<section class="s">
+  <div class="tag">DDD estratégico · 3/4</div>
+  <h2>Glossário: a mesma palavra, com significado explícito</h2>
+  <table>
+    <tr><th style="width:24%">Termo</th><th>Significado</th><th style="width:22%">Contexto</th></tr>
+    <tr><td><b>Alocação</b></td><td>Decisão de quais bolsas atendem a requisição; proposta → confirmada</td><td>Alocação</td></tr>
+    <tr><td><b>Reserva</b></td><td>Bloqueio temporário da bolsa no estoque; expira se não confirmada</td><td>Estoque</td></tr>
+    <tr><td><b>FEFO</b></td><td>First Expired, First Out: validade mais próxima sai primeiro</td><td>Alocação</td></tr>
+    <tr><td><b>Solicitante × Nó</b></td><td>O hospital <i>que pede</i> × o hospital <i>como destino</i> no grafo</td><td>Requisições × Logística</td></tr>
+    <tr><td><b>Limite de cadeia fria</b></td><td>Tempo máximo de transporte: 120 min hemácias, 90 min plaquetas</td><td>Logística</td></tr>
+    <tr><td><b>Guia de transporte</b></td><td>Bolsas em FEFO, rota, temperatura, checklist e assinaturas</td><td>Logística</td></tr>
+    <tr><td><b>Estoque insuficiente</b></td><td>Sem bolsas compatíveis e válidas suficientes → aguardando estoque</td><td>Alocação</td></tr>
+  </table>
+  <p style="font-size:16px;color:#6b6262;margin-top:12px">Glossário completo, com 22 termos, no documento (seção 2.3).</p>
+  <div class="num">5</div>
+</section>
+
+<!-- 6 -->
+<section class="s">
+  <div class="tag">DDD estratégico · 4/4</div>
+  <h2>Mapa de contextos</h2>
+  <div class="fig" style="top:118px"><img src="../diagramas/02-mapa-de-contextos.svg"></div>
+  <div class="num">6</div>
+</section>
+
+<!-- 7 -->
+<section class="s">
+  <div class="tag">DDD tático · contexto core</div>
+  <h2>Agregado <i>Alocacao</i>: invariantes protegidas pela raiz</h2>
+  <div class="fig" style="top:118px"><img src="../diagramas/03-modelo-tatico-alocacao.svg"></div>
+  <div class="num">7</div>
+</section>
+
+<!-- 8 -->
+<section class="s">
+  <div class="tag">DDD tático · cenário Gherkin</div>
+  <h2>Alocar bolsas compatíveis respeitando FEFO</h2>
+<pre><span class="k">Contexto:</span> hoje é <span class="s2">"01/12/2030"</span> e o estoque tem hemácias:
+  | BOL-0007 | A+ | 20/12/2030 |   | BOL-0101 | B+ | 03/12/2030 |
+  | BOL-0042 | O- | 05/12/2030 |   | BOL-0150 | A+ | 30/11/2030 |
+
+<span class="k">Cenário:</span> Alocar bolsas compatíveis respeitando FEFO
+  <span class="k">Dado</span> que o Hospital da Restauração abriu a requisição <span class="s2">"REQ-17"</span>
+    de 2 bolsas de hemácias para receptor A+, janela 01/12/2030 14:00
+  <span class="k">Quando</span> o operador solicitar a alocação da requisição <span class="s2">"REQ-17"</span>
+  <span class="k">Então</span> a alocação é confirmada com as bolsas, nesta ordem:
+    | 1 | BOL-0042 | O- |
+    | 2 | BOL-0007 | A+ |
+  <span class="k">E</span> <span class="s2">"BOL-0101"</span> não é considerada (incompatível com A+)
+  <span class="k">E</span> <span class="s2">"BOL-0150"</span> não é considerada (vencida)
+  <span class="k">E</span> as bolsas alocadas ficam <span class="s2">"RESERVADA"</span> no estoque
+  <span class="k">E</span> o evento <span class="s2">"AlocacaoConfirmada"</span> é publicado para a Logística</pre>
+  <div class="num">8</div>
+</section>
+
+<!-- 9 -->
+<section class="s">
+  <div class="tag">Arquitetura</div>
+  <h2>Três camadas dentro de cada contexto</h2>
+  <div class="fig" style="top:118px"><img src="../diagramas/04-arquitetura-tres-camadas.svg"></div>
+  <div class="num">9</div>
+</section>
+
+<!-- 10 -->
+<section class="s">
+  <div class="tag">Projeção</div>
+  <h2>Microsserviços por bounded context (+ serverless opcional)</h2>
+  <div class="fig" style="top:118px"><img src="../diagramas/05-microsservicos.svg"></div>
+  <div class="num">10</div>
+</section>
+
+<!-- 11 -->
+<section class="s">
+  <div class="tag">Como chegar lá</div>
+  <h2>Strangler Fig: evoluir sem reescrever tudo de uma vez</h2>
+  <div class="fases">
+    <div class="fase"><div class="t">FASE 1 · ~3 SEMANAS</div><h3>Monólito modular</h3><p>Pacotes por contexto, três camadas, eventos internos + outbox, um schema por contexto, testes ArchUnit.</p><p style="margin-top:10px"><b>= Cenário A</b></p></div>
+    <div class="fase" style="border:2px solid #b3121f"><div class="t">FASE 2 · ~3 MESES</div><h3>Extrair o que dói</h3><p>Gateway na frente; <b>svc-logistica</b> (core) e <b>svc-telemetria</b> (volume) saem; broker gerenciado; funções serverless.</p><p style="margin-top:10px"><b class="r">= Cenário B (alvo)</b></p></div>
+    <div class="fase"><div class="t">FASE 3 · SOB GATILHO</div><h3>Microsserviços completos</h3><p>Demais contextos e infraestrutura como código, só se: mais de 50 hospitais, mais de 1 milhão de leituras/dia, SLA de 99,9% ou mais de 3 squads.</p><p style="margin-top:10px"><b>= Cenário C</b></p></div>
+  </div>
+  <p style="margin-top:26px;font-size:19px">A função da <b>guia de transporte</b> já roda como serverless (Cloudflare Workers): é o primeiro pedaço da fase 2 pronto.</p>
+  <div class="num">11</div>
+</section>
+
+<!-- 12 -->
+<section class="s">
+  <div class="tag">Orçamento · planilha em docs/arquitetura/orcamento</div>
+  <h2>Três cenários: custo em 12 meses</h2>
+  <div class="grid3">
+    <div class="card" style="border-top-color:#9a8f8d"><h3>A — Monólito modular</h3><p>Render Web + PostgreSQL + Workers Free</p><div class="valor">R$ 11,9 mil</div><p>US$ 44,62/mês · 112 h</p></div>
+    <div class="card alvo"><h3>B — Híbrido <span class="pill core">ALVO</span></h3><p>Monólito + logística + telemetria, RabbitMQ, Redis, Sentry</p><div class="valor">R$ 46,3 mil</div><p>US$ 200,62/mês · 416 h</p></div>
+    <div class="card" style="border-top-color:#4b4242"><h3>C — Microsserviços AWS</h3><p>ECS Fargate, 6 RDS, ALB, SNS/SQS, NAT, CloudWatch</p><div class="valor">R$ 110,7 mil</div><p>US$ 498,91/mês · 980 h</p></div>
+  </div>
+  <div style="margin-top:26px">
+    <div class="barra"><span class="rot">A — Monólito modular</span><span class="tr"><span class="v" style="display:block;width:10.7%;background:#9a8f8d">1,0×</span></span></div>
+    <div class="barra"><span class="rot">B — Híbrido</span><span class="tr"><span class="v" style="display:block;width:41.8%;background:#b3121f">3,9×</span></span></div>
+    <div class="barra"><span class="rot">C — Microsserviços AWS</span><span class="tr"><span class="v" style="display:block;width:100%;background:#4b4242">9,3×</span></span></div>
+  </div>
+  <p style="font-size:14px;color:#6b6262;margin-top:10px">Custo total = infraestrutura em 12 meses + esforço de implantação. Câmbio de R$ 5,40/US$ e valor-hora de R$ 80, ambos editáveis na aba Premissas. Preços de lista estimados (nov/2026).</p>
+  <div class="num">12</div>
+</section>
+
+<!-- 13 -->
+<section class="s">
+  <div class="tag">Decisões</div>
+  <h2>Recomendação e ADRs</h2>
+  <div style="display:grid;grid-template-columns:1.1fr 1fr;gap:36px">
+    <div>
+      <table>
+        <tr><th style="width:14%">ADR</th><th>Decisão</th></tr>
+        <tr><td>001</td><td>DDD: subdomínios + 8 bounded contexts</td></tr>
+        <tr><td>002</td><td>Três camadas em cada contexto</td></tr>
+        <tr><td>003</td><td>Monólito modular + Strangler Fig</td></tr>
+        <tr><td>004</td><td>Eventos de domínio (outbox, DLQ)</td></tr>
+        <tr><td>005</td><td>Banco por serviço</td></tr>
+        <tr><td>006</td><td>Serverless só para funções pontuais</td></tr>
+        <tr><td>007</td><td>Cenário B como alvo de 12 meses</td></tr>
+      </table>
+    </div>
+    <div>
+      <div class="card alvo" style="margin-bottom:18px"><h3>Recomendação</h3><p style="font-size:19px">Fazer o <b>A</b> agora e chegar ao <b class="r">B</b> em 12 meses. Ele isola o core logístico e a telemetria por <b>~42% do custo do C</b>.</p></div>
+      <p style="font-size:18px;margin:0 0 6px"><b>Próximos passos</b></p>
+      <ul style="font-size:17px">
+        <li style="font-size:17px">Criar os pacotes por contexto e o agregado <i>Alocacao</i></li>
+        <li style="font-size:17px">Automatizar o cenário Gherkin (Cucumber)</li>
+        <li style="font-size:17px">ArchUnit para camadas e contextos</li>
+      </ul>
+    </div>
+  </div>
+  <div class="num">13</div>
+</section>
+
+<!-- 14 -->
+<section class="s capa">
+  <div style="position:absolute;left:84px;top:220px;right:80px">
+    <h1>Obrigado!</h1>
+    <p class="sub">Documento (PDF) e slides na entrega · diagramas, planilha e ADRs em <b style="color:#fff">docs/arquitetura/</b> no repositório</p>
+  </div>
+</section>
+
+</body>
+</html>

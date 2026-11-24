@@ -1,0 +1,50 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 700" font-family="Segoe UI, Arial, sans-serif">
+  <defs>
+    <marker id="s" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#3b3333"/></marker>
+  </defs>
+  <rect width="1200" height="700" fill="#fbf8f7"/>
+  <text x="40" y="46" font-size="26" font-weight="700" fill="#1d1b1b">Arquitetura em três camadas — HemoFlow</text>
+  <text x="40" y="72" font-size="14" fill="#6b6262">Cada camada só depende da camada de baixo. Pacotes reais do repositório entre parênteses.</text>
+
+  <!-- clientes -->
+  <g font-size="15" fill="#1d1b1b" text-anchor="middle">
+    <rect x="120" y="96" width="220" height="50" rx="25" fill="#fff" stroke="#9a8f8d"/><text x="230" y="127">Navegador (operador/gestor)</text>
+    <rect x="490" y="96" width="220" height="50" rx="25" fill="#fff" stroke="#9a8f8d"/><text x="600" y="127">Hospital (cliente REST)</text>
+    <rect x="860" y="96" width="220" height="50" rx="25" fill="#fff" stroke="#9a8f8d"/><text x="970" y="127">Motorista / app móvel</text>
+  </g>
+  <g stroke="#3b3333" stroke-width="2" marker-end="url(#s)"><path d="M230 148 L230 178"/><path d="M600 148 L600 178"/><path d="M970 148 L970 178"/></g>
+
+  <!-- Apresentação -->
+  <rect x="40" y="182" width="1120" height="140" rx="16" fill="#eef4ff" stroke="#2563eb" stroke-width="2.5"/>
+  <text x="62" y="212" font-size="18" font-weight="700" fill="#1e40af">1 · Apresentação</text>
+  <text x="62" y="234" font-size="13" fill="#3b4a6b">HTTP, validação de entrada (DTO + Bean Validation), autenticação, tradução de erros</text>
+  <g font-size="14" fill="#1d1b1b">
+    <rect x="62" y="248" width="340" height="56" rx="10" fill="#fff" stroke="#93b0ee"/><text x="78" y="272" font-weight="700">Controllers REST /api/v1</text><text x="78" y="292" font-size="12.5" fill="#6b6262">(api/*Controller, api/dto)</text>
+    <rect x="420" y="248" width="340" height="56" rx="10" fill="#fff" stroke="#93b0ee"/><text x="436" y="272" font-weight="700">Telas Thymeleaf (painéis)</text><text x="436" y="292" font-size="12.5" fill="#6b6262">(web/, resources/templates)</text>
+    <rect x="778" y="248" width="360" height="56" rx="10" fill="#fff" stroke="#93b0ee"/><text x="794" y="272" font-weight="700">ApiExceptionHandler · Auth</text><text x="794" y="292" font-size="12.5" fill="#6b6262">400/404/422 padronizados, sessão</text>
+  </g>
+  <path d="M600 324 L600 352" stroke="#3b3333" stroke-width="2.5" marker-end="url(#s)"/>
+  <text x="612" y="344" font-size="12.5" fill="#6b6262">chama casos de uso com DTOs/comandos</text>
+
+  <!-- Negócio -->
+  <rect x="40" y="356" width="1120" height="164" rx="16" fill="#fdecea" stroke="#b3121f" stroke-width="2.5"/>
+  <text x="62" y="386" font-size="18" font-weight="700" fill="#7d0c15">2 · Negócio (aplicação + domínio)</text>
+  <text x="62" y="408" font-size="13" fill="#6b3b3b">Regras e invariantes; não conhece HTTP nem SQL. Transações começam aqui.</text>
+  <g font-size="14" fill="#1d1b1b">
+    <rect x="62" y="424" width="256" height="76" rx="10" fill="#fff" stroke="#e7a0a6"/><text x="78" y="448" font-weight="700">Alocação</text><text x="78" y="468" font-size="12.5" fill="#6b6262">CompatibilidadeAboRh, FilaFEFO,</text><text x="78" y="486" font-size="12.5" fill="#6b6262">EstoqueService (estoque/)</text>
+    <rect x="334" y="424" width="256" height="76" rx="10" fill="#fff" stroke="#e7a0a6"/><text x="350" y="448" font-weight="700">Logística</text><text x="350" y="468" font-size="12.5" fill="#6b6262">Grafo + Dijkstra, RedeService</text><text x="350" y="486" font-size="12.5" fill="#6b6262">(grafo/, rede/)</text>
+    <rect x="606" y="424" width="256" height="76" rx="10" fill="#fff" stroke="#e7a0a6"/><text x="622" y="448" font-weight="700">Indicadores</text><text x="622" y="468" font-size="12.5" fill="#6b6262">EstatisticaService</text><text x="622" y="486" font-size="12.5" fill="#6b6262">(estatistica/)</text>
+    <rect x="878" y="424" width="260" height="76" rx="10" fill="#fff" stroke="#e7a0a6"/><text x="894" y="448" font-weight="700">Modelo de domínio</text><text x="894" y="468" font-size="12.5" fill="#6b6262">Bolsa, Requisicao, Hospital,</text><text x="894" y="486" font-size="12.5" fill="#6b6262">NoRede, Ligacao (dominio/)</text>
+  </g>
+  <path d="M600 522 L600 550" stroke="#3b3333" stroke-width="2.5" marker-end="url(#s)"/>
+  <text x="612" y="542" font-size="12.5" fill="#6b6262">usa interfaces de repositório</text>
+
+  <!-- Dados -->
+  <rect x="40" y="554" width="1120" height="126" rx="16" fill="#e7f3f2" stroke="#1a7a76" stroke-width="2.5"/>
+  <text x="62" y="584" font-size="18" font-weight="700" fill="#115e5a">3 · Dados (persistência)</text>
+  <g font-size="14" fill="#1d1b1b">
+    <rect x="62" y="600" width="420" height="62" rx="10" fill="#fff" stroke="#8cc7c3"/><text x="78" y="625" font-weight="700">Repositórios Spring Data JPA</text><text x="78" y="645" font-size="12.5" fill="#6b6262">(persistencia/*Repository) — mapeamento ORM</text>
+    <rect x="500" y="600" width="300" height="62" rx="10" fill="#fff" stroke="#8cc7c3"/><text x="516" y="625" font-weight="700">PostgreSQL 16</text><text x="516" y="645" font-size="12.5" fill="#6b6262">volume persistente (Docker)</text>
+    <rect x="818" y="600" width="320" height="62" rx="10" fill="#fff" stroke="#8cc7c3"/><text x="834" y="625" font-weight="700">H2 (testes)</text><text x="834" y="645" font-size="12.5" fill="#6b6262">perfil de teste / CI</text>
+  </g>
+</svg>
