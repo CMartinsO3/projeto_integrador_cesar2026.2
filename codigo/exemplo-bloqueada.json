@@ -1,0 +1,20 @@
+{
+  "requisicao": {
+    "id": 18,
+    "hospital": { "id": 3, "nome": "Hospital da Restauração" },
+    "tipoSanguineo": "A_POS",
+    "hemocomponente": "PLAQUETAS",
+    "quantidade": 2,
+    "janelaEntrega": "2030-12-01T14:00:00-03:00"
+  },
+  "bolsas": [
+    { "id": "BOL-0101", "tipoSanguineo": "B_POS", "hemocomponente": "PLAQUETAS", "validade": "2030-12-04T00:00:00-03:00" },
+    { "id": "BOL-0102", "tipoSanguineo": "A_POS", "hemocomponente": "PLAQUETAS", "validade": "2030-12-04T00:00:00-03:00" }
+  ],
+  "rota": {
+    "caminho": ["Hemocentro Caruaru", "Hospital da Restauração"],
+    "distanciaKm": 135,
+    "tempoEstimadoMin": 110,
+    "saidaPrevista": "2030-12-01T11:00:00-03:00"
+  }
+}

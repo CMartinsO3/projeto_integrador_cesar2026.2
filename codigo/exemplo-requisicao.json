@@ -1,0 +1,20 @@
+{
+  "requisicao": {
+    "id": 17,
+    "hospital": { "id": 3, "nome": "Hospital da Restauração" },
+    "tipoSanguineo": "A_POS",
+    "hemocomponente": "HEMACIAS",
+    "quantidade": 2,
+    "janelaEntrega": "2030-12-01T14:00:00-03:00"
+  },
+  "bolsas": [
+    { "id": "BOL-0007", "tipoSanguineo": "A_POS", "hemocomponente": "HEMACIAS", "validade": "2030-12-20T00:00:00-03:00" },
+    { "id": "BOL-0042", "tipoSanguineo": "O_NEG", "hemocomponente": "HEMACIAS", "validade": "2030-12-05T00:00:00-03:00" }
+  ],
+  "rota": {
+    "caminho": ["HEMOPE (Recife)", "Centro de Distribuição Boa Vista", "Hospital da Restauração"],
+    "distanciaKm": 6.4,
+    "tempoEstimadoMin": 25,
+    "saidaPrevista": "2030-12-01T12:30:00-03:00"
+  }
+}

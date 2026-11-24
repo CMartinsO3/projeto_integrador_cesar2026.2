@@ -1,0 +1,62 @@
+﻿# POST /guia-transporte com exemplo-bloqueada.json
+HTTP 422
+{
+  "numeroGuia": "HF-20261124-09A803",
+  "emitidaEm": "2026-11-24T17:49:14.268Z",
+  "status": "BLOQUEADA",
+  "pendencias": [
+    "Bolsa BOL-0101 (B+) incompatível com receptor A+.",
+    "Tempo de rota (110 min) excede o limite de cadeia fria de Plaquetas (90 min)."
+  ],
+  "requisicao": {
+    "id": 18,
+    "hospital": "Hospital da Restauração",
+    "tipoSanguineoReceptor": "A+",
+    "hemocomponente": "Plaquetas",
+    "quantidade": 2,
+    "janelaEntrega": "2030-12-01T17:00:00.000Z"
+  },
+  "transporte": {
+    "origem": "Hemocentro Caruaru",
+    "destino": "Hospital da Restauração",
+    "caminho": [
+      "Hemocentro Caruaru",
+      "Hospital da Restauração"
+    ],
+    "distanciaKm": 135,
+    "saidaPrevista": "2030-12-01T14:00:00.000Z",
+    "chegadaPrevista": "2030-12-01T15:50:00.000Z",
+    "tempoEstimadoMin": 110
+  },
+  "cadeiaFria": {
+    "temperaturaExigida": "20 °C a 24 °C",
+    "acondicionamento": "Caixa térmica em temperatura ambiente controlada (sem gelo)",
+    "limiteMin": 90,
+    "folgaMin": -20
+  },
+  "itens": [
+    {
+      "ordemFEFO": 1,
+      "bolsaId": "BOL-0101",
+      "tipoSanguineo": "B+",
+      "validade": "2030-12-04T00:00:00-03:00",
+      "compativel": false,
+      "validaNaEntrega": true
+    },
+    {
+      "ordemFEFO": 2,
+      "bolsaId": "BOL-0102",
+      "tipoSanguineo": "A+",
+      "validade": "2030-12-04T00:00:00-03:00",
+      "compativel": true,
+      "validaNaEntrega": true
+    }
+  ],
+  "checklist": [
+    "Conferir etiqueta e número de cada bolsa com esta guia",
+    "Registrar temperatura da caixa na saída (faixa: 20 °C a 24 °C)",
+    "Lacrar a caixa térmica e anotar o número do lacre",
+    "Registrar temperatura e horário no recebimento pelo hospital",
+    "Coletar assinatura do responsável pelo recebimento"
+  ]
+}

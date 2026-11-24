@@ -1,0 +1,18 @@
+npm notice run hemoflow-guia-transporte@1.0.0 test
+npm notice run node --test "test/**/*.test.js"
+✔ matriz ABO/Rh igual à do backend Java (0.4618ms)
+✔ requisição válida gera guia APTA (201) com bolsas em ordem FEFO (15.9034ms)
+✔ bolsa incompatível bloqueia a guia (422) (0.5394ms)
+✔ rota acima do limite de cadeia fria bloqueia a guia (0.4352ms)
+✔ entrada inválida retorna 400 com detalhes (0.3526ms)
+✔ JSON malformado retorna 400 (0.9128ms)
+✔ GET na rota da guia retorna 405 (0.2133ms)
+✔ ?formato=html devolve guia imprimível (10.6315ms)
+ℹ tests 8
+ℹ suites 0
+ℹ pass 8
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 87.4026

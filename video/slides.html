@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>HemoFlow — Função HTTP: Guia de Transporte</title>
+<style>
+  :root { --verm:#b3121f; --verm2:#7d0c15; --fundo:#fbf8f7; --texto:#1d1b1b; --suave:#6b6262; --linha:#e6dcda; }
+  * { box-sizing:border-box; }
+  html,body { margin:0; height:100%; background:#1b1414; font-family:"Segoe UI",system-ui,sans-serif; color:var(--texto); }
+  .slide { display:none; position:absolute; inset:0; margin:auto; width:min(100vw,177.78vh); height:min(56.25vw,100vh);
+           background:var(--fundo); padding:6% 7%; flex-direction:column; justify-content:center; }
+  .slide.ativo { display:flex; }
+  .slide::before { content:""; position:absolute; left:0; top:0; bottom:0; width:1.2%; background:var(--verm); }
+  .tag { color:var(--verm); font-weight:700; letter-spacing:.12em; text-transform:uppercase; font-size:clamp(10px,1.4vw,18px); margin-bottom:1.5%; }
+  h1 { font-size:clamp(24px,4.6vw,64px); margin:0 0 2%; line-height:1.1; }
+  h2 { font-size:clamp(20px,3.2vw,44px); margin:0 0 3%; }
+  p, li { font-size:clamp(13px,1.8vw,26px); line-height:1.45; }
+  .sub { color:var(--suave); font-size:clamp(14px,2vw,28px); }
+  ul { margin:0; padding-left:1.2em; } li { margin:.35em 0; } li b { color:var(--verm2); }
+  .fluxo { display:flex; align-items:center; gap:2%; margin-top:2%; }
+  .caixa { flex:1; border:2px solid var(--linha); border-radius:14px; padding:2.5% 2%; background:#fff; text-align:center; font-size:clamp(11px,1.5vw,22px); }
+  .caixa b { display:block; font-size:1.15em; margin-bottom:.3em; }
+  .caixa.destaque { border-color:var(--verm); box-shadow:0 0 0 4px #b3121f22; }
+  .seta { color:var(--verm); font-size:clamp(18px,3vw,40px); font-weight:700; }
+  .grade { display:grid; grid-template-columns:1fr 1fr; gap:2.5% 4%; }
+  .card { background:#fff; border:1px solid var(--linha); border-left:6px solid var(--verm); border-radius:10px; padding:3% 4%; }
+  .card b { display:block; font-size:clamp(13px,1.9vw,26px); margin-bottom:.2em; }
+  .card span { color:var(--suave); font-size:clamp(11px,1.5vw,21px); }
+  code, pre { font-family:Consolas,"Cascadia Mono",monospace; }
+  pre { background:#211a1a; color:#f3e9e7; border-radius:12px; padding:2.5% 3%; font-size:clamp(10px,1.35vw,19px); line-height:1.5; margin:0; }
+  .k { color:#ff8a8a; } .s { color:#b5e8a0; } .c { color:#9a8f8d; }
+  .status { display:flex; gap:3%; margin-top:3%; }
+  .st { flex:1; border-radius:10px; padding:2% 2.5%; color:#fff; font-size:clamp(12px,1.6vw,22px); }
+  .st b { font-size:1.6em; display:block; }
+  .ok { background:#1e7d32; } .bloq { background:var(--verm); } .erro { background:#5d5353; }
+  .rodape { position:absolute; bottom:4%; right:5%; color:var(--suave); font-size:clamp(10px,1.2vw,16px); }
+  .dica { position:fixed; bottom:8px; left:50%; transform:translateX(-50%); color:#9a8f8d; font:12px system-ui; }
+</style>
+</head>
+<body>
+
+<section class="slide ativo">
+  <div class="tag">Atividade individual · Função HTTP serverless</div>
+  <h1>🩸 HemoFlow<br>Guia de Transporte</h1>
+  <p class="sub">Função na Cloudflare Workers que recebe uma requisição do HemoFlow e devolve a guia de transporte das bolsas de sangue.</p>
+  <p class="sub" style="margin-top:4%">Ruan Carlos Oliveira da Silva · rcos3@cesar.school</p>
+</section>
+
+<section class="slide">
+  <div class="tag">Onde a função entra</div>
+  <h2>Do pedido do hospital até a guia na mão do motorista</h2>
+  <div class="fluxo">
+    <div class="caixa"><b>Hospital</b>pede hemocomponente<br>(tipo, quantidade, prazo)</div>
+    <div class="seta">→</div>
+    <div class="caixa"><b>Backend HemoFlow</b>aloca bolsas (FEFO)<br>calcula rota (Dijkstra)</div>
+    <div class="seta">→</div>
+    <div class="caixa destaque"><b>Função HTTP</b>POST /guia-transporte<br>valida e emite a guia</div>
+    <div class="seta">→</div>
+    <div class="caixa"><b>Guia</b>JSON para o sistema<br>HTML para imprimir</div>
+  </div>
+  <p class="sub" style="margin-top:4%">Função <b>stateless</b>: tudo o que ela precisa vem no corpo da requisição. Não acessa banco de dados.</p>
+</section>
+
+<section class="slide">
+  <div class="tag">Regras verificadas antes de emitir</div>
+  <h2>A guia só sai “apta” se tudo estiver certo</h2>
+  <div class="grade">
+    <div class="card"><b>Compatibilidade ABO/Rh</b><span>mesma matriz 8×8 do backend Java</span></div>
+    <div class="card"><b>FEFO</b><span>bolsas listadas da validade mais próxima para a mais distante</span></div>
+    <div class="card"><b>Validade na entrega</b><span>a bolsa precisa estar válida na chegada prevista</span></div>
+    <div class="card"><b>Cadeia fria</b><span>tempo de rota ≤ limite do componente (plaquetas: 90 min)</span></div>
+    <div class="card"><b>Janela de entrega</b><span>chegada prevista dentro do prazo do hospital</span></div>
+    <div class="card"><b>Quantidade</b><span>nº de bolsas igual ao que foi pedido</span></div>
+  </div>
+</section>
+
+<section class="slide">
+  <div class="tag">Contrato HTTP</div>
+  <h2>Entrada, saída e códigos de status</h2>
+<pre><span class="c">// POST /guia-transporte</span>
+{ <span class="k">"requisicao"</span>: { <span class="k">"tipoSanguineo"</span>: <span class="s">"A_POS"</span>, <span class="k">"hemocomponente"</span>: <span class="s">"HEMACIAS"</span>, <span class="k">"quantidade"</span>: 2, ... },
+  <span class="k">"bolsas"</span>: [ { <span class="k">"id"</span>: <span class="s">"BOL-0007"</span>, <span class="k">"tipoSanguineo"</span>: <span class="s">"A_POS"</span>, <span class="k">"validade"</span>: <span class="s">"..."</span> }, ... ],
+  <span class="k">"rota"</span>: { <span class="k">"caminho"</span>: [<span class="s">"HEMOPE"</span>, ..., <span class="s">"Hospital"</span>], <span class="k">"tempoEstimadoMin"</span>: 25 } }
+
+<span class="c">// resposta</span>
+{ <span class="k">"numeroGuia"</span>: <span class="s">"HF-20261124-176BCB"</span>, <span class="k">"status"</span>: <span class="s">"APTA_PARA_TRANSPORTE"</span>,
+  <span class="k">"pendencias"</span>: [], <span class="k">"cadeiaFria"</span>: { <span class="k">"temperaturaExigida"</span>: <span class="s">"2 °C a 6 °C"</span>, ... },
+  <span class="k">"transporte"</span>: {...}, <span class="k">"itens"</span>: [...], <span class="k">"checklist"</span>: [...] }</pre>
+  <div class="status">
+    <div class="st ok"><b>201</b>guia apta para transporte</div>
+    <div class="st bloq"><b>422</b>guia bloqueada + pendências</div>
+    <div class="st erro"><b>400</b>JSON ou campos inválidos</div>
+  </div>
+</section>
+
+<section class="slide">
+  <div class="tag">Demonstração</div>
+  <h2>Rodando a função</h2>
+  <ul>
+    <li><b>Testes unitários</b> com <code>node:test</code> (8 testes)</li>
+    <li><b>Runtime local da Cloudflare</b> com <code>wrangler dev</code></li>
+    <li>Guia <b>apta</b> → 201 · guia <b>bloqueada</b> → 422 com as pendências</li>
+    <li><b>Guia imprimível</b> com <code>?formato=html</code></li>
+    <li>Deploy: <code>npx wrangler login</code> + <code>npm run deploy</code> → URL pública <code>*.workers.dev</code></li>
+  </ul>
+</section>
+
+<section class="slide">
+  <div class="tag">Resumo</div>
+  <h1>Obrigado!</h1>
+  <ul>
+    <li>Provedor: <b>Cloudflare Workers</b> (serverless, plano gratuito)</li>
+    <li>JavaScript sem dependências em produção. As regras ficam separadas do handler HTTP (<code>guia.js</code> × <code>index.js</code>)</li>
+    <li>Reaproveita as regras do HemoFlow: ABO/Rh, FEFO e cadeia fria</li>
+  </ul>
+</section>
+
+<div class="rodape" id="num"></div>
+<div class="dica">← → ou clique para navegar · F11 tela cheia</div>
+<script>
+  const s = [...document.querySelectorAll('.slide')]; let i = 0;
+  const ir = n => { s[i].classList.remove('ativo'); i = Math.max(0, Math.min(s.length - 1, n)); s[i].classList.add('ativo');
+                    document.getElementById('num').textContent = (i + 1) + ' / ' + s.length; };
+  addEventListener('keydown', e => { if (['ArrowRight','PageDown',' '].includes(e.key)) ir(i + 1); if (['ArrowLeft','PageUp'].includes(e.key)) ir(i - 1); });
+  addEventListener('click', e => ir(e.clientX > innerWidth / 2 ? i + 1 : i - 1));
+  if (location.search.includes('captura')) document.querySelector('.dica').remove();
+  ir((parseInt(location.hash.slice(1), 10) || 1) - 1);
+</script>
+</body>
+</html>
