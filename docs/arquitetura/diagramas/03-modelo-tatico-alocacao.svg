@@ -1,0 +1,110 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 760" font-family="Segoe UI, Arial, sans-serif">
+  <defs>
+    <marker id="s" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#3b3333"/></marker>
+    <marker id="d" viewBox="0 0 12 12" refX="1" refY="6" markerWidth="12" markerHeight="12" orient="auto"><path d="M1,6 L6,1 L11,6 L6,11 z" fill="#3b3333"/></marker>
+  </defs>
+  <rect width="1200" height="760" fill="#fbf8f7"/>
+  <text x="40" y="46" font-size="26" font-weight="700" fill="#1d1b1b">Contexto core “Alocação” — modelo tático</text>
+  <g font-size="13" fill="#1d1b1b">
+    <rect x="700" y="28" width="16" height="16" rx="3" fill="#b3121f"/><text x="722" y="41">Agregado / Entidade</text>
+    <rect x="860" y="28" width="16" height="16" rx="3" fill="#1a7a76"/><text x="882" y="41">Value Object</text>
+    <rect x="985" y="28" width="16" height="16" rx="3" fill="#7c3aed"/><text x="1007" y="41">Serviço / Evento</text>
+  </g>
+
+  <!-- Fronteira do agregado -->
+  <rect x="40" y="80" width="620" height="420" rx="18" fill="none" stroke="#b3121f" stroke-width="2" stroke-dasharray="10 6"/>
+  <text x="60" y="106" font-size="14" font-weight="700" fill="#b3121f">Fronteira do agregado Alocacao (consistência transacional)</text>
+
+  <!-- Alocacao (raiz) -->
+  <rect x="70" y="124" width="300" height="214" rx="10" fill="#fff" stroke="#b3121f" stroke-width="3"/>
+  <rect x="70" y="124" width="300" height="40" rx="10" fill="#b3121f"/>
+  <text x="86" y="150" font-size="17" font-weight="700" fill="#fff">«Aggregate Root» Alocacao</text>
+  <g font-size="14" fill="#1d1b1b" font-family="Consolas, monospace">
+    <text x="86" y="186">id: AlocacaoId</text>
+    <text x="86" y="206">requisicao: RequisicaoRef</text>
+    <text x="86" y="226">itens: List&lt;ItemAlocado&gt;</text>
+    <text x="86" y="246">status: StatusAlocacao</text>
+    <line x1="80" y1="258" x2="360" y2="258" stroke="#e6dcda"/>
+    <text x="86" y="280">+ propor(candidatas, politicas)</text>
+    <text x="86" y="300">+ confirmar()</text>
+    <text x="86" y="320">+ cancelar(motivo)</text>
+  </g>
+
+  <!-- ItemAlocado -->
+  <rect x="420" y="124" width="220" height="120" rx="10" fill="#fff" stroke="#b3121f" stroke-width="2"/>
+  <rect x="420" y="124" width="220" height="36" rx="10" fill="#f6c9cd"/>
+  <text x="434" y="148" font-size="15" font-weight="700" fill="#7d0c15">«Entity» ItemAlocado</text>
+  <g font-size="13.5" font-family="Consolas, monospace" fill="#1d1b1b">
+    <text x="434" y="182">bolsa: BolsaId</text><text x="434" y="202">tipo: TipoSanguineo</text><text x="434" y="222">validade: Validade</text>
+  </g>
+  <path d="M372 184 L418 184" stroke="#3b3333" stroke-width="2" marker-start="url(#d)"/>
+  <text x="380" y="176" font-size="12" fill="#6b6262">1..*</text>
+
+  <!-- VOs dentro -->
+  <g font-size="14" font-family="Consolas, monospace" fill="#1d1b1b">
+    <rect x="70" y="360" width="180" height="56" rx="10" fill="#fff" stroke="#1a7a76" stroke-width="2"/>
+    <text x="84" y="384" font-family="Segoe UI" font-size="12" fill="#1a7a76" font-weight="700">«VO»</text><text x="84" y="404">RequisicaoRef</text>
+    <rect x="266" y="360" width="180" height="56" rx="10" fill="#fff" stroke="#1a7a76" stroke-width="2"/>
+    <text x="280" y="384" font-family="Segoe UI" font-size="12" fill="#1a7a76" font-weight="700">«VO»</text><text x="280" y="404">JanelaEntrega</text>
+    <rect x="462" y="360" width="180" height="56" rx="10" fill="#fff" stroke="#1a7a76" stroke-width="2"/>
+    <text x="476" y="384" font-family="Segoe UI" font-size="12" fill="#1a7a76" font-weight="700">«VO»</text><text x="476" y="404">Quantidade</text>
+    <rect x="70" y="428" width="180" height="56" rx="10" fill="#fff" stroke="#1a7a76" stroke-width="2"/>
+    <text x="84" y="452" font-family="Segoe UI" font-size="12" fill="#1a7a76" font-weight="700">«VO»</text><text x="84" y="472">TipoSanguineo</text>
+    <rect x="266" y="428" width="180" height="56" rx="10" fill="#fff" stroke="#1a7a76" stroke-width="2"/>
+    <text x="280" y="452" font-family="Segoe UI" font-size="12" fill="#1a7a76" font-weight="700">«VO»</text><text x="280" y="472">Hemocomponente</text>
+    <rect x="462" y="428" width="180" height="56" rx="10" fill="#fff" stroke="#1a7a76" stroke-width="2"/>
+    <text x="476" y="452" font-family="Segoe UI" font-size="12" fill="#1a7a76" font-weight="700">«VO»</text><text x="476" y="472">Validade</text>
+  </g>
+  <text x="430" y="292" font-size="13" fill="#6b6262">StatusAlocacao: PROPOSTA →</text>
+  <text x="430" y="310" font-size="13" fill="#6b6262">CONFIRMADA | CANCELADA | EXPIRADA</text>
+
+  <!-- Invariantes -->
+  <rect x="40" y="520" width="620" height="212" rx="14" fill="#fff" stroke="#d6cbc9"/>
+  <text x="60" y="550" font-size="16" font-weight="700" fill="#1d1b1b">Invariantes protegidas pela raiz</text>
+  <g font-size="14" fill="#3b3333">
+    <text x="60" y="580">1. Toda bolsa do item é compatível (ABO/Rh) com o receptor da requisição.</text>
+    <text x="60" y="606">2. Toda bolsa está válida até o fim da janela de entrega.</text>
+    <text x="60" y="632">3. Itens seguem a ordem FEFO (menor validade primeiro; desempate por id).</text>
+    <text x="60" y="658">4. Soma dos itens = quantidade pedida; senão a alocação não é proposta.</text>
+    <text x="60" y="684">5. Só uma alocação ativa por requisição; confirmada não volta a proposta.</text>
+    <text x="60" y="710">6. Mesmo hemocomponente da requisição em todos os itens.</text>
+  </g>
+
+  <!-- Serviços de domínio -->
+  <g font-size="14" fill="#1d1b1b">
+    <rect x="700" y="90" width="460" height="74" rx="12" fill="#fff" stroke="#7c3aed" stroke-width="2"/>
+    <text x="718" y="116" font-size="12" font-weight="700" fill="#7c3aed">«Domain Service»</text>
+    <text x="718" y="138" font-weight="700">PoliticaCompatibilidadeAboRh</text>
+    <text x="718" y="156" font-size="12.5" fill="#6b6262">compativel(doador, receptor) — matriz 8×8, O(1)</text>
+
+    <rect x="700" y="178" width="460" height="74" rx="12" fill="#fff" stroke="#7c3aed" stroke-width="2"/>
+    <text x="718" y="204" font-size="12" font-weight="700" fill="#7c3aed">«Domain Service»</text>
+    <text x="718" y="226" font-weight="700">SelecionadorFEFO</text>
+    <text x="718" y="244" font-size="12.5" fill="#6b6262">ordena candidatas por validade e escolhe N bolsas</text>
+
+    <rect x="700" y="266" width="460" height="74" rx="12" fill="#fff" stroke="#7c3aed" stroke-width="2"/>
+    <text x="718" y="292" font-size="12" font-weight="700" fill="#7c3aed">«Repository»</text>
+    <text x="718" y="314" font-weight="700">AlocacaoRepository</text>
+    <text x="718" y="332" font-size="12.5" fill="#6b6262">salvar(Alocacao) · porRequisicao(RequisicaoRef)</text>
+
+    <rect x="700" y="354" width="460" height="74" rx="12" fill="#fff" stroke="#7c3aed" stroke-width="2"/>
+    <text x="718" y="380" font-size="12" font-weight="700" fill="#7c3aed">«Port / ACL»</text>
+    <text x="718" y="402" font-weight="700">EstoquePort (consulta e reserva de bolsas)</text>
+    <text x="718" y="420" font-size="12.5" fill="#6b6262">traduz Bolsa do Estoque → BolsaCandidata (VO local)</text>
+
+    <rect x="700" y="442" width="460" height="74" rx="12" fill="#fff" stroke="#7c3aed" stroke-width="2"/>
+    <text x="718" y="468" font-size="12" font-weight="700" fill="#7c3aed">«Application Service»</text>
+    <text x="718" y="490" font-weight="700">AlocarRequisicaoHandler</text>
+    <text x="718" y="508" font-size="12.5" fill="#6b6262">orquestra: carrega → propõe → reserva → confirma</text>
+  </g>
+  <path d="M698 300 L376 240" stroke="#3b3333" stroke-width="1.5" stroke-dasharray="5 4" marker-end="url(#s)"/>
+
+  <!-- Eventos -->
+  <rect x="700" y="540" width="460" height="192" rx="14" fill="#f5f0ff" stroke="#7c3aed" stroke-width="2"/>
+  <text x="718" y="570" font-size="16" font-weight="700" fill="#5b21b6">Eventos de domínio publicados</text>
+  <g font-size="14" fill="#1d1b1b">
+    <rect x="718" y="586" width="424" height="36" rx="8" fill="#ffb74d"/><text x="732" y="609" font-weight="700">AlocacaoConfirmada</text><text x="910" y="609" font-size="12.5">→ Logística, Estoque, Indicadores</text>
+    <rect x="718" y="630" width="424" height="36" rx="8" fill="#ffb74d"/><text x="732" y="653" font-weight="700">EstoqueInsuficiente</text><text x="910" y="653" font-size="12.5">→ Requisições, Indicadores</text>
+    <rect x="718" y="674" width="424" height="36" rx="8" fill="#ffb74d"/><text x="732" y="697" font-weight="700">AlocacaoCancelada</text><text x="910" y="697" font-size="12.5">→ Estoque (libera reserva)</text>
+  </g>
+</svg>

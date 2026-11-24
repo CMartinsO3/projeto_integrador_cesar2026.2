@@ -1,0 +1,75 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 720" font-family="Segoe UI, Arial, sans-serif">
+  <defs>
+    <marker id="seta" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#3b3333"/>
+    </marker>
+  </defs>
+  <rect width="1200" height="720" fill="#fbf8f7"/>
+  <text x="40" y="46" font-size="26" font-weight="700" fill="#1d1b1b">HemoFlow — Mapa de Contextos</text>
+  <text x="40" y="72" font-size="14" fill="#6b6262">Seta: upstream (U) → downstream (D). Rótulos: padrão de integração entre os contextos.</text>
+
+  <!-- Contextos -->
+  <g font-size="17" font-weight="700" fill="#1d1b1b" text-anchor="middle">
+    <!-- Captação -->
+    <rect x="40" y="110" width="230" height="84" rx="12" fill="#fff" stroke="#1a7a76" stroke-width="2.5"/>
+    <text x="155" y="146">Captação</text><text x="155" y="170" font-size="13" font-weight="400" fill="#6b6262">Suporte</text>
+    <!-- Estoque -->
+    <rect x="40" y="320" width="230" height="84" rx="12" fill="#fff" stroke="#1a7a76" stroke-width="2.5"/>
+    <text x="155" y="356">Estoque</text><text x="155" y="380" font-size="13" font-weight="400" fill="#6b6262">Suporte</text>
+    <!-- Requisições -->
+    <rect x="485" y="110" width="230" height="84" rx="12" fill="#fff" stroke="#1a7a76" stroke-width="2.5"/>
+    <text x="600" y="146">Requisições Hospitalares</text><text x="600" y="170" font-size="13" font-weight="400" fill="#6b6262">Suporte</text>
+    <!-- Alocação -->
+    <rect x="455" y="310" width="290" height="104" rx="14" fill="#fdecea" stroke="#b3121f" stroke-width="3.5"/>
+    <text x="600" y="352" font-size="20">Alocação</text><text x="600" y="378" font-size="13" font-weight="700" fill="#b3121f">CORE</text>
+    <!-- Logística -->
+    <rect x="890" y="310" width="270" height="104" rx="14" fill="#fdecea" stroke="#b3121f" stroke-width="3.5"/>
+    <text x="1025" y="346" font-size="20">Logística e Rede</text><text x="1025" y="370" font-size="13" font-weight="700" fill="#b3121f">CORE</text>
+    <text x="1025" y="392" font-size="12" font-weight="400" fill="#6b6262">rotas · guia · entrega</text>
+    <!-- Telemetria -->
+    <rect x="930" y="540" width="230" height="84" rx="12" fill="#fff" stroke="#1a7a76" stroke-width="2.5"/>
+    <text x="1045" y="576">Telemetria</text><text x="1045" y="600" font-size="13" font-weight="400" fill="#6b6262">Suporte</text>
+    <!-- Indicadores -->
+    <rect x="485" y="540" width="230" height="84" rx="12" fill="#fff" stroke="#1a7a76" stroke-width="2.5"/>
+    <text x="600" y="576">Indicadores</text><text x="600" y="600" font-size="13" font-weight="400" fill="#6b6262">Suporte</text>
+    <!-- Identidade -->
+    <rect x="890" y="110" width="270" height="84" rx="12" fill="#f1f2f4" stroke="#6b7280" stroke-width="2.5"/>
+    <text x="1025" y="146">Identidade e Acesso</text><text x="1025" y="170" font-size="13" font-weight="400" fill="#6b6262">Genérico</text>
+    <!-- Externos -->
+    <rect x="40" y="560" width="230" height="64" rx="12" fill="#fff" stroke="#9a8f8d" stroke-width="2" stroke-dasharray="7 5"/>
+    <text x="155" y="590" font-size="15">Sensores / Simulador</text><text x="155" y="610" font-size="12" font-weight="400" fill="#6b6262">sistema externo</text>
+  </g>
+
+  <!-- Relações -->
+  <g stroke="#3b3333" stroke-width="2" fill="none" marker-end="url(#seta)">
+    <path d="M155 194 L155 318"/>                 <!-- Captação -> Estoque -->
+    <path d="M600 194 L600 308"/>                 <!-- Requisições -> Alocação -->
+    <path d="M270 362 L453 362"/>                 <!-- Estoque -> Alocação -->
+    <path d="M745 362 L888 362"/>                 <!-- Alocação -> Logística -->
+    <path d="M1045 540 L1045 416"/>               <!-- Telemetria -> Logística -->
+    <path d="M270 592 C 600 680, 800 650, 928 592"/> <!-- Sensores -> Telemetria -->
+    <path d="M600 414 L600 538"/>                 <!-- Alocação -> Indicadores -->
+    <path d="M155 404 C 200 520, 400 560, 483 572"/> <!-- Estoque -> Indicadores -->
+    <path d="M1025 196 L1025 308"/>               <!-- Identidade -> Logística (representa todos) -->
+  </g>
+
+  <!-- Rótulos das relações -->
+  <g font-size="12.5" fill="#1d1b1b">
+    <g><rect x="165" y="236" width="150" height="40" rx="6" fill="#fff" stroke="#d6cbc9"/>
+      <text x="173" y="252">U/D · Customer-Supplier</text><text x="173" y="268" fill="#6b6262">evento DoacaoRegistrada</text></g>
+    <g><rect x="610" y="228" width="178" height="40" rx="6" fill="#fff" stroke="#d6cbc9"/>
+      <text x="618" y="244">U/D · Published Language</text><text x="618" y="260" fill="#6b6262">evento RequisicaoAberta</text></g>
+    <g><rect x="282" y="294" width="160" height="56" rx="6" fill="#fff" stroke="#d6cbc9"/>
+      <text x="290" y="310">U/D · Open Host Service</text><text x="290" y="326" fill="#6b6262">API de reserva de</text><text x="290" y="342" fill="#6b6262">bolsas (Estoque)</text></g>
+    <g><rect x="752" y="378" width="132" height="56" rx="6" fill="#fff" stroke="#d6cbc9"/>
+      <text x="760" y="394">Customer-Supplier</text><text x="760" y="410" fill="#6b6262">evento</text><text x="760" y="426" fill="#6b6262">AlocacaoConfirmada</text></g>
+    <g><rect x="1055" y="450" width="128" height="56" rx="6" fill="#fff" stroke="#d6cbc9"/>
+      <text x="1063" y="466">U/D · Published</text><text x="1063" y="482">Language</text><text x="1063" y="498" fill="#6b6262">LeituraRegistrada</text></g>
+    <g><rect x="470" y="640" width="250" height="40" rx="6" fill="#fff" stroke="#d6cbc9"/>
+      <text x="478" y="656">ACL (camada anticorrupção)</text><text x="478" y="672" fill="#6b6262">traduz pacotes do sensor p/ o modelo</text></g>
+    <g><rect x="610" y="452" width="160" height="40" rx="6" fill="#fff" stroke="#d6cbc9"/>
+      <text x="618" y="468">Conformist</text><text x="618" y="484" fill="#6b6262">read model de eventos</text></g>
+    <g><rect x="1035" y="226" width="148" height="56" rx="6" fill="#fff" stroke="#d6cbc9"/>
+      <text x="1043" y="242">OHS + Conformist</text><text x="1043" y="258" fill="#6b6262">token JWT usado por</text><text x="1043" y="274" fill="#6b6262">todos os contextos</text></g>
+  </g>
+</svg>
