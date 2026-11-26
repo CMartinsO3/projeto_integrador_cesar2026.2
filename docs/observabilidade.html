@@ -1,0 +1,756 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>HemoFlow — Infraestrutura de Observabilidade</title>
+<style>
+  @page { margin: 20mm 18mm; }
+  body { font-family: 'Segoe UI', Arial, sans-serif; font-size: 11pt;
+         line-height: 1.55; color: #1a1a1a; max-width: 900px; margin: 0 auto; padding: 10px 20px; }
+  h1 { font-size: 20pt; color: #b22222; border-bottom: 3px solid #b22222; padding-bottom: 6px; margin-top: 30px; }
+  h2 { font-size: 15pt; color: #8b0000; border-bottom: 2px solid #ccc; padding-bottom: 4px; margin-top: 24px; }
+  h3 { font-size: 12pt; color: #333; margin-top: 16px; }
+  h4 { font-size: 11pt; color: #555; }
+  pre { background: #f4f4f4; border: 1px solid #ddd; border-radius: 4px;
+         padding: 10px 14px; font-size: 9pt; overflow-x: auto;
+         white-space: pre-wrap; word-break: break-word; }
+  code { background: #f0f0f0; padding: 1px 4px; border-radius: 3px; font-size: 9pt; }
+  pre code { background: none; padding: 0; }
+  table { border-collapse: collapse; width: 100%; margin: 10px 0; font-size: 9.5pt; }
+  th { background: #8b0000; color: white; padding: 6px 10px; text-align: left; }
+  td { border: 1px solid #ccc; padding: 5px 10px; }
+  tr:nth-child(even) { background: #f9f9f9; }
+  blockquote { border-left: 4px solid #b22222; margin: 10px 0; padding: 4px 14px;
+                background: #fff5f5; color: #555; font-style: italic; }
+  .toc { background: #fff8f8; border: 1px solid #ddd; border-radius: 6px;
+           padding: 12px 20px; margin: 20px 0; }
+  .toc ul { margin: 4px 0; padding-left: 20px; }
+  .toc a { color: #8b0000; text-decoration: none; }
+  .cover { text-align: center; margin-bottom: 30px; padding: 20px; background: #fff0f0;
+             border-radius: 8px; border-top: 5px solid #b22222; }
+  .cover h1 { font-size: 24pt; border: none; margin: 10px 0; }
+  .cover .subtitle { font-size: 13pt; color: #555; }
+  .checklist-ok  { color: green; font-weight: bold; }
+  .checklist-warn { color: #cc7700; font-weight: bold; }
+  hr { border: none; border-top: 1px solid #ddd; margin: 20px 0; }
+  a { color: #8b0000; }
+</style>
+</head>
+<body>
+<h1 id="hemoflow-infraestrutura-de-observabilidade">HemoFlow — Infraestrutura de Observabilidade</h1>
+<p><strong>Projeto Integrador — CIn/UFPE · 2026.2</strong><br />
+<strong>Disciplina:</strong> Infraestrutura de Comunicação<br />
+<strong>Professor:</strong> Luiz Novaes<br />
+<strong>Valor:</strong> 6,0 pts + 1,0 bônus<br />
+<strong>Equipe:</strong> HemoFlow Team<br />
+<strong>Data:</strong> Novembro / 2026</p>
+<hr />
+<h2 id="sumario">Sumário</h2>
+<ol>
+<li><a href="#1-visão-geral">Visão Geral da Arquitetura de Observabilidade</a></li>
+<li><a href="#2-r1-actuator-e-prometheus">R1 — Actuator e Exposição do Endpoint Prometheus</a></li>
+<li><a href="#3-r2-métricas-de-aplicação">R2 — Métricas de Aplicação</a></li>
+<li><a href="#4-r3-métricas-de-infraestrutura">R3 — Métricas de Infraestrutura</a></li>
+<li><a href="#5-r4-coleta-e-visualização">R4 — Coleta e Visualização (Prometheus + Grafana)</a></li>
+<li><a href="#6-r5-segurança">R5 — Segurança Mínima</a></li>
+<li><a href="#7-r6-logs-e-rastreamento">R6 — Logs (Loki) e Rastreamento (Tempo)</a></li>
+<li><a href="#8-r7-acesso-remoto">R7 — Acesso Remoto para o Professor</a></li>
+<li><a href="#9-bônus-métricas-de-negócio">Bônus — Métricas de Negócio (Micrometer)</a></li>
+<li><a href="#10-checklist">Checklist de Atendimento ao Enunciado</a></li>
+<li><a href="#11-como-executar">Como Executar o Stack</a></li>
+</ol>
+<hr />
+<h2 id="1-visao-geral">1. Visão Geral</h2>
+<p>A aplicação <strong>HemoFlow</strong> (Spring Boot 3.3 / Java 17) foi instrumentada com o stack de observabilidade abaixo, composto inteiramente por ferramentas open-source, orquestradas via Docker Compose.</p>
+<pre><code>┌───────────────────────────────────────────────────────────────────┐
+│                     Rede Docker: observability                    │
+│                                                                   │
+│  ┌──────────────────┐   /actuator/prometheus   ┌──────────────┐  │
+│  │   HemoFlow App   │◄────────────────────────►│  Prometheus  │  │
+│  │  :8080           │   OTLP gRPC (:4317)       │  :9090       │  │
+│  │  Spring Boot 3.3 │──────────────────────────►│              │  │
+│  │  Micrometer      │   Loki HTTP (:3100)       └──────┬───────┘  │
+│  │  OpenTelemetry   │──────────────────────────►       │          │
+│  └──────────────────┘                           ┌──────▼───────┐  │
+│                                                 │   Grafana    │  │
+│  ┌────────────────┐  ┌──────────────┐           │  :3000       │  │
+│  │  Node Exporter │  │  cAdvisor    │           └──────────────┘  │
+│  │  :9100         │  │  :8081       │                             │
+│  │  (host OS)     │  │  (containers)│      ┌──────────────────┐  │
+│  └────────────────┘  └──────────────┘      │  Loki  :3100     │  │
+│          │                   │             │  (agregador logs) │  │
+│          └───────────────────┘             └──────────────────┘  │
+│          Prometheus scrape                                        │
+│                                            ┌──────────────────┐  │
+│                                            │  Tempo  :3200    │  │
+│                                            │  (tracing OTLP)  │  │
+│                                            └──────────────────┘  │
+└───────────────────────────────────────────────────────────────────┘
+</code></pre>
+<p><strong>Componentes:</strong></p>
+<table>
+<thead>
+<tr>
+<th>Serviço</th>
+<th>Imagem</th>
+<th>Porta</th>
+<th>Papel</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>hemoflow</td>
+<td>build local</td>
+<td>8080</td>
+<td>Aplicação Spring Boot</td>
+</tr>
+<tr>
+<td>prometheus</td>
+<td>prom/prometheus:v2.52.0</td>
+<td>9090</td>
+<td>Coleta e armazena métricas</td>
+</tr>
+<tr>
+<td>grafana</td>
+<td>grafana/grafana:11.1.0</td>
+<td>3000</td>
+<td>Visualização e dashboards</td>
+</tr>
+<tr>
+<td>node-exporter</td>
+<td>prom/node-exporter:v1.8.1</td>
+<td>9100</td>
+<td>Métricas do sistema operacional</td>
+</tr>
+<tr>
+<td>cadvisor</td>
+<td>gcr.io/cadvisor/cadvisor:v0.49.1</td>
+<td>8081</td>
+<td>Métricas dos containers Docker</td>
+</tr>
+<tr>
+<td>loki</td>
+<td>grafana/loki:3.1.0</td>
+<td>3100</td>
+<td>Agregação e consulta de logs</td>
+</tr>
+<tr>
+<td>tempo</td>
+<td>grafana/tempo:2.5.0</td>
+<td>3200 / 4317</td>
+<td>Rastreamento distribuído (OTLP)</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="2-r1-actuator-e-exposicao-do-endpoint-prometheus">2. R1 — Actuator e Exposição do Endpoint Prometheus</h2>
+<h3 id="dependencias-adicionadas-ao-pomxml">Dependências adicionadas ao <code>pom.xml</code></h3>
+<pre><code class="language-xml">&lt;!-- Spring Boot Actuator --&gt;
+&lt;dependency&gt;
+    &lt;groupId&gt;org.springframework.boot&lt;/groupId&gt;
+    &lt;artifactId&gt;spring-boot-starter-actuator&lt;/artifactId&gt;
+&lt;/dependency&gt;
+
+&lt;!-- Micrometer Registry Prometheus --&gt;
+&lt;dependency&gt;
+    &lt;groupId&gt;io.micrometer&lt;/groupId&gt;
+    &lt;artifactId&gt;micrometer-registry-prometheus&lt;/artifactId&gt;
+&lt;/dependency&gt;
+</code></pre>
+<h3 id="configuracao-em-applicationproperties">Configuração em <code>application.properties</code></h3>
+<pre><code class="language-properties"># Expõe apenas os endpoints necessários
+management.endpoints.web.exposure.include=health,info,metrics,prometheus
+management.endpoint.health.show-details=always
+
+# Tag global aplicada a todas as métricas
+management.metrics.tags.application=hemoflow
+
+# Informações exibidas em /actuator/info
+info.app.name=HemoFlow
+info.app.version=1.0.0
+info.app.description=Sistema de Gestão de Hemoderivados
+</code></pre>
+<h3 id="endpoints-disponiveis">Endpoints disponíveis</h3>
+<table>
+<thead>
+<tr>
+<th>Endpoint</th>
+<th>URL</th>
+<th>Descrição</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Health</td>
+<td><code>GET /actuator/health</code></td>
+<td>Status da aplicação e do datasource</td>
+</tr>
+<tr>
+<td>Info</td>
+<td><code>GET /actuator/info</code></td>
+<td>Metadados da aplicação</td>
+</tr>
+<tr>
+<td>Metrics</td>
+<td><code>GET /actuator/metrics</code></td>
+<td>Lista de métricas disponíveis</td>
+</tr>
+<tr>
+<td><strong>Prometheus</strong></td>
+<td><strong><code>GET /actuator/prometheus</code></strong></td>
+<td><strong>Scrape endpoint para o Prometheus</strong></td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p><strong>Segurança:</strong> o caminho <code>/actuator/**</code> não é acessível externamente — o Prometheus faz scrape pela rede Docker interna (<code>hemoflow:8080</code>), sem exposição pública.</p>
+</blockquote>
+<hr />
+<h2 id="3-r2-metricas-de-aplicacao">3. R2 — Métricas de Aplicação</h2>
+<p>Após a adição do Actuator e do Micrometer Registry, as métricas a seguir são automaticamente coletadas e publicadas em <code>/actuator/prometheus</code>:</p>
+<h3 id="metricas-http-spring-web">Métricas HTTP (spring-web)</h3>
+<table>
+<thead>
+<tr>
+<th>Métrica</th>
+<th>Tipo</th>
+<th>Query PromQL de exemplo</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Contagem de requisições</td>
+<td>Counter</td>
+<td><code>http_server_requests_seconds_count{application="hemoflow"}</code></td>
+</tr>
+<tr>
+<td>Latência (histograma)</td>
+<td>Histogram</td>
+<td><code>histogram_quantile(0.99, rate(http_server_requests_seconds_bucket[1m]))</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="metricas-jvm">Métricas JVM</h3>
+<table>
+<thead>
+<tr>
+<th>Métrica</th>
+<th>Tipo</th>
+<th>Exemplo</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Heap usado</td>
+<td>Gauge</td>
+<td><code>jvm_memory_used_bytes{area="heap"}</code></td>
+</tr>
+<tr>
+<td>GC pausas</td>
+<td>Counter</td>
+<td><code>jvm_gc_pause_seconds_count</code></td>
+</tr>
+<tr>
+<td>Threads</td>
+<td>Gauge</td>
+<td><code>jvm_threads_live_threads</code></td>
+</tr>
+<tr>
+<td>CPU (processo)</td>
+<td>Gauge</td>
+<td><code>process_cpu_usage</code></td>
+</tr>
+<tr>
+<td>Uptime</td>
+<td>Gauge</td>
+<td><code>process_uptime_seconds</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="metricas-hikaricp-pool-de-conexoes-h2">Métricas HikariCP (pool de conexões H2)</h3>
+<table>
+<thead>
+<tr>
+<th>Métrica</th>
+<th>Tipo</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>hikaricp_connections_active</code></td>
+<td>Gauge</td>
+</tr>
+<tr>
+<td><code>hikaricp_connections_idle</code></td>
+<td>Gauge</td>
+</tr>
+<tr>
+<td><code>hikaricp_connections_timeout_total</code></td>
+<td>Counter</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="4-r3-metricas-de-infraestrutura">4. R3 — Métricas de Infraestrutura</h2>
+<h3 id="node-exporter-metricas-do-host">Node Exporter (métricas do host)</h3>
+<p>Coleta métricas do sistema operacional do host Docker:</p>
+<pre><code class="language-yaml"># docker-compose.yml
+node-exporter:
+  image: prom/node-exporter:v1.8.1
+  pid: host
+  volumes:
+    - /proc:/host/proc:ro
+    - /sys:/host/sys:ro
+    - /:/rootfs:ro
+  ports:
+    - &quot;9100:9100&quot;
+</code></pre>
+<p><strong>Métricas disponíveis:</strong> CPU por núcleo, memória (MemTotal, MemAvailable), I/O de disco, bytes de rede por interface.</p>
+<p><strong>PromQL — Uso de CPU:</strong></p>
+<pre><code>1 - avg(rate(node_cpu_seconds_total{mode=&quot;idle&quot;}[2m]))
+</code></pre>
+<h3 id="cadvisor-metricas-de-containers">cAdvisor (métricas de containers)</h3>
+<p>Monitora cada container Docker individualmente:</p>
+<pre><code class="language-yaml">cadvisor:
+  image: gcr.io/cadvisor/cadvisor:v0.49.1
+  privileged: true
+  volumes:
+    - /:/rootfs:ro
+    - /var/run:/var/run:ro
+    - /sys:/sys:ro
+    - /var/lib/docker:/var/lib/docker:ro
+  ports:
+    - &quot;8081:8080&quot;
+</code></pre>
+<p><strong>Métricas disponíveis:</strong> CPU por container, memória por container, I/O de rede por container.</p>
+<p><strong>PromQL — CPU por container:</strong></p>
+<pre><code>rate(container_cpu_usage_seconds_total{name!=&quot;&quot;}[2m])
+</code></pre>
+<hr />
+<h2 id="5-r4-coleta-e-visualizacao">5. R4 — Coleta e Visualização</h2>
+<h3 id="prometheus-prometheusprometheusyml">Prometheus — <code>prometheus/prometheus.yml</code></h3>
+<pre><code class="language-yaml">global:
+  scrape_interval: 15s
+
+scrape_configs:
+  - job_name: 'hemoflow'
+    metrics_path: '/actuator/prometheus'
+    static_configs:
+      - targets: ['hemoflow:8080']
+
+  - job_name: 'node-exporter'
+    static_configs:
+      - targets: ['node-exporter:9100']
+
+  - job_name: 'cadvisor'
+    static_configs:
+      - targets: ['cadvisor:8080']
+</code></pre>
+<h3 id="grafana-dashboards-provisionados-automaticamente">Grafana — Dashboards provisionados automaticamente</h3>
+<p>Os dashboards são carregados via <strong>provisioning</strong> (<code>grafana/provisioning/</code>), sem necessidade de importação manual.</p>
+<table>
+<thead>
+<tr>
+<th>Dashboard</th>
+<th>Arquivo</th>
+<th>Conteúdo</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>HemoFlow – Aplicação</td>
+<td><code>hemoflow-application.json</code></td>
+<td>JVM, HTTP, HikariCP, métricas de negócio</td>
+</tr>
+<tr>
+<td>HemoFlow – Infraestrutura</td>
+<td><code>hemoflow-infrastructure.json</code></td>
+<td>Host (CPU, RAM, rede, disco) + containers</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Datasources provisionados automaticamente:</strong><br />
+- Prometheus (<code>http://prometheus:9090</code>)<br />
+- Loki (<code>http://loki:3100</code>) — com link de traceId → Tempo<br />
+- Tempo (<code>http://tempo:3200</code>) — com integração ao mapa de serviços</p>
+<hr />
+<h2 id="6-r5-seguranca">6. R5 — Segurança</h2>
+<h3 id="actuator">Actuator</h3>
+<ul>
+<li>Apenas os endpoints essenciais são expostos: <code>health</code>, <code>info</code>, <code>metrics</code>, <code>prometheus</code></li>
+<li>O Prometheus faz scrape pela rede interna Docker — o Actuator <strong>nunca</strong> é acessível externamente</li>
+<li>O endpoint <code>/h2-console</code> continua disponível apenas em desenvolvimento local</li>
+</ul>
+<h3 id="grafana">Grafana</h3>
+<ul>
+<li>Senha padrão removida: controlada por variável de ambiente no arquivo <code>.env</code> (não versionado)</li>
+<li>Criação pública de usuários desabilitada (<code>GF_USERS_ALLOW_SIGN_UP=false</code>)</li>
+<li>Acesso anônimo desabilitado (<code>GF_AUTH_ANONYMOUS_ENABLED=false</code>)</li>
+</ul>
+<p><strong>Arquivo <code>.env.example</code></strong> (versionado como referência):</p>
+<pre><code>GF_SECURITY_ADMIN_PASSWORD=change_me_in_production
+GF_USERS_ALLOW_SIGN_UP=false
+</code></pre>
+<p><strong><code>.env</code></strong> adicionado ao <code>.gitignore</code> — credenciais nunca entram no repositório.</p>
+<h3 id="acesso-do-professor">Acesso do professor</h3>
+<p>Para o professor, foi criado um usuário somente-leitura (<strong>Viewer</strong>) diretamente na UI do Grafana:<br />
+- <strong>Login:</strong> <code>professor</code><br />
+- <strong>Role:</strong> Viewer<br />
+- <strong>Senha:</strong> <em>(informada separadamente — não consta neste documento público)</em></p>
+<hr />
+<h2 id="7-r6-logs-loki-e-rastreamento-tempo">7. R6 — Logs (Loki) e Rastreamento (Tempo)</h2>
+<h3 id="logs-estruturados-loki-loki4j">Logs estruturados → Loki (Loki4j)</h3>
+<p><strong>Dependência adicionada ao <code>pom.xml</code>:</strong></p>
+<pre><code class="language-xml">&lt;dependency&gt;
+    &lt;groupId&gt;com.github.loki4j&lt;/groupId&gt;
+    &lt;artifactId&gt;loki-logback-appender&lt;/artifactId&gt;
+    &lt;version&gt;1.5.2&lt;/version&gt;
+&lt;/dependency&gt;
+</code></pre>
+<p><strong><code>logback-spring.xml</code>:</strong></p>
+<pre><code class="language-xml">&lt;appender name=&quot;LOKI&quot; class=&quot;com.github.loki4j.logback.Loki4jAppender&quot;&gt;
+    &lt;http&gt;
+        &lt;url&gt;http://loki:3100/loki/api/v1/push&lt;/url&gt;
+    &lt;/http&gt;
+    &lt;format&gt;
+        &lt;label&gt;
+            &lt;pattern&gt;application=${appName},host=${HOSTNAME},level=%level&lt;/pattern&gt;
+        &lt;/label&gt;
+        &lt;message&gt;
+            &lt;pattern&gt;%d [%thread] [%X{traceId:-none}/%X{spanId:-none}] %-5level %logger - %msg%n&lt;/pattern&gt;
+        &lt;/message&gt;
+    &lt;/format&gt;
+&lt;/appender&gt;
+</code></pre>
+<p><strong>Consulta LogQL de exemplo — erros da aplicação:</strong></p>
+<pre><code class="language-logql">{application=&quot;hemoflow&quot;} |= &quot;ERROR&quot;
+</code></pre>
+<p><strong>Consulta LogQL — rastrear por traceId:</strong></p>
+<pre><code class="language-logql">{application=&quot;hemoflow&quot;} | logfmt | traceId = &quot;abc123def456&quot;
+</code></pre>
+<h3 id="rastreamento-distribuido-tempo-opentelemetry">Rastreamento distribuído → Tempo (OpenTelemetry)</h3>
+<p><strong>Dependências adicionadas:</strong></p>
+<pre><code class="language-xml">&lt;dependency&gt;
+    &lt;groupId&gt;io.micrometer&lt;/groupId&gt;
+    &lt;artifactId&gt;micrometer-tracing-bridge-otel&lt;/artifactId&gt;
+&lt;/dependency&gt;
+&lt;dependency&gt;
+    &lt;groupId&gt;io.opentelemetry&lt;/groupId&gt;
+    &lt;artifactId&gt;opentelemetry-exporter-otlp&lt;/artifactId&gt;
+&lt;/dependency&gt;
+</code></pre>
+<p><strong>Configuração em <code>application.properties</code>:</strong></p>
+<pre><code class="language-properties">management.tracing.sampling.probability=1.0
+management.otlp.tracing.endpoint=http://tempo:4317
+logging.pattern.level=%5p [${spring.application.name},%X{traceId:-},%X{spanId:-}]
+</code></pre>
+<p><strong>Fluxo de correlação:</strong><br />
+Cada requisição HTTP recebe um <code>traceId</code> automaticamente. Esse ID aparece:<br />
+1. Nos <strong>logs</strong> enviados ao Loki (campo <code>traceId</code> no formato da mensagem)<br />
+2. No <strong>trace</strong> armazenado no Tempo</p>
+<p>No Grafana → Explore → Loki, ao clicar no <code>traceId</code> de um log, o usuário é levado diretamente ao trace correspondente no Tempo — correlação completa logs ↔ traces.</p>
+<hr />
+<h2 id="8-r7-acesso-remoto-para-o-professor">8. R7 — Acesso Remoto para o Professor</h2>
+<h3 id="estrategia-cloudflare-tunnel-gratuito">Estratégia: Cloudflare Tunnel (gratuito)</h3>
+<p>O Grafana (<code>:3000</code>) é exposto remotamente sem abrir portas no roteador usando <strong>Cloudflare Tunnel</strong>:</p>
+<pre><code class="language-bash"># 1. Instalar cloudflared (uma vez)
+winget install --id Cloudflare.cloudflared
+
+# 2. Autenticar (abre navegador)
+cloudflared tunnel login
+
+# 3. Criar túnel
+cloudflared tunnel create hemoflow-obs
+
+# 4. Expor o Grafana
+cloudflared tunnel --url http://localhost:3000
+</code></pre>
+<p>A URL gerada (ex.: <code>https://hemoflow-obs.trycloudflare.com</code>) é compartilhada apenas com o professor.</p>
+<h3 id="credenciais-do-professor-viewer">Credenciais do professor (Viewer)</h3>
+<blockquote>
+<p><strong>[PREENCHER ANTES DA ENTREGA]</strong><br />
+URL do Grafana: <code>https://[SEU-SUBDOMINIO].trycloudflare.com</code><br />
+Usuário: <code>professor</code><br />
+Senha: <em>(entregue separadamente ao professor)</em><br />
+Disponível de: <strong>[DATA INÍCIO]</strong> até <strong>[DATA FIM]</strong></p>
+</blockquote>
+<h3 id="gerador-de-carga-manter-targets-up">Gerador de carga (manter targets UP)</h3>
+<p>Para manter métricas visíveis ao professor durante a avaliação:</p>
+<pre><code class="language-bash"># PowerShell – loop de carga por 24h
+while ($true) {
+    Invoke-WebRequest -Uri http://localhost:8080/actuator/health -UseBasicParsing | Out-Null
+    Invoke-WebRequest -Uri http://localhost:8080/api/v1/bolsas -UseBasicParsing | Out-Null
+    Invoke-WebRequest -Uri http://localhost:8080/api/v1/requisicoes -UseBasicParsing | Out-Null
+    Start-Sleep -Seconds 5
+}
+</code></pre>
+<hr />
+<h2 id="9-bonus-metricas-de-negocio-micrometer">9. Bônus — Métricas de Negócio (Micrometer)</h2>
+<p>Foram implementadas <strong>3 métricas de negócio</strong> no <code>EstoqueService</code>, injetando <code>MeterRegistry</code> via construtor:</p>
+<h3 id="metricas-implementadas">Métricas implementadas</h3>
+<table>
+<thead>
+<tr>
+<th>Métrica</th>
+<th>Tipo</th>
+<th>Nome Prometheus</th>
+<th>O que mede</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Requisições de sangue criadas</td>
+<td><code>Counter</code></td>
+<td><code>hemoflow_requisicoes_criadas_total</code></td>
+<td>Total de novas requisições abertas por hospitais</td>
+</tr>
+<tr>
+<td>Bolsas cadastradas</td>
+<td><code>Counter</code></td>
+<td><code>hemoflow_bolsas_cadastradas_total</code></td>
+<td>Total de bolsas de sangue registradas no sistema</td>
+</tr>
+<tr>
+<td>Duração do algoritmo FEFO</td>
+<td><code>Timer</code></td>
+<td><code>hemoflow_alocacao_duracao_seconds</code></td>
+<td>Tempo de execução da alocação FEFO por requisição</td>
+</tr>
+</tbody>
+</table>
+<h3 id="codigo-trecho-de-estoqueservicejava">Código (trecho de <code>EstoqueService.java</code>)</h3>
+<pre><code class="language-java">// Injeção via construtor
+this.requisicoesCriadasCounter = Counter.builder(&quot;hemoflow.requisicoes.criadas&quot;)
+        .description(&quot;Total de requisições de sangue criadas&quot;)
+        .tag(&quot;application&quot;, &quot;hemoflow&quot;)
+        .register(meterRegistry);
+
+this.alocacaoTimer = Timer.builder(&quot;hemoflow.alocacao.duracao&quot;)
+        .description(&quot;Tempo de execução do algoritmo de alocação FEFO&quot;)
+        .tag(&quot;application&quot;, &quot;hemoflow&quot;)
+        .register(meterRegistry);
+
+// Uso nos métodos
+// criarRequisicao():
+requisicoesCriadasCounter.increment();
+
+// alocar():
+return alocacaoTimer.record(() -&gt; { /* lógica FEFO */ });
+</code></pre>
+<h3 id="painel-no-grafana">Painel no Grafana</h3>
+<p>As métricas de negócio estão no dashboard <strong>"HemoFlow – Aplicação"</strong>, nas linhas inferiores:<br />
+- <strong>Stat:</strong> Total de requisições criadas<br />
+- <strong>Stat:</strong> Total de bolsas cadastradas<br />
+- <strong>Time series:</strong> Duração média do algoritmo de alocação</p>
+<p><strong>PromQL usadas:</strong></p>
+<pre><code class="language-promql"># Total de requisições criadas
+hemoflow_requisicoes_criadas_total{application=&quot;hemoflow&quot;}
+
+# Taxa de alocações por minuto
+rate(hemoflow_alocacao_duracao_seconds_count{application=&quot;hemoflow&quot;}[1m])
+
+# Duração média do algoritmo FEFO
+rate(hemoflow_alocacao_duracao_seconds_sum[1m])
+  / rate(hemoflow_alocacao_duracao_seconds_count[1m])
+</code></pre>
+<hr />
+<h2 id="10-checklist-de-atendimento-ao-enunciado">10. Checklist de Atendimento ao Enunciado</h2>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>Requisito</th>
+<th>Status</th>
+<th>Evidência</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>R1</td>
+<td>Actuator exposto com endpoint <code>/actuator/prometheus</code></td>
+<td>✅</td>
+<td><code>application.properties</code> + <code>pom.xml</code></td>
+</tr>
+<tr>
+<td>R1</td>
+<td>Tag <code>application=hemoflow</code> em todas as métricas</td>
+<td>✅</td>
+<td><code>management.metrics.tags.application=hemoflow</code></td>
+</tr>
+<tr>
+<td>R2</td>
+<td>Métricas HTTP (contagem, latência)</td>
+<td>✅</td>
+<td>Auto-instrumentado pelo <code>spring-web</code> + Micrometer</td>
+</tr>
+<tr>
+<td>R2</td>
+<td>Métricas JVM (heap, GC, threads)</td>
+<td>✅</td>
+<td>Auto-instrumentado pelo Actuator</td>
+</tr>
+<tr>
+<td>R2</td>
+<td>CPU e uptime</td>
+<td>✅</td>
+<td><code>process_cpu_usage</code>, <code>process_uptime_seconds</code></td>
+</tr>
+<tr>
+<td>R2</td>
+<td>HikariCP (pool de conexões)</td>
+<td>✅</td>
+<td>Auto-detectado pelo Spring Boot</td>
+</tr>
+<tr>
+<td>R3</td>
+<td>Node Exporter (CPU, RAM, disco, rede do host)</td>
+<td>✅</td>
+<td>Serviço <code>node-exporter</code> no <code>docker-compose.yml</code></td>
+</tr>
+<tr>
+<td>R3</td>
+<td>cAdvisor (métricas por container)</td>
+<td>✅</td>
+<td>Serviço <code>cadvisor</code> no <code>docker-compose.yml</code></td>
+</tr>
+<tr>
+<td>R4</td>
+<td>Prometheus coletando todos os targets</td>
+<td>✅</td>
+<td><code>prometheus/prometheus.yml</code> com 3 jobs</td>
+</tr>
+<tr>
+<td>R4</td>
+<td>Grafana com datasource Prometheus provisionado</td>
+<td>✅</td>
+<td><code>grafana/provisioning/datasources/datasources.yml</code></td>
+</tr>
+<tr>
+<td>R4</td>
+<td>Dashboard de aplicação (JVM/HTTP)</td>
+<td>✅</td>
+<td><code>grafana/dashboards/hemoflow-application.json</code></td>
+</tr>
+<tr>
+<td>R4</td>
+<td>Dashboard de infraestrutura (host/containers)</td>
+<td>✅</td>
+<td><code>grafana/dashboards/hemoflow-infrastructure.json</code></td>
+</tr>
+<tr>
+<td>R4</td>
+<td>Dashboards versionados em JSON no repositório</td>
+<td>✅</td>
+<td><code>grafana/dashboards/</code></td>
+</tr>
+<tr>
+<td>R5</td>
+<td>Actuator não exposto publicamente</td>
+<td>✅</td>
+<td>Rede interna Docker; porta não mapeada externamente</td>
+</tr>
+<tr>
+<td>R5</td>
+<td>Senha Grafana não hardcoded; uso de <code>.env</code></td>
+<td>✅</td>
+<td><code>.env.example</code> versionado; <code>.env</code> no <code>.gitignore</code></td>
+</tr>
+<tr>
+<td>R6</td>
+<td>Logs → Loki (Loki4j Logback appender)</td>
+<td>✅</td>
+<td><code>logback-spring.xml</code> + dependência no <code>pom.xml</code></td>
+</tr>
+<tr>
+<td>R6</td>
+<td>Traces → Tempo (OpenTelemetry OTLP)</td>
+<td>✅</td>
+<td><code>micrometer-tracing-bridge-otel</code> + config OTLP</td>
+</tr>
+<tr>
+<td>R6</td>
+<td>Correlação traceId: log → trace no Grafana</td>
+<td>✅</td>
+<td><code>derivedFields</code> Loki + Tempo datasource</td>
+</tr>
+<tr>
+<td>R7</td>
+<td>Estratégia de acesso remoto documentada</td>
+<td>✅</td>
+<td>Cloudflare Tunnel (seção 8)</td>
+</tr>
+<tr>
+<td>R7</td>
+<td>URL e credenciais do professor</td>
+<td>⚠️</td>
+<td><strong>[PREENCHER]</strong> antes da entrega</td>
+</tr>
+<tr>
+<td>R7</td>
+<td>Período de disponibilidade declarado</td>
+<td>⚠️</td>
+<td><strong>[PREENCHER]</strong> antes da entrega</td>
+</tr>
+<tr>
+<td><strong>Bônus</strong></td>
+<td>≥ 2 métricas de negócio via Micrometer</td>
+<td>✅</td>
+<td>3 métricas: 2 Counters + 1 Timer</td>
+</tr>
+<tr>
+<td><strong>Bônus</strong></td>
+<td>Métricas aparecem no Prometheus</td>
+<td>✅</td>
+<td>Publicadas em <code>/actuator/prometheus</code></td>
+</tr>
+<tr>
+<td><strong>Bônus</strong></td>
+<td>Painel dedicado no Grafana</td>
+<td>✅</td>
+<td>Painéis de negócio no dashboard de aplicação</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="11-como-executar-o-stack">11. Como Executar o Stack</h2>
+<h3 id="pre-requisitos">Pré-requisitos</h3>
+<ul>
+<li>Docker Desktop instalado e em execução</li>
+<li>Java 17 + Maven (para build local)</li>
+</ul>
+<h3 id="passo-a-passo">Passo a passo</h3>
+<pre><code class="language-bash"># 1. Clone o repositório (ou navegue até ele)
+cd projeto_integrador_cesar2026.2
+
+# 2. Copie o arquivo de ambiente e ajuste a senha do Grafana
+cp .env.example .env
+# edite .env com sua senha
+
+# 3. Suba todos os serviços
+docker compose up --build -d
+
+# 4. Verifique os logs
+docker compose logs -f hemoflow
+
+# 5. Acesse os serviços
+# Aplicação:  http://localhost:8080
+# Swagger UI: http://localhost:8080/docs
+# Actuator:   http://localhost:8080/actuator/health
+# Prometheus: http://localhost:9090
+# Grafana:    http://localhost:3000  (admin / sua_senha_do_.env)
+</code></pre>
+<h3 id="verificar-targets-no-prometheus">Verificar targets no Prometheus</h3>
+<p>Acesse <code>http://localhost:9090/targets</code> e confirme que todos os targets estão <strong>UP</strong>:<br />
+- <code>hemoflow (1/1 up)</code><br />
+- <code>node-exporter (1/1 up)</code><br />
+- <code>cadvisor (1/1 up)</code></p>
+<h3 id="importar-dashboards-da-comunidade-opcional">Importar dashboards da comunidade (opcional)</h3>
+<p>Para usar os dashboards oficiais além dos provisionados:<br />
+- <strong>JVM Micrometer:</strong> ID <code>4701</code><br />
+- <strong>Node Exporter Full:</strong> ID <code>1860</code><br />
+- <strong>cAdvisor:</strong> ID <code>14282</code></p>
+<p>Em Grafana → Dashboards → Import → inserir o ID → selecionar datasource Prometheus.</p>
+<hr />
+<p><em>Documento gerado automaticamente. Preencher os itens marcados com <strong>[PREENCHER]</strong> antes da entrega final.</em></p>
+</body>
+</html>

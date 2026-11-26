@@ -34,3 +34,9 @@ build/
 
 ### Docker ###
 *.log
+
+### Observability Secrets ###
+.env
+grafana/data/
+loki/data/
+tempo/data/

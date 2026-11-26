@@ -1,7 +1,133 @@
 services:
+
+  # ============================================================
+  # Aplicação HemoFlow (Spring Boot)
+  # ============================================================
   hemoflow:
     build: .
     ports:
       - "8080:8080"
     environment:
       SPRING_DATASOURCE_URL: jdbc:h2:mem:hemoflow;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
+      SPRING_DATASOURCE_USERNAME: sa
+      SPRING_DATASOURCE_PASSWORD: ""
+      MANAGEMENT_OTLP_TRACING_ENDPOINT: http://tempo:4317
+      OTEL_SERVICE_NAME: hemoflow
+    networks:
+      - observability
+    depends_on:
+      - loki
+      - tempo
+
+  # ============================================================
+  # Prometheus — coleta de métricas
+  # ============================================================
+  prometheus:
+    image: prom/prometheus:v2.52.0
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    ports:
+      - "9090:9090"
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.retention.time=7d'
+    networks:
+      - observability
+
+  # ============================================================
+  # Grafana — visualização
+  # ============================================================
+  grafana:
+    image: grafana/grafana:11.1.0
+    ports:
+      - "3000:3000"
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: ${GF_SECURITY_ADMIN_PASSWORD:-hemoflow@2026}
+      GF_USERS_ALLOW_SIGN_UP: "false"
+      GF_AUTH_ANONYMOUS_ENABLED: "false"
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./grafana/dashboards:/etc/grafana/dashboards:ro
+    networks:
+      - observability
+    depends_on:
+      - prometheus
+      - loki
+      - tempo
+
+  # ============================================================
+  # Node Exporter — métricas do host (R3)
+  # ============================================================
+  node-exporter:
+    image: prom/node-exporter:v1.8.1
+    pid: host
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/rootfs:ro
+    command:
+      - '--path.procfs=/host/proc'
+      - '--path.sysfs=/host/sys'
+      - '--collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)'
+    ports:
+      - "9100:9100"
+    networks:
+      - observability
+
+  # ============================================================
+  # cAdvisor — métricas de containers (R3)
+  # ============================================================
+  cadvisor:
+    image: gcr.io/cadvisor/cadvisor:v0.49.1
+    privileged: true
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:ro
+      - /sys:/sys:ro
+      - /var/lib/docker:/var/lib/docker:ro
+      - /dev/disk:/dev/disk:ro
+    ports:
+      - "8081:8080"
+    networks:
+      - observability
+
+  # ============================================================
+  # Loki — agregação de logs (R6)
+  # ============================================================
+  loki:
+    image: grafana/loki:3.1.0
+    ports:
+      - "3100:3100"
+    volumes:
+      - ./loki/loki-config.yml:/etc/loki/local-config.yaml:ro
+      - loki_data:/loki
+    command: -config.file=/etc/loki/local-config.yaml
+    networks:
+      - observability
+
+  # ============================================================
+  # Tempo — distributed tracing (R6)
+  # ============================================================
+  tempo:
+    image: grafana/tempo:2.5.0
+    ports:
+      - "3200:3200"   # Tempo HTTP query
+      - "4317:4317"   # OTLP gRPC
+      - "4318:4318"   # OTLP HTTP
+    volumes:
+      - ./tempo/tempo-config.yml:/etc/tempo/tempo-config.yml:ro
+      - tempo_data:/var/tempo
+    command: -config.file=/etc/tempo/tempo-config.yml
+    networks:
+      - observability
+
+networks:
+  observability:
+    driver: bridge
+
+volumes:
+  grafana_data:
+  loki_data:
+  tempo_data:

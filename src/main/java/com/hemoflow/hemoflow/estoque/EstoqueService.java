@@ -7,6 +7,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Timer;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -32,18 +35,38 @@ public class EstoqueService {
     private final RequisicaoRepository requisicaoRepository;
     private final IndiceEstoque indiceEstoque;
 
+    // ===== Métricas de negócio (Micrometer) =====
+    private final Counter requisicoesCriadasCounter;
+    private final Counter bolsasCadastradasCounter;
+    private final Timer alocacaoTimer;
+
     public EstoqueService(
             BolsaRepository bolsaRepository,
             NoRedeRepository noRedeRepository,
             HospitalRepository hospitalRepository,
             RequisicaoRepository requisicaoRepository,
-            IndiceEstoque indiceEstoque
+            IndiceEstoque indiceEstoque,
+            MeterRegistry meterRegistry
     ) {
         this.bolsaRepository = bolsaRepository;
         this.noRedeRepository = noRedeRepository;
         this.hospitalRepository = hospitalRepository;
         this.requisicaoRepository = requisicaoRepository;
         this.indiceEstoque = indiceEstoque;
+
+        // Registra métricas de negócio
+        this.requisicoesCriadasCounter = Counter.builder("hemoflow.requisicoes.criadas")
+                .description("Total de requisições de sangue criadas")
+                .tag("application", "hemoflow")
+                .register(meterRegistry);
+        this.bolsasCadastradasCounter = Counter.builder("hemoflow.bolsas.cadastradas")
+                .description("Total de bolsas de sangue cadastradas no sistema")
+                .tag("application", "hemoflow")
+                .register(meterRegistry);
+        this.alocacaoTimer = Timer.builder("hemoflow.alocacao.duracao")
+                .description("Tempo de execução do algoritmo de alocação FEFO")
+                .tag("application", "hemoflow")
+                .register(meterRegistry);
     }
 
     // -------------------------------------------------------------------------
@@ -65,6 +88,7 @@ public class EstoqueService {
         );
         Bolsa salva = bolsaRepository.save(bolsa);
         indiceEstoque.registrarAposCommit(salva);
+        bolsasCadastradasCounter.increment(); // métrica de negócio
         return salva;
     }
 
@@ -114,7 +138,9 @@ public class EstoqueService {
                 dto.quantidade(),
                 dto.janelaEntrega()
         );
-        return requisicaoRepository.save(requisicao);
+        Requisicao salva = requisicaoRepository.save(requisicao);
+        requisicoesCriadasCounter.increment(); // métrica de negócio
+        return salva;
     }
 
     /**
@@ -154,18 +180,20 @@ public class EstoqueService {
         }
 
         // U1: seleção simples (as primeiras N bolsas da lista)
-        List<Bolsa> alocadas = new ArrayList<>();
-        for (int i = 0; i < requisicao.getQuantidade(); i++) {
-            Bolsa bolsa = candidatas.get(i);
-            bolsa.setStatus(StatusBolsa.ALOCADA);
-            alocadas.add(bolsa);
-        }
-
-        bolsaRepository.saveAll(alocadas);
-        alocadas.forEach(indiceEstoque::retirarAposCommit);
-        requisicao.setStatus(StatusRequisicao.ALOCADA);
-        requisicaoRepository.save(requisicao);
-        return alocadas;
+        // Timer de negócio envolve a fase de seleção e persistência
+        return alocacaoTimer.record(() -> {
+            List<Bolsa> alocadas = new ArrayList<>();
+            for (int i = 0; i < requisicao.getQuantidade(); i++) {
+                Bolsa bolsa = candidatas.get(i);
+                bolsa.setStatus(StatusBolsa.ALOCADA);
+                alocadas.add(bolsa);
+            }
+            bolsaRepository.saveAll(alocadas);
+            alocadas.forEach(indiceEstoque::retirarAposCommit);
+            requisicao.setStatus(StatusRequisicao.ALOCADA);
+            requisicaoRepository.save(requisicao);
+            return alocadas;
+        });
     }
 
     @Transactional

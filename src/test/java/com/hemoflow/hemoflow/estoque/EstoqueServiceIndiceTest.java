@@ -22,6 +22,8 @@ import java.util.concurrent.atomic.AtomicLong;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
+
 import com.hemoflow.hemoflow.dominio.Bolsa;
 import com.hemoflow.hemoflow.dominio.Hemocomponente;
 import com.hemoflow.hemoflow.dominio.NoRede;
@@ -50,7 +52,8 @@ class EstoqueServiceIndiceTest {
     private final RequisicaoRepository requisicaoRepository = mock(RequisicaoRepository.class);
     private final IndiceEstoque indice = new IndiceEstoque();
     private final EstoqueService servico =
-            new EstoqueService(bolsaRepository, noRedeRepository, hospitalRepository, requisicaoRepository, indice);
+            new EstoqueService(bolsaRepository, noRedeRepository, hospitalRepository,
+                    requisicaoRepository, indice, new SimpleMeterRegistry());
 
     /** "Banco" falso: guarda as bolsas salvas, na ordem de cadastro. */
     private final Map<Long, Bolsa> banco = new LinkedHashMap<>();
@@ -150,7 +153,8 @@ class EstoqueServiceIndiceTest {
         RelogioMutavel relogio = new RelogioMutavel(hoje);
         IndiceEstoque indiceComRelogio = new IndiceEstoque(relogio);
         EstoqueService servicoComRelogio = new EstoqueService(
-                bolsaRepository, noRedeRepository, hospitalRepository, requisicaoRepository, indiceComRelogio);
+                bolsaRepository, noRedeRepository, hospitalRepository, requisicaoRepository,
+                indiceComRelogio, new SimpleMeterRegistry());
 
         servicoComRelogio.registrarEntrada(TipoSanguineo.O_NEG, Hemocomponente.PLASMA,
                 hoje.minusDays(1), hoje.plusDays(2), "L-PLASMA", 1L);
