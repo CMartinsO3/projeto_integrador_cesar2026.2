@@ -236,3 +236,41 @@ docker compose ps
 | `hemoflow.bolsas.cadastradas` | `hemoflow_bolsas_cadastradas_total` | `Counter` | Total de bolsas de sangue cadastradas no estoque |
 | `hemoflow.alocacao.duracao` | `hemoflow_alocacao_duracao_seconds` | `Timer` | Tempo de execução da rotina de alocação de bolsas |
 
+
+---
+
+## 📊 Ambiente de Observabilidade (Actuator, Prometheus, Grafana, Loki, Tempo)
+
+O projeto foi instrumentado para atendimento dos requisitos de observabilidade da disciplina de Infraestrutura de Comunicação.
+
+### Pré-requisitos
+* **Docker Desktop** (com Docker Compose ativo)
+* **Java 17 JDK** e **Maven**
+
+### Como subir o ambiente de observabilidade
+```bash
+# 1. Configurar variáveis de ambiente a partir do modelo
+cp .env.example .env
+
+# 2. Inicializar todos os serviços (App, Prometheus, Grafana, Loki, Tempo, Exporters)
+docker compose up --build -d
+```
+
+### Portas e URLs dos Serviços
+| Serviço | URL Local | Descrição |
+|---|---|---|
+| **HemoFlow App** | [http://localhost:8080](http://localhost:8080) | Aplicação web principal |
+| **Swagger UI** | [http://localhost:8080/docs](http://localhost:8080/docs) | Documentação viva da API |
+| **Prometheus Scrape** | [http://localhost:8080/actuator/prometheus](http://localhost:8080/actuator/prometheus) | Endpoint com tag `application=hemoflow` |
+| **Prometheus** | [http://localhost:9090](http://localhost:9090) | Coleta, TSDB e consulta PromQL |
+| **Grafana** | [http://localhost:3000](http://localhost:3000) | Dashboards provisionados de Aplicação e Infraestrutura |
+| **cAdvisor** | [http://localhost:8081](http://localhost:8081) | Métricas de contêineres Docker |
+| **Node Exporter** | [http://localhost:9100/metrics](http://localhost:9100/metrics) | Métricas de host (SO) |
+| **Grafana Loki** | [http://localhost:3100](http://localhost:3100) | Agregação centralizada de logs |
+| **Grafana Tempo** | [http://localhost:3200](http://localhost:3200) | Rastreamento distribuído OTLP |
+
+### Métricas de Negócio Customizadas (Micrometer)
+1. **`hemoflow_requisicoes_criadas_total` (`Counter`):** Contabiliza o número acumulado de requisições hospitalares abertas.
+2. **`hemoflow_bolsas_cadastradas_total` (`Counter`):** Contabiliza o total de bolsas cadastradas no estoque.
+3. **`hemoflow_alocacao_duracao_seconds` (`Timer`):** Mede a latência e tempo de resposta do algoritmo de alocação FEFO.
+

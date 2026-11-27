@@ -381,10 +381,11 @@ A URL gerada (ex.: `https://hemoflow-obs.trycloudflare.com`) é compartilhada ap
 
 ### Credenciais do professor (Viewer)
 
-> **[PREENCHER ANTES DA ENTREGA]**  
-> URL do Grafana: `https://[SEU-SUBDOMINIO].trycloudflare.com`  
-> Usuário: `professor`  
-> Senha: *(entregue separadamente ao professor)*  
+* **URL do Grafana:** `https://batch-starsmerchant-allocated-laptop.trycloudflare.com` *(Túnel Cloudflare HTTPS ativo)*  
+* **Usuário:** `professor`  
+* **Papel:** `Viewer` (permissão estrita de somente-leitura)  
+* **Senha:** *(enviada no comentário privado da entrega no Google Classroom)*  
+* **Janela de Disponibilidade:** Das `08:00` às `22:00` durante todo o período de avaliação do docente.  
 
 ### Gerador de carga (métricas de negócio, logs de erro e traces multi-span)
 
@@ -536,16 +537,47 @@ Em Grafana → Dashboards → Import → inserir o ID → selecionar datasource 
 
 ## 12. Evidências do Ambiente em Execução *(Prints com Data/Hora Visível)*
 
-> **[PREENCHER ANTES DE EXPORTAR O PDF]** Salvar os prints em `docs/evidencias/` com a barra de data/hora do sistema visível e anexar abaixo:
+Nesta seção são apresentadas as evidências reais de funcionamento capturadas diretamente do ambiente em execução, contendo a barra de data e hora do sistema visível em todas as telas, conforme exigido nos critérios de avaliação (E1 a E6):
 
-1. **Containers em execução (`docker compose ps`):** `[Inserir print de docker compose ps]`
-2. **Endpoint `/actuator/prometheus` (com tag `application="hemoflow"` e métricas de negócio):** `[Inserir print ou saída curl]`
-3. **Prometheus `Status → Targets` (todos os targets `UP`):** `[Inserir print de http://localhost:9090/targets]`
-4. **Consulta PromQL no Prometheus/Grafana:** `[Inserir print da consulta]`
-5. **Dashboard `HemoFlow – Aplicação` com dados reais (incluindo métricas de negócio e taxa de erros):** `[Inserir print do Grafana]`
-6. **Dashboard `HemoFlow – Infraestrutura` com dados reais (Node Exporter + cAdvisor):** `[Inserir print do Grafana]`
-7. **Logs no Loki (consulta LogQL no Grafana → Explore):** `[Inserir print de {application="hemoflow"}]`
-8. **Trace com múltiplos spans no Tempo e navegação `log → trace` via `traceId`:** `[Inserir prints do Tempo e do link TraceID no Loki]`
+---
+
+### 12.1. Exposição de Métricas no Spring Boot Actuator (R1, R2 e Bônus)
+
+![Endpoint /actuator/prometheus com métricas de negócio e duração FEFO](evidencias/01-actuator-prometheus-metricas.jpg)
+*Figura 12.1: Endpoint `/actuator/prometheus` exibindo a duração do algoritmo FEFO (`hemoflow_alocacao_duracao_seconds`), o total de bolsas cadastradas (`hemoflow_bolsas_cadastradas_total = 104`) e métricas do sistema com a tag `application="hemoflow"` (Data/Hora: 27/11/2026 16:36).*
+
+![Endpoint /actuator/prometheus detalhando pool HikariCP e requisições criadas](evidencias/02-actuator-prometheus-hikaricp.jpg)
+*Figura 12.2: Endpoint `/actuator/prometheus` detalhando a métrica customizada `hemoflow_requisicoes_criadas_total = 104.0`, tempos de processamento e conexões ativas/ociosas do pool HikariCP (Data/Hora: 27/11/2026 16:53).*
+
+---
+
+### 12.2. Consultas PromQL e Monitoramento no Prometheus (R4 e Bônus)
+
+![Consulta PromQL em formato tabela no Prometheus](evidencias/03-prometheus-tabela-metricas.png)
+*Figura 12.3: Interface web do Prometheus (`localhost:9090`) executando consulta PromQL de `hemoflow_requisicoes_criadas_total` em formato tabular com 176 requisições registradas e tags de instância (Data/Hora: 27/11/2026 16:39).*
+
+![Gráfico PromQL temporal de requisições criadas](evidencias/04-prometheus-grafico-promql.jpg)
+*Figura 12.4: Gráfico PromQL demonstrando a curva de evolução contínua da métrica de requisições criadas durante o ciclo do gerador de carga (Data/Hora: 27/11/2026 16:55).*
+
+---
+
+### 12.3. Dashboards Provisionados no Grafana com Dados Reais (R4 e Bônus)
+
+![Dashboard HemoFlow - Aplicação no Grafana](evidencias/05-grafana-dashboard-aplicacao.jpg)
+*Figura 12.5: Dashboard `HemoFlow – Aplicação` acessado remotamente via túnel Cloudflare HTTPS (`batch-starsmerchant-allocated-laptop.trycloudflare.com`), exibindo Taxa de Requisições HTTP por rota, Latência p95/p99, JVM Heap Usado e Threads ativas (Data/Hora: 27/11/2026 16:41).*
+
+![Dashboard HemoFlow - Infraestrutura no Grafana](evidencias/06-grafana-dashboard-infraestrutura.jpg)
+*Figura 12.6: Dashboard `HemoFlow – Infraestrutura` exibindo indicadores de CPU do Host (1.77%), uso de memória RAM (19.0%) e tráfego de rede via Node Exporter e cAdvisor (Data/Hora: 27/11/2026 16:41).*
+
+---
+
+### 12.4. Centralização de Logs no Grafana Loki (R6)
+
+![Grafana Explore - Loki Log Volume e consulta LogQL](evidencias/07-grafana-explore-loki-volume.jpg)
+*Figura 12.7: Painel Explore do Grafana com datasource Loki executando query LogQL `{application="hemoflow"}`, exibindo histograma de volume de logs categorizados por severidade (info, error, warning) e fluxo de ingestão (Data/Hora: 27/11/2026 16:45).*
+
+![Grafana Explore - Loki detalhe dos logs estruturados e stacktrace](evidencias/08-grafana-explore-loki-logs.jpg)
+*Figura 12.8: Detalhe das linhas de log estruturadas ingeridas pelo Loki4j, demonstrando a captura de eventos de erro simulados e stacktraces com labels e campos indexados (Data/Hora: 27/11/2026 16:45).*
 
 ---
 
