@@ -1,11 +1,11 @@
 # HemoFlow — Infraestrutura de Observabilidade
 
-**Projeto Integrador — CIn/UFPE · 2026.2**  
+**Projeto Integrador — 2026.2**  
 **Disciplina:** Infraestrutura de Comunicação  
 **Professor:** Luiz Novaes  
 **Valor:** 6,0 pts + 1,0 bônus  
 **Equipe:** HemoFlow Team (Bruna Tiburtino, Caio Martins, Cauã Henrique, João Felipe Bonifácio, Luís Felipe Carneiro, Luís Henrique Vilas Boas, Priscila Pontes, Rafael Medeiros, Ruan Carlos)  
-**Repositório:** `https://github.com/CMartinsO3/projeto_integrador_cesar2026.2` *(confirmar branch de entrega)*  
+**Repositório:** `https://github.com/CMartinsO3/projeto_integrador_cesar2026.2` 
 **Data:** Novembro / 2026
 
 ---
@@ -372,7 +372,6 @@ A URL gerada (ex.: `https://hemoflow-obs.trycloudflare.com`) é compartilhada ap
 > URL do Grafana: `https://[SEU-SUBDOMINIO].trycloudflare.com`  
 > Usuário: `professor`  
 > Senha: *(entregue separadamente ao professor)*  
-> Disponível de: **[DATA INÍCIO]** até **[DATA FIM]**
 
 ### Gerador de carga (métricas de negócio, logs de erro e traces multi-span)
 
