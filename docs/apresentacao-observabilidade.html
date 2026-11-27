@@ -1,0 +1,530 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HemoFlow — Observabilidade</title>
+<style>
+  :root {
+    --bg: #0a0c11;
+    --surface: #121620;
+    --surface-2: #171c28;
+    --line: #242b3a;
+    --text: #eef1f7;
+    --muted: #8a93a8;
+    --dim: #5b6478;
+    --accent: #ef4b56;
+    --metrics: #ff6b5b;
+    --logs: #f3b23a;
+    --traces: #6aa8ff;
+    --ok: #3ccf8e;
+    --font: "Inter", "Segoe UI", system-ui, -apple-system, Roboto, "Helvetica Neue", Arial, sans-serif;
+    --mono: "JetBrains Mono", "Cascadia Code", Consolas, "SF Mono", Menlo, monospace;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; background: #05060a; color: var(--text); font-family: var(--font); overflow: hidden; }
+
+  /* ---------- Stage 16:9 escalável ---------- */
+  .viewport { position: fixed; inset: 0; }
+  .stage {
+    width: 1600px; height: 900px; position: absolute; left: 50%; top: 50%;
+    background: radial-gradient(1200px 700px at 85% -10%, rgba(239,75,86,.10), transparent 60%),
+                radial-gradient(900px 600px at -10% 110%, rgba(106,168,255,.07), transparent 60%),
+                var(--bg);
+    overflow: hidden; transform-origin: center center;
+    box-shadow: 0 30px 80px rgba(0,0,0,.6);
+  }
+
+  .slide {
+    position: absolute; inset: 0; padding: 88px 112px 96px;
+    display: flex; flex-direction: column;
+    opacity: 0; visibility: hidden; transform: translateX(40px);
+    transition: opacity .6s ease, transform .6s cubic-bezier(.2,.7,.2,1), visibility 0s linear .6s;
+  }
+  .slide.active { opacity: 1; visibility: visible; transform: none; transition: opacity .6s ease, transform .6s cubic-bezier(.2,.7,.2,1); }
+  .slide.prev { transform: translateX(-40px); }
+
+  .r { opacity: 0; transform: translateY(16px); transition: opacity .7s ease, transform .7s cubic-bezier(.2,.7,.2,1); }
+  .slide.active .r { opacity: 1; transform: none; }
+  .slide.active .d1 { transition-delay: .12s; } .slide.active .d2 { transition-delay: .24s; }
+  .slide.active .d3 { transition-delay: .36s; } .slide.active .d4 { transition-delay: .48s; }
+  .slide.active .d5 { transition-delay: .60s; } .slide.active .d6 { transition-delay: .72s; }
+  .slide.active .d7 { transition-delay: .84s; } .slide.active .d8 { transition-delay: .96s; }
+
+  /* ---------- Tipografia ---------- */
+  .eyebrow { font-size: 15px; font-weight: 600; letter-spacing: .18em; text-transform: uppercase; color: var(--accent); display: flex; align-items: center; gap: 14px; }
+  .eyebrow::before { content: ""; width: 28px; height: 2px; background: currentColor; }
+  h1 { font-size: 92px; line-height: 1.02; font-weight: 700; letter-spacing: -.035em; }
+  h2 { font-size: 54px; line-height: 1.08; font-weight: 700; letter-spacing: -.025em; margin-top: 18px; max-width: 1200px; }
+  h3 { font-size: 26px; font-weight: 650; letter-spacing: -.01em; }
+  p.lead { font-size: 24px; line-height: 1.5; color: var(--muted); max-width: 900px; }
+  .muted { color: var(--muted); }
+  .accent { color: var(--accent); }
+  code, .mono { font-family: var(--mono); font-size: .86em; }
+  .chip { display: inline-block; font-family: var(--mono); font-size: 15px; padding: 6px 12px; border-radius: 8px; background: var(--surface-2); border: 1px solid var(--line); color: #c9d0de; }
+
+  .footer { position: absolute; left: 112px; right: 112px; bottom: 40px; display: flex; justify-content: space-between; font-size: 14px; color: var(--dim); letter-spacing: .04em; }
+
+  /* ---------- Slide 1 ---------- */
+  .cover { justify-content: center; }
+  .cover h1 span { display: block; color: var(--muted); font-weight: 300; }
+  .cover .meta { margin-top: 56px; display: flex; gap: 56px; }
+  .cover .meta div { font-size: 16px; color: var(--dim); letter-spacing: .06em; text-transform: uppercase; }
+  .cover .meta b { display: block; margin-top: 8px; font-size: 22px; color: var(--text); font-weight: 500; letter-spacing: 0; text-transform: none; }
+  .pulse { position: absolute; right: 0; top: 0; bottom: 0; width: 760px; opacity: .9; pointer-events: none; }
+  .pulse path { stroke-dasharray: 1400; stroke-dashoffset: 1400; }
+  .slide.active .pulse path { animation: draw 2.4s .3s cubic-bezier(.6,.1,.2,1) forwards; }
+  @keyframes draw { to { stroke-dashoffset: 0; } }
+  .team { position: absolute; left: 112px; right: 112px; bottom: 40px; font-size: 14px; color: var(--dim); line-height: 1.7; }
+
+  /* ---------- Slide 2: arquitetura ---------- */
+  .arch { margin-top: 44px; flex: 1; display: flex; gap: 56px; align-items: center; }
+  .arch svg { flex: 1; height: 100%; max-height: 560px; }
+  .arch .side { width: 300px; display: flex; flex-direction: column; gap: 28px; }
+  .stat .n { font-size: 72px; font-weight: 700; letter-spacing: -.04em; line-height: 1; }
+  .stat .l { margin-top: 8px; font-size: 18px; color: var(--muted); line-height: 1.4; }
+  .node rect { fill: var(--surface); stroke: var(--line); stroke-width: 1.5; }
+  .node .t { fill: var(--text); font: 600 20px var(--font); }
+  .node .s { fill: var(--muted); font: 400 14px var(--mono); }
+  .edge { fill: none; stroke-width: 2; }
+  .edge.dash { stroke-dasharray: 6 6; }
+  .elabel { font: 500 13px var(--mono); fill: var(--dim); }
+
+  /* ---------- Slide 3: pilares ---------- */
+  .pillars { margin-top: 52px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 28px; }
+  .pillar { background: var(--surface); border: 1px solid var(--line); border-radius: 20px; padding: 34px 34px 30px; position: relative; overflow: hidden; }
+  .pillar::before { content: ""; position: absolute; left: 0; right: 0; top: 0; height: 4px; background: var(--c); }
+  .pillar .k { font-family: var(--mono); font-size: 14px; color: var(--c); letter-spacing: .08em; text-transform: uppercase; }
+  .pillar h3 { margin-top: 12px; font-size: 34px; }
+  .pillar .via { margin-top: 6px; font-size: 18px; color: var(--muted); }
+  .pillar ul { list-style: none; margin-top: 24px; display: grid; gap: 12px; }
+  .pillar li { font-size: 19px; color: #cdd3df; padding-left: 20px; position: relative; }
+  .pillar li::before { content: ""; position: absolute; left: 0; top: 11px; width: 7px; height: 7px; border-radius: 50%; background: var(--c); }
+  .flow { margin-top: 36px; display: flex; align-items: center; gap: 0; background: var(--surface); border: 1px solid var(--line); border-radius: 18px; padding: 22px 30px; }
+  .flow .lbl { font-size: 14px; letter-spacing: .14em; text-transform: uppercase; color: var(--dim); margin-right: 28px; white-space: nowrap; }
+  .flow .step { font-size: 19px; white-space: nowrap; }
+  .flow .arrow { flex: 1; height: 2px; margin: 0 18px; background: linear-gradient(90deg, var(--line), var(--dim)); position: relative; min-width: 30px; }
+  .flow .arrow::after { content: ""; position: absolute; right: -2px; top: -4px; border: 5px solid transparent; border-left: 8px solid var(--dim); border-right: 0; }
+
+  /* ---------- Slide 4: coleta ---------- */
+  .split { margin-top: 40px; flex: 1; display: grid; grid-template-columns: 1fr 1fr; gap: 72px; align-items: center; }
+  .tiles { display: grid; grid-template-columns: 1fr 1fr; gap: 22px; }
+  .tile { background: var(--surface); border: 1px solid var(--line); border-radius: 20px; padding: 30px 30px 28px; }
+  .tile .n { font-size: 76px; font-weight: 700; letter-spacing: -.04em; line-height: 1; }
+  .tile .n small { font-size: 34px; color: var(--muted); font-weight: 500; margin-left: 4px; }
+  .tile .l { margin-top: 12px; font-size: 18px; color: var(--muted); }
+  .tile .chips { margin-top: 16px; display: flex; flex-wrap: wrap; gap: 8px; }
+  .tile .chips .chip { font-size: 13px; padding: 4px 9px; }
+  .quote { font-size: 40px; line-height: 1.25; font-weight: 600; letter-spacing: -.02em; }
+  .quote em { font-style: normal; color: var(--accent); }
+
+  /* ---------- Slide 5: segurança ---------- */
+  .sec { margin-top: 48px; display: grid; grid-template-columns: 1fr 1.15fr; gap: 40px; }
+  .slide.mid { justify-content: center; padding-bottom: 120px; }
+  .panel { background: var(--surface); border: 1px solid var(--line); border-radius: 22px; padding: 36px 38px; }
+  .panel h3 { display: flex; align-items: center; gap: 14px; }
+  .lock { display: grid; gap: 18px; margin-top: 28px; }
+  .lock .row { display: flex; gap: 16px; align-items: flex-start; font-size: 20px; line-height: 1.4; color: #cdd3df; }
+  .lock .row svg { flex: none; margin-top: 3px; }
+  .lock .row b { color: var(--text); font-weight: 600; }
+  .tunnel { margin-top: 34px; display: flex; align-items: center; }
+  .tunnel .box { background: var(--surface-2); border: 1px solid var(--line); border-radius: 14px; padding: 18px 20px; text-align: center; min-width: 150px; }
+  .tunnel .box b { display: block; font-size: 19px; }
+  .tunnel .box span { display: block; margin-top: 4px; font-size: 14px; color: var(--muted); font-family: var(--mono); }
+  .tunnel .box.hl { border-color: rgba(239,75,86,.5); background: rgba(239,75,86,.08); }
+  .tunnel .wire { flex: 1; height: 2px; background: repeating-linear-gradient(90deg, var(--accent) 0 8px, transparent 8px 14px); background-size: 28px 2px; animation: flowx 1s linear infinite; }
+  @keyframes flowx { to { background-position: 28px 0; } }
+  .facts { margin-top: 34px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+  .facts div { border-top: 1px solid var(--line); padding-top: 16px; }
+  .facts b { display: block; font-size: 28px; font-weight: 650; letter-spacing: -.02em; }
+  .facts span { font-size: 15px; color: var(--muted); }
+
+  /* ---------- Slide 6: bônus ---------- */
+  .bonus { margin-top: 44px; display: grid; grid-template-columns: 1.35fr 1fr; gap: 48px; }
+  .metrics { display: grid; gap: 18px; align-content: start; }
+  .metric { display: grid; grid-template-columns: 112px 1fr; gap: 24px; align-items: center; background: var(--surface); border: 1px solid var(--line); border-radius: 18px; padding: 24px 28px; }
+  .metric .type { font-family: var(--mono); font-size: 14px; text-transform: uppercase; letter-spacing: .1em; padding: 8px 0; text-align: center; border-radius: 10px; }
+  .type.counter { color: var(--metrics); background: rgba(255,107,91,.1); }
+  .type.timer { color: var(--traces); background: rgba(106,168,255,.1); }
+  .metric h3 { font-size: 24px; }
+  .metric code { display: block; margin-top: 6px; color: var(--muted); font-size: 15px; }
+  .evidence { background: linear-gradient(160deg, rgba(239,75,86,.12), rgba(239,75,86,.02)); border: 1px solid rgba(239,75,86,.25); border-radius: 22px; padding: 36px 38px; display: flex; flex-direction: column; }
+  .evidence .k { font-size: 14px; letter-spacing: .16em; text-transform: uppercase; color: var(--accent); }
+  .evidence .big { margin-top: 26px; }
+  .evidence .big .n { font-size: 96px; font-weight: 700; letter-spacing: -.05em; line-height: 1; }
+  .evidence .big .l { font-size: 19px; color: var(--muted); margin-top: 6px; }
+  .evidence .bar { margin-top: auto; font-size: 15px; color: var(--muted); border-top: 1px solid rgba(239,75,86,.2); padding-top: 18px; line-height: 1.5; }
+
+  /* ---------- Slide 7: lições ---------- */
+  .lessons { margin-top: 48px; display: grid; grid-template-columns: 1fr 1fr; gap: 22px 28px; }
+  .lesson { display: grid; grid-template-columns: 64px 1fr; gap: 20px; padding: 28px 30px; background: var(--surface); border: 1px solid var(--line); border-radius: 18px; }
+  .lesson .i { font-size: 44px; font-weight: 300; color: var(--dim); line-height: 1; font-variant-numeric: tabular-nums; }
+  .lesson h3 { font-size: 24px; }
+  .lesson .pf { margin-top: 12px; display: grid; gap: 8px; font-size: 18px; line-height: 1.4; }
+  .lesson .pf div { display: flex; gap: 10px; }
+  .lesson .pf .tag { flex: none; font-family: var(--mono); font-size: 12px; letter-spacing: .08em; text-transform: uppercase; padding: 3px 8px; border-radius: 6px; height: fit-content; margin-top: 2px; }
+  .tag.p { color: var(--logs); background: rgba(243,178,58,.1); }
+  .tag.f { color: var(--ok); background: rgba(60,207,142,.1); }
+  .lesson .pf span:last-child { color: #c4cbd8; }
+
+  /* ---------- Slide 8: conclusão ---------- */
+  .closing { justify-content: center; }
+  .checks { margin-top: 56px; display: grid; grid-template-columns: repeat(8, 1fr); gap: 14px; }
+  .check { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 20px 16px 18px; }
+  .check .id { font-family: var(--mono); font-size: 15px; color: var(--muted); display: flex; justify-content: space-between; align-items: center; }
+  .check .id svg { color: var(--ok); }
+  .check .nm { margin-top: 14px; font-size: 17px; font-weight: 600; line-height: 1.3; }
+  .check.b { border-color: rgba(239,75,86,.4); }
+  .takeaway { margin-top: 64px; font-size: 60px; line-height: 1.12; font-weight: 700; letter-spacing: -.03em; max-width: 1300px; }
+  .takeaway span { color: var(--muted); font-weight: 400; }
+  .cmd { margin-top: 30px; display: inline-flex; align-items: center; gap: 14px; font-family: var(--mono); font-size: 22px; padding: 16px 24px; border-radius: 14px; background: var(--surface); border: 1px solid var(--line); width: fit-content; }
+  .cmd::before { content: "$"; color: var(--accent); }
+
+  /* ---------- Controles ---------- */
+  .progress { position: fixed; left: 0; right: 0; top: 0; height: 3px; background: rgba(255,255,255,.06); z-index: 10; }
+  .progress i { display: block; height: 100%; width: 0; background: var(--accent); transition: width .5s cubic-bezier(.2,.7,.2,1); }
+  .controls { position: fixed; right: 24px; bottom: 22px; display: flex; align-items: center; gap: 10px; z-index: 10; opacity: .55; transition: opacity .3s; }
+  .controls:hover { opacity: 1; }
+  .controls button { width: 42px; height: 42px; border-radius: 50%; border: 1px solid var(--line); background: rgba(18,22,32,.85); color: var(--text); cursor: pointer; display: grid; place-items: center; transition: background .2s, border-color .2s; }
+  .controls button:hover:not(:disabled) { background: var(--surface-2); border-color: var(--dim); }
+  .controls button:disabled { opacity: .3; cursor: default; }
+  .controls .count { font-family: var(--mono); font-size: 13px; color: var(--muted); min-width: 52px; text-align: center; }
+  .dots { position: fixed; left: 50%; bottom: 30px; transform: translateX(-50%); display: flex; gap: 8px; z-index: 10; opacity: .55; transition: opacity .3s; }
+  .dots:hover { opacity: 1; }
+  .dots button { width: 8px; height: 8px; border-radius: 4px; border: 0; background: rgba(255,255,255,.22); cursor: pointer; transition: width .3s, background .3s; }
+  .dots button.on { width: 26px; background: var(--accent); }
+</style>
+</head>
+<body>
+
+<div class="progress"><i id="bar"></i></div>
+
+<div class="viewport">
+<div class="stage" id="stage">
+
+  <!-- 1 · ABERTURA -->
+  <section class="slide cover">
+    <svg class="pulse" viewBox="0 0 760 900" fill="none">
+      <path d="M0 470 H250 L285 470 L310 380 L345 590 L380 300 L415 520 L440 470 H760" stroke="url(#g1)" stroke-width="3" stroke-linejoin="round"/>
+      <defs><linearGradient id="g1" x1="0" x2="760" y1="0" y2="0" gradientUnits="userSpaceOnUse">
+        <stop offset="0" stop-color="#ef4b56" stop-opacity="0"/><stop offset=".45" stop-color="#ef4b56"/><stop offset="1" stop-color="#ef4b56" stop-opacity=".1"/>
+      </linearGradient></defs>
+    </svg>
+    <div class="eyebrow r">Projeto Integrador · 2026.2</div>
+    <h1 class="r d1" style="margin-top:28px">HemoFlow<span>Infraestrutura de<br>Observabilidade</span></h1>
+    <div class="meta r d2">
+      <div>Disciplina<b>Infraestrutura de Comunicação</b></div>
+      <div>Professor<b>Luiz Novaes</b></div>
+      <div>Branch<b class="mono">feature/observabilidade</b></div>
+    </div>
+    <div class="team r d3">Bruna Tiburtino · Caio Martins Oliveira · Cauã Henrique Melo Almeida · João Felipe Bonifácio Barros da Silva · Luís Felipe Carneiro da Silva · Luís Henrique Vilas Boas · Priscila Pontes · Rafael Dias · Ruan Carlos</div>
+  </section>
+
+  <!-- 2 · ARQUITETURA -->
+  <section class="slide">
+    <div class="eyebrow r">Visão geral</div>
+    <h2 class="r d1">Um stack 100% open-source, orquestrado via Docker Compose</h2>
+    <div class="arch">
+      <svg class="r d2" viewBox="0 0 1160 510" aria-label="Arquitetura de observabilidade">
+        <defs>
+          <marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="#5b6478"/></marker>
+          <marker id="am" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="#ff6b5b"/></marker>
+          <marker id="al" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="#f3b23a"/></marker>
+          <marker id="at" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="#6aa8ff"/></marker>
+        </defs>
+        <!-- edges -->
+        <path class="edge" stroke="#f3b23a" marker-end="url(#al)" d="M300 80 H468"/>
+        <text class="elabel" x="318" y="68">push HTTP</text>
+        <path class="edge" stroke="#6aa8ff" marker-end="url(#at)" d="M300 135 C390 135 380 205 468 205"/>
+        <text class="elabel" x="318" y="158">OTLP gRPC</text>
+        <path class="edge dash" stroke="#ff6b5b" marker-start="url(#am)" d="M300 170 C400 170 370 360 468 360"/>
+        <path class="edge dash" stroke="#ff6b5b" marker-start="url(#am)" d="M300 375 C380 375 390 390 468 390"/>
+        <path class="edge dash" stroke="#ff6b5b" marker-start="url(#am)" d="M300 470 C400 470 370 420 468 420"/>
+        <text class="elabel" x="360" y="455">scrape 15s</text>
+        <path class="edge" stroke="#5b6478" marker-end="url(#ah)" d="M730 80 C820 80 800 200 878 220"/>
+        <path class="edge" stroke="#5b6478" marker-end="url(#ah)" d="M730 205 C800 205 810 245 878 250"/>
+        <path class="edge" stroke="#5b6478" marker-end="url(#ah)" d="M730 390 C820 390 800 300 878 280"/>
+        <!-- sources -->
+        <g class="node"><rect x="20" y="30" width="280" height="160" rx="16" style="stroke:#ef4b56;stroke-opacity:.55"/>
+          <text class="t" x="44" y="72">HemoFlow App</text>
+          <text class="s" x="44" y="102">:8080</text>
+          <text class="s" x="44" y="130">Spring Boot 3.3 · Java 17</text>
+          <text class="s" x="44" y="156">Micrometer · OpenTelemetry</text></g>
+        <g class="node"><rect x="20" y="330" width="280" height="90" rx="16"/>
+          <text class="t" x="44" y="368">Node Exporter</text><text class="s" x="44" y="396">:9100 · host OS</text></g>
+        <g class="node"><rect x="20" y="430" width="280" height="80" rx="16"/>
+          <text class="t" x="44" y="464">cAdvisor</text><text class="s" x="44" y="490">:8081 · containers</text></g>
+        <!-- backends -->
+        <g class="node"><rect x="470" y="35" width="260" height="90" rx="16"/>
+          <text class="t" x="494" y="73" style="fill:#f3b23a">Loki</text><text class="s" x="494" y="101">:3100 · logs</text></g>
+        <g class="node"><rect x="470" y="160" width="260" height="90" rx="16"/>
+          <text class="t" x="494" y="198" style="fill:#6aa8ff">Tempo</text><text class="s" x="494" y="226">:3200 · traces</text></g>
+        <g class="node"><rect x="470" y="335" width="260" height="110" rx="16"/>
+          <text class="t" x="494" y="378" style="fill:#ff6b5b">Prometheus</text><text class="s" x="494" y="406">:9090 · métricas</text></g>
+        <!-- grafana -->
+        <g class="node"><rect x="880" y="170" width="260" height="160" rx="18" style="fill:#1a1f2c;stroke:#8a93a8;stroke-opacity:.6"/>
+          <text class="t" x="906" y="232" style="font-size:26px">Grafana</text>
+          <text class="s" x="906" y="262">:3000</text>
+          <text class="s" x="906" y="290">dashboards + explore</text></g>
+      </svg>
+      <div class="side">
+        <div class="stat r d3"><div class="n">7</div><div class="l">serviços na rede Docker <span class="mono">observability</span></div></div>
+        <div class="stat r d4"><div class="n">3</div><div class="l">sinais: <span style="color:var(--metrics)">métricas</span>, <span style="color:var(--logs)">logs</span> e <span style="color:var(--traces)">traces</span></div></div>
+        <div class="stat r d5"><div class="n">1</div><div class="l">painel único de consulta e correlação</div></div>
+      </div>
+    </div>
+    <div class="footer"><span>HemoFlow · Observabilidade</span><span>Arquitetura</span></div>
+  </section>
+
+  <!-- 3 · TRÊS PILARES -->
+  <section class="slide mid">
+    <div class="eyebrow r">R1 · R2 · R3 · R6</div>
+    <h2 class="r d1">Três sinais, uma visão completa da aplicação</h2>
+    <div class="pillars">
+      <div class="pillar r d2" style="--c:var(--metrics)">
+        <div class="k">Métricas</div>
+        <h3>O que está acontecendo</h3>
+        <div class="via">Actuator + Micrometer · Prometheus</div>
+        <ul>
+          <li>HTTP: contagem e latência p95/p99</li>
+          <li>JVM: heap, GC, threads, CPU, uptime</li>
+          <li>Pool HikariCP: conexões ativas/ociosas</li>
+          <li>Host (Node Exporter) e containers (cAdvisor)</li>
+        </ul>
+      </div>
+      <div class="pillar r d3" style="--c:var(--logs)">
+        <div class="k">Logs</div>
+        <h3>O que aconteceu</h3>
+        <div class="via">Loki4j Logback appender · Loki</div>
+        <ul>
+          <li>Labels: application, host, level</li>
+          <li>Cada linha carrega traceId e spanId</li>
+          <li>Consultas LogQL por erro ou por trace</li>
+        </ul>
+      </div>
+      <div class="pillar r d4" style="--c:var(--traces)">
+        <div class="k">Traces</div>
+        <h3>Onde aconteceu</h3>
+        <div class="via">OpenTelemetry OTLP · Tempo</div>
+        <ul>
+          <li>traceId automático por requisição</li>
+          <li>Amostragem de 100% das requisições</li>
+          <li>Spans internos: criar, buscar candidatas, alocar</li>
+        </ul>
+      </div>
+    </div>
+    <div class="flow r d5">
+      <span class="lbl">Correlação</span>
+      <span class="step">Requisição HTTP</span><span class="arrow"></span>
+      <span class="step"><span class="mono" style="color:var(--traces)">traceId</span> gerado</span><span class="arrow"></span>
+      <span class="step">Log no <b style="color:var(--logs)">Loki</b></span><span class="arrow"></span>
+      <span class="step">1 clique</span><span class="arrow"></span>
+      <span class="step">Trace no <b style="color:var(--traces)">Tempo</b></span>
+    </div>
+    <div class="footer"><span>HemoFlow · Observabilidade</span><span>Sinais</span></div>
+  </section>
+
+  <!-- 4 · COLETA E VISUALIZAÇÃO -->
+  <section class="slide">
+    <div class="eyebrow r">R4 · Coleta e visualização</div>
+    <div class="split">
+      <div>
+        <div class="quote r d1">Dashboards e datasources <em>provisionados como código</em> — zero importação manual.</div>
+        <p class="lead r d2" style="margin-top:28px">Tudo versionado em JSON no repositório e carregado automaticamente pelo Grafana ao subir o stack.</p>
+      </div>
+      <div class="tiles">
+        <div class="tile r d2"><div class="n">15<small>s</small></div><div class="l">intervalo de scrape do Prometheus</div></div>
+        <div class="tile r d3"><div class="n">3</div><div class="l">jobs de coleta</div>
+          <div class="chips"><span class="chip">hemoflow</span><span class="chip">node-exporter</span><span class="chip">cadvisor</span></div></div>
+        <div class="tile r d4"><div class="n">2</div><div class="l">dashboards</div>
+          <div class="chips"><span class="chip">Aplicação</span><span class="chip">Infraestrutura</span></div></div>
+        <div class="tile r d5"><div class="n">3</div><div class="l">datasources</div>
+          <div class="chips"><span class="chip">Prometheus</span><span class="chip">Loki</span><span class="chip">Tempo</span></div></div>
+      </div>
+    </div>
+    <div class="footer"><span>HemoFlow · Observabilidade</span><span>Coleta</span></div>
+  </section>
+
+  <!-- 5 · SEGURANÇA E ACESSO -->
+  <section class="slide mid">
+    <div class="eyebrow r">R5 · R7 · Segurança e acesso remoto</div>
+    <h2 class="r d1">Fechado por padrão, aberto só para quem precisa</h2>
+    <div class="sec">
+      <div class="panel r d2">
+        <h3>Superfície mínima</h3>
+        <div class="lock">
+          <div class="row"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#3ccf8e" stroke-width="2.2"><path d="M20 6 9 17l-5-5"/></svg>
+            <span><b>Actuator só na rede interna</b> — scrape via <span class="mono">hemoflow:8080</span>, sem exposição pública</span></div>
+          <div class="row"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#3ccf8e" stroke-width="2.2"><path d="M20 6 9 17l-5-5"/></svg>
+            <span><b>4 endpoints</b>: health, info, metrics, prometheus</span></div>
+          <div class="row"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#3ccf8e" stroke-width="2.2"><path d="M20 6 9 17l-5-5"/></svg>
+            <span><b>Senha do Grafana no .env</b>, fora do Git</span></div>
+          <div class="row"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#3ccf8e" stroke-width="2.2"><path d="M20 6 9 17l-5-5"/></svg>
+            <span><b>Cadastro público e acesso anônimo</b> desabilitados</span></div>
+        </div>
+      </div>
+      <div class="panel r d3">
+        <h3>Acesso do professor</h3>
+        <div class="tunnel">
+          <div class="box"><b>Professor</b><span>navegador</span></div>
+          <div class="wire"></div>
+          <div class="box hl"><b>Cloudflare Tunnel</b><span>HTTPS</span></div>
+          <div class="wire"></div>
+          <div class="box"><b>Grafana</b><span>:3000</span></div>
+        </div>
+        <div class="facts">
+          <div><b>Viewer</b><span>somente leitura</span></div>
+          <div><b>08h–22h</b><span>janela de avaliação</span></div>
+          <div><b>0 portas</b><span>abertas no roteador</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="footer"><span>HemoFlow · Observabilidade</span><span>Segurança</span></div>
+  </section>
+
+  <!-- 6 · BÔNUS -->
+  <section class="slide mid">
+    <div class="eyebrow r">Bônus · Métricas de negócio</div>
+    <h2 class="r d1">Do técnico ao negócio: medindo o fluxo de hemoderivados</h2>
+    <div class="bonus">
+      <div class="metrics">
+        <div class="metric r d2"><div class="type counter">Counter</div>
+          <div><h3>Requisições de sangue criadas</h3><code>hemoflow_requisicoes_criadas_total</code></div></div>
+        <div class="metric r d3"><div class="type counter">Counter</div>
+          <div><h3>Bolsas cadastradas</h3><code>hemoflow_bolsas_cadastradas_total</code></div></div>
+        <div class="metric r d4"><div class="type timer">Timer</div>
+          <div><h3>Duração do algoritmo FEFO</h3><code>hemoflow_alocacao_duracao_seconds</code></div></div>
+        <p class="r d5 muted" style="font-size:18px;margin-top:6px">Instrumentadas no <span class="mono">EstoqueService</span> via <span class="mono">MeterRegistry</span> e exibidas no dashboard “HemoFlow – Aplicação”.</p>
+      </div>
+      <div class="evidence r d4">
+        <div class="k">Em execução · 27/11/2026</div>
+        <div class="big"><div class="n">176</div><div class="l">requisições registradas no Prometheus</div></div>
+        <div class="big"><div class="n">104</div><div class="l">bolsas cadastradas via <span class="mono">/actuator/prometheus</span></div></div>
+        <div class="bar">Carga gerada por <span class="mono">scripts/gerar-carga.ps1</span>, incluindo erros controlados para correlação no Loki e Tempo.</div>
+      </div>
+    </div>
+    <div class="footer"><span>HemoFlow · Observabilidade</span><span>Bônus</span></div>
+  </section>
+
+  <!-- 7 · LIÇÕES -->
+  <section class="slide mid">
+    <div class="eyebrow r">Dificuldades e lições aprendidas</div>
+    <h2 class="r d1">O que precisou de ajuste fino</h2>
+    <div class="lessons">
+      <div class="lesson r d2"><div class="i">01</div><div><h3>Correlação log ↔ trace</h3><div class="pf">
+        <div><span class="tag p">Problema</span><span>Formato <span class="mono">[traceId/spanId]</span> não casava com a regex do Loki</span></div>
+        <div><span class="tag f">Solução</span><span>Padronizar o log como <span class="mono">traceId=…</span></span></div></div></div></div>
+      <div class="lesson r d3"><div class="i">02</div><div><h3>Traces multi-span e p95/p99</h3><div class="pf">
+        <div><span class="tag p">Problema</span><span>OTLP gerava um único span por requisição</span></div>
+        <div><span class="tag f">Solução</span><span>Spans filhos com <span class="mono">ObservationRegistry</span> + histograma habilitado</span></div></div></div></div>
+      <div class="lesson r d4"><div class="i">03</div><div><h3>Erros invisíveis</h3><div class="pf">
+        <div><span class="tag p">Problema</span><span>Respostas 4xx/5xx não emitiam log</span></div>
+        <div><span class="tag f">Solução</span><span>Logger WARN/ERROR no <span class="mono">ApiExceptionHandler</span></span></div></div></div></div>
+      <div class="lesson r d5"><div class="i">04</div><div><h3>Docker Desktop no Windows</h3><div class="pf">
+        <div><span class="tag p">Problema</span><span>Métricas vêm da VM Linux (WSL2), não do host</span></div>
+        <div><span class="tag f">Solução</span><span>Ajuste de volumes e documentação explícita</span></div></div></div></div>
+    </div>
+    <div class="footer"><span>HemoFlow · Observabilidade</span><span>Lições</span></div>
+  </section>
+
+  <!-- 8 · CONCLUSÃO -->
+  <section class="slide closing">
+    <div class="eyebrow r">Checklist do enunciado</div>
+    <div class="checks">
+      <div class="check r d1"><div class="id">R1<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6"><path d="M20 6 9 17l-5-5"/></svg></div><div class="nm">Actuator</div></div>
+      <div class="check r d1"><div class="id">R2<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6"><path d="M20 6 9 17l-5-5"/></svg></div><div class="nm">Métricas de aplicação</div></div>
+      <div class="check r d2"><div class="id">R3<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6"><path d="M20 6 9 17l-5-5"/></svg></div><div class="nm">Métricas de infra</div></div>
+      <div class="check r d2"><div class="id">R4<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6"><path d="M20 6 9 17l-5-5"/></svg></div><div class="nm">Prometheus + Grafana</div></div>
+      <div class="check r d3"><div class="id">R5<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6"><path d="M20 6 9 17l-5-5"/></svg></div><div class="nm">Segurança</div></div>
+      <div class="check r d3"><div class="id">R6<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6"><path d="M20 6 9 17l-5-5"/></svg></div><div class="nm">Logs + traces</div></div>
+      <div class="check r d4"><div class="id">R7<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6"><path d="M20 6 9 17l-5-5"/></svg></div><div class="nm">Acesso remoto</div></div>
+      <div class="check b r d4"><div class="id" style="color:var(--accent)">Bônus<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6"><path d="M20 6 9 17l-5-5"/></svg></div><div class="nm">Métricas de negócio</div></div>
+    </div>
+    <div class="takeaway r d5">Um comando. <span>Métricas, logs e traces correlacionados, reproduzíveis em qualquer máquina.</span></div>
+    <div class="cmd r d6">docker compose up --build -d</div>
+    <div class="footer"><span>HemoFlow · Observabilidade</span><span>Obrigado</span></div>
+  </section>
+
+</div>
+</div>
+
+<div class="dots" id="dots"></div>
+<div class="controls">
+  <button id="prev" aria-label="Slide anterior"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg></button>
+  <span class="count" id="count">1 / 8</span>
+  <button id="next" aria-label="Próximo slide"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg></button>
+  <button id="fs" aria-label="Tela cheia"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg></button>
+</div>
+
+<script>
+(() => {
+  const stage = document.getElementById('stage');
+  const slides = [...document.querySelectorAll('.slide')];
+  const bar = document.getElementById('bar');
+  const count = document.getElementById('count');
+  const prevBtn = document.getElementById('prev');
+  const nextBtn = document.getElementById('next');
+  const dots = document.getElementById('dots');
+  const N = slides.length;
+  let cur = 0;
+
+  slides.forEach((_, i) => {
+    const b = document.createElement('button');
+    b.setAttribute('aria-label', 'Ir para slide ' + (i + 1));
+    b.onclick = () => go(i);
+    dots.appendChild(b);
+  });
+
+  function fit() {
+    const s = Math.min(window.innerWidth / 1600, window.innerHeight / 900);
+    stage.style.transform = `translate(-50%, -50%) scale(${s})`;
+  }
+
+  function go(i) {
+    i = Math.max(0, Math.min(N - 1, i));
+    slides.forEach((sl, k) => {
+      sl.classList.toggle('active', k === i);
+      sl.classList.toggle('prev', k < i);
+    });
+    cur = i;
+    bar.style.width = ((i + 1) / N * 100) + '%';
+    count.textContent = `${i + 1} / ${N}`;
+    prevBtn.disabled = i === 0;
+    nextBtn.disabled = i === N - 1;
+    [...dots.children].forEach((d, k) => d.classList.toggle('on', k === i));
+    history.replaceState(null, '', '#' + (i + 1));
+  }
+
+  document.addEventListener('keydown', e => {
+    if (['ArrowRight', 'PageDown', ' ', 'Enter'].includes(e.key)) { e.preventDefault(); go(cur + 1); }
+    else if (['ArrowLeft', 'PageUp', 'Backspace'].includes(e.key)) { e.preventDefault(); go(cur - 1); }
+    else if (e.key === 'Home') go(0);
+    else if (e.key === 'End') go(N - 1);
+    else if (e.key.toLowerCase() === 'f') toggleFs();
+  });
+  prevBtn.onclick = () => go(cur - 1);
+  nextBtn.onclick = () => go(cur + 1);
+
+  function toggleFs() {
+    if (!document.fullscreenElement) document.documentElement.requestFullscreen?.();
+    else document.exitFullscreen?.();
+  }
+  document.getElementById('fs').onclick = toggleFs;
+
+  let tx = null;
+  document.addEventListener('touchstart', e => { tx = e.touches[0].clientX; }, { passive: true });
+  document.addEventListener('touchend', e => {
+    if (tx === null) return;
+    const dx = e.changedTouches[0].clientX - tx;
+    if (Math.abs(dx) > 50) go(cur + (dx < 0 ? 1 : -1));
+    tx = null;
+  });
+
+  window.addEventListener('resize', fit);
+  fit();
+  const start = parseInt(location.hash.slice(1), 10);
+  go(Number.isFinite(start) ? start - 1 : 0);
+})();
+</script>
+</body>
+</html>
