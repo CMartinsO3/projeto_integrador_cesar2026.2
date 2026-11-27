@@ -4,7 +4,8 @@
 **Disciplina:** Infraestrutura de Comunicação  
 **Professor:** Luiz Novaes  
 **Valor:** 6,0 pts + 1,0 bônus  
-**Equipe:** HemoFlow Team  
+**Equipe:** HemoFlow Team (Bruna Tiburtino, Caio Martins, Cauã Henrique, João Felipe Bonifácio, Luís Felipe Carneiro, Luís Henrique Vilas Boas, Priscila Pontes, Rafael Medeiros, Ruan Carlos)  
+**Repositório:** `https://github.com/CMartinsO3/projeto_integrador_cesar2026.2` *(confirmar branch de entrega)*  
 **Data:** Novembro / 2026
 
 ---
@@ -95,8 +96,9 @@ A aplicação **HemoFlow** (Spring Boot 3.3 / Java 17) foi instrumentada com o s
 management.endpoints.web.exposure.include=health,info,metrics,prometheus
 management.endpoint.health.show-details=always
 
-# Tag global aplicada a todas as métricas
+# Tag global aplicada a todas as métricas e histogramas p95/p99
 management.metrics.tags.application=hemoflow
+management.metrics.distribution.percentiles-histogram.http.server.requests=true
 
 # Informações exibidas em /actuator/info
 info.app.name=HemoFlow
@@ -197,6 +199,8 @@ cadvisor:
 ```
 rate(container_cpu_usage_seconds_total{name!=""}[2m])
 ```
+
+> **Nota sobre ambiente Windows/macOS (Docker Desktop):** Em execuções locais no Windows/macOS via Docker Desktop, o Node Exporter e o cAdvisor coletam métricas da máquina virtual Linux gerenciada pelo Docker Desktop (WSL2), comportamento esperado e aceito na avaliação para ambientes não-Linux nativos.
 
 ---
 
@@ -370,19 +374,15 @@ A URL gerada (ex.: `https://hemoflow-obs.trycloudflare.com`) é compartilhada ap
 > Senha: *(entregue separadamente ao professor)*  
 > Disponível de: **[DATA INÍCIO]** até **[DATA FIM]**
 
-### Gerador de carga (manter targets UP)
+### Gerador de carga (métricas de negócio, logs de erro e traces multi-span)
 
-Para manter métricas visíveis ao professor durante a avaliação:
+Para manter os gráficos populados e gerar logs e traces (incluindo erros 404/500 para correlação no Loki/Tempo), utilize o script pronto em [`scripts/gerar-carga.ps1`](../scripts/gerar-carga.ps1):
 
-```bash
-# PowerShell – loop de carga por 24h
-while ($true) {
-    Invoke-WebRequest -Uri http://localhost:8080/actuator/health -UseBasicParsing | Out-Null
-    Invoke-WebRequest -Uri http://localhost:8080/api/v1/bolsas -UseBasicParsing | Out-Null
-    Invoke-WebRequest -Uri http://localhost:8080/api/v1/requisicoes -UseBasicParsing | Out-Null
-    Start-Sleep -Seconds 5
-}
+```powershell
+.\scripts\gerar-carga.ps1
 ```
+
+O script executa leituras HTTP, cadastra bolsas (`POST /api/v1/bolsas`), cria e aloca requisições (`POST /api/v1/requisicoes` → `POST /api/v1/requisicoes/{id}/alocar`, gerando múltiplos spans `hemoflow.requisicao.criar`, `hemoflow.estoque.buscar-candidatas` e `hemoflow.estoque.alocar-bolsas`) e dispara erros controlados a cada 3 ciclos.
 
 ---
 
@@ -522,4 +522,29 @@ Em Grafana → Dashboards → Import → inserir o ID → selecionar datasource 
 
 ---
 
-*Documento gerado automaticamente. Preencher os itens marcados com **[PREENCHER]** antes da entrega final.*
+## 12. Evidências do Ambiente em Execução *(Prints com Data/Hora Visível)*
+
+> **[PREENCHER ANTES DE EXPORTAR O PDF]** Salvar os prints em `docs/evidencias/` com a barra de data/hora do sistema visível e anexar abaixo:
+
+1. **Containers em execução (`docker compose ps`):** `[Inserir print de docker compose ps]`
+2. **Endpoint `/actuator/prometheus` (com tag `application="hemoflow"` e métricas de negócio):** `[Inserir print ou saída curl]`
+3. **Prometheus `Status → Targets` (todos os targets `UP`):** `[Inserir print de http://localhost:9090/targets]`
+4. **Consulta PromQL no Prometheus/Grafana:** `[Inserir print da consulta]`
+5. **Dashboard `HemoFlow – Aplicação` com dados reais (incluindo métricas de negócio e taxa de erros):** `[Inserir print do Grafana]`
+6. **Dashboard `HemoFlow – Infraestrutura` com dados reais (Node Exporter + cAdvisor):** `[Inserir print do Grafana]`
+7. **Logs no Loki (consulta LogQL no Grafana → Explore):** `[Inserir print de {application="hemoflow"}]`
+8. **Trace com múltiplos spans no Tempo e navegação `log → trace` via `traceId`:** `[Inserir prints do Tempo e do link TraceID no Loki]`
+
+---
+
+## 13. Dificuldades Encontradas e Lições Aprendidas
+
+* **Correlação entre logs (Loki) e traces (Tempo):** Inicialmente, o formato da mensagem no `logback-spring.xml` imprimia `[traceId/spanId]` entre colchetes, enquanto a regex configurada no datasource do Loki (`datasources.yml`) buscava `traceId=(\w+)`. Padronizar o log para `traceId=... spanId=...` garantiu a navegação direta do log para o trace no Grafana Explore.
+* **Geração de traces multi-span e histogramas p95/p99:** Apenas a dependência OTLP gera um span HTTP único por requisição; foi necessário instrumentar pontos internos do `EstoqueService` com `ObservationRegistry` (criando spans filhos para busca de candidatas e alocação) e habilitar `management.metrics.distribution.percentiles-histogram.http.server.requests=true` no `application.properties` para popular os quantis `p95` e `p99` no Prometheus.
+* **Registro de erros para observabilidade:** O `ApiExceptionHandler` retornava respostas HTTP 400/404/422/500 sem emitir logs explícitos; adicionar `Logger` (`WARN`/`ERROR`) garantiu visibilidade dos casos de falha no Loki correlacionados ao `traceId`.
+* **Execução em Docker Desktop no Windows:** Diferentemente de um host Linux nativo, o Node Exporter e o cAdvisor no Windows coletam métricas da VM Linux do Docker Desktop, exigindo atenção no mapeamento de volumes (como `/dev/disk`) e explicação clara na documentação.
+* **Lição aprendida:** Provisionar datasources e dashboards em código (`grafana/provisioning/` e JSON versionado) torna o ambiente reproduzível com um único `docker compose up -d --build`, evitando configuração manual repetitiva e mantendo segredos isolados em `.env`.
+
+---
+
+*Preencher os itens marcados com **[PREENCHER]** (URL do túnel, credenciais do professor apenas no PDF/Classroom, período de disponibilidade e prints com data/hora) antes da entrega final.*

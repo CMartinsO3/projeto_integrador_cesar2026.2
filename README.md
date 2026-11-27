@@ -191,3 +191,48 @@ Exemplo de rota Hemocentro → Hospital C (via nó intermediário, 35 min):
 ```bash
 curl "http://localhost:8080/api/v1/rotas/caminho-minimo?origemId=1&destinoId=4"
 ```
+
+---
+
+## 📊 Observabilidade (Actuator, Prometheus, Grafana, Loki e Tempo)
+
+Documentação completa e evidências em [docs/observabilidade.md](./docs/observabilidade.md).
+
+### Pré-requisitos
+* **Docker Desktop** instalado e em execução (inclui `docker compose`)
+* Arquivo `.env` criado localmente a partir de `.env.example` (nunca versionado):
+  ```bash
+  cp .env.example .env
+  ```
+
+### Como subir todo o stack de observabilidade
+```bash
+docker compose up -d --build
+```
+
+Para validar os containers e gerar carga contínua (métricas HTTP, métricas de negócio, traces multi-span e erros para logs):
+```powershell
+docker compose ps
+.\scripts\gerar-carga.ps1
+```
+
+### Portas e URLs dos serviços
+
+| Serviço | Porta | URL Local | Finalidade |
+|---|---|---|---|
+| **HemoFlow App** | `8080` | `http://localhost:8080` | Aplicação Spring Boot (`/docs` Swagger, `/actuator/prometheus`) |
+| **Prometheus** | `9090` | `http://localhost:9090` | Coleta de métricas e verificação em `/targets` |
+| **Grafana** | `3000` | `http://localhost:3000` | Visualização (`HemoFlow – Aplicação` e `HemoFlow – Infraestrutura`) |
+| **Node Exporter** | `9100` | `http://localhost:9100/metrics` | Métricas de CPU, memória, disco e rede do host |
+| **cAdvisor** | `8081` | `http://localhost:8081` | Métricas de CPU e memória por container |
+| **Loki** | `3100` | `http://localhost:3100` | Agregação de logs correlacionados por `traceId` |
+| **Tempo** | `3200` / `4317` | `http://localhost:3200` | Rastreamento distribuído (OTLP gRPC na porta `4317`) |
+
+### Métricas de negócio criadas (Micrometer)
+
+| Métrica | Nome no Prometheus | Tipo | O que mede |
+|---|---|---|---|
+| `hemoflow.requisicoes.criadas` | `hemoflow_requisicoes_criadas_total` | `Counter` | Total de requisições hospitalares criadas |
+| `hemoflow.bolsas.cadastradas` | `hemoflow_bolsas_cadastradas_total` | `Counter` | Total de bolsas de sangue cadastradas no estoque |
+| `hemoflow.alocacao.duracao` | `hemoflow_alocacao_duracao_seconds` | `Timer` | Tempo de execução da rotina de alocação de bolsas |
+

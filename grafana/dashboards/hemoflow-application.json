@@ -18,8 +18,7 @@
       "type": "timeseries",
       "targets": [
         {
-          "datasource": { "type": "prometheus" },
-          "expr": "sum(rate(http_server_requests_seconds_count{application=\"hemoflow\"}[1m])) by (uri, method, status)",
+          "expr": "sum(rate(http_server_requests_seconds_count{application=\"hemoflow\"}[5m])) by (uri, method, status)",
           "legendFormat": "{{method}} {{uri}} {{status}}",
           "refId": "A"
         }
@@ -30,13 +29,18 @@
       "fieldConfig": { "defaults": { "unit": "s", "color": { "mode": "palette-classic" } }, "overrides": [] },
       "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
       "id": 2,
-      "title": "Latência HTTP (p99)",
+      "title": "Latência HTTP (p95 / p99)",
       "type": "timeseries",
       "targets": [
         {
-          "expr": "histogram_quantile(0.99, sum(rate(http_server_requests_seconds_bucket{application=\"hemoflow\"}[1m])) by (le, uri))",
-          "legendFormat": "p99 {{uri}}",
+          "expr": "histogram_quantile(0.95, sum(rate(http_server_requests_seconds_bucket{application=\"hemoflow\"}[5m])) by (le, uri))",
+          "legendFormat": "p95 {{uri}}",
           "refId": "A"
+        },
+        {
+          "expr": "histogram_quantile(0.99, sum(rate(http_server_requests_seconds_bucket{application=\"hemoflow\"}[5m])) by (le, uri))",
+          "legendFormat": "p99 {{uri}}",
+          "refId": "B"
         }
       ]
     },
@@ -109,7 +113,7 @@
       "type": "timeseries",
       "targets": [
         {
-          "expr": "rate(hemoflow_alocacao_duracao_seconds_sum{application=\"hemoflow\"}[1m]) / rate(hemoflow_alocacao_duracao_seconds_count{application=\"hemoflow\"}[1m])",
+          "expr": "rate(hemoflow_alocacao_duracao_seconds_sum{application=\"hemoflow\"}[5m]) / rate(hemoflow_alocacao_duracao_seconds_count{application=\"hemoflow\"}[5m])",
           "legendFormat": "Duração Média",
           "refId": "A"
         }
@@ -118,7 +122,7 @@
     {
       "datasource": { "type": "prometheus", "uid": "${datasource}" },
       "fieldConfig": { "defaults": { "unit": "percentunit", "max": 1 }, "overrides": [] },
-      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 24 },
+      "gridPos": { "h": 8, "w": 8, "x": 0, "y": 24 },
       "id": 8,
       "title": "CPU JVM (Process)",
       "type": "timeseries",
@@ -133,7 +137,7 @@
     {
       "datasource": { "type": "prometheus", "uid": "${datasource}" },
       "fieldConfig": { "defaults": { "unit": "short" }, "overrides": [] },
-      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 24 },
+      "gridPos": { "h": 8, "w": 8, "x": 8, "y": 24 },
       "id": 9,
       "title": "HikariCP – Pool de Conexões",
       "type": "timeseries",
@@ -147,6 +151,21 @@
           "expr": "hikaricp_connections_idle{application=\"hemoflow\"}",
           "legendFormat": "Conexões Idle",
           "refId": "B"
+        }
+      ]
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "fieldConfig": { "defaults": { "unit": "reqps", "color": { "mode": "palette-classic" } }, "overrides": [] },
+      "gridPos": { "h": 8, "w": 8, "x": 16, "y": 24 },
+      "id": 10,
+      "title": "Taxa de Erros HTTP (4xx / 5xx)",
+      "type": "timeseries",
+      "targets": [
+        {
+          "expr": "sum(rate(http_server_requests_seconds_count{application=\"hemoflow\", status=~\"4..|5..\"}[5m])) by (status, uri)",
+          "legendFormat": "{{status}} {{uri}}",
+          "refId": "A"
         }
       ]
     }

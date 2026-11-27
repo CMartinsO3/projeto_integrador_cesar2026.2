@@ -10,6 +10,11 @@ import java.util.Random;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Timer;
+import io.micrometer.observation.Observation;
+import io.micrometer.observation.ObservationRegistry;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -29,11 +34,14 @@ import com.hemoflow.hemoflow.persistencia.RequisicaoRepository;
 @Service
 public class EstoqueService {
 
+    private static final Logger log = LoggerFactory.getLogger(EstoqueService.class);
+
     private final BolsaRepository bolsaRepository;
     private final NoRedeRepository noRedeRepository;
     private final HospitalRepository hospitalRepository;
     private final RequisicaoRepository requisicaoRepository;
     private final IndiceEstoque indiceEstoque;
+    private final ObservationRegistry observationRegistry;
 
     // ===== Métricas de negócio (Micrometer) =====
     private final Counter requisicoesCriadasCounter;
@@ -48,11 +56,26 @@ public class EstoqueService {
             IndiceEstoque indiceEstoque,
             MeterRegistry meterRegistry
     ) {
+        this(bolsaRepository, noRedeRepository, hospitalRepository, requisicaoRepository,
+                indiceEstoque, meterRegistry, ObservationRegistry.NOOP);
+    }
+
+    @Autowired
+    public EstoqueService(
+            BolsaRepository bolsaRepository,
+            NoRedeRepository noRedeRepository,
+            HospitalRepository hospitalRepository,
+            RequisicaoRepository requisicaoRepository,
+            IndiceEstoque indiceEstoque,
+            MeterRegistry meterRegistry,
+            ObservationRegistry observationRegistry
+    ) {
         this.bolsaRepository = bolsaRepository;
         this.noRedeRepository = noRedeRepository;
         this.hospitalRepository = hospitalRepository;
         this.requisicaoRepository = requisicaoRepository;
         this.indiceEstoque = indiceEstoque;
+        this.observationRegistry = observationRegistry != null ? observationRegistry : ObservationRegistry.NOOP;
 
         // Registra métricas de negócio
         this.requisicoesCriadasCounter = Counter.builder("hemoflow.requisicoes.criadas")
@@ -89,6 +112,8 @@ public class EstoqueService {
         Bolsa salva = bolsaRepository.save(bolsa);
         indiceEstoque.registrarAposCommit(salva);
         bolsasCadastradasCounter.increment(); // métrica de negócio
+        log.info("Bolsa cadastrada: id={}, tipo={}, componente={}, lote={}",
+                salva.getId(), salva.getTipoSanguineo(), salva.getHemocomponente(), salva.getLote());
         return salva;
     }
 
@@ -123,24 +148,30 @@ public class EstoqueService {
 
     @Transactional
     public Requisicao criarRequisicao(com.hemoflow.hemoflow.api.dto.RequisicaoDTOs.Cadastro dto) {
-        Hospital hospital = hospitalRepository.findById(dto.hospitalId())
-                .orElseThrow(() -> new RecursoNaoEncontradoException("Hospital não encontrado: " + dto.hospitalId()));
-        if (!hospital.isAtivo()) {
-            throw new RegraNegocioException("Hospital inativo não pode abrir requisição");
-        }
-        if (dto.quantidade() < 1) {
-            throw new RegraNegocioException("Quantidade deve ser pelo menos 1");
-        }
-        Requisicao requisicao = new Requisicao(
-                hospital,
-                dto.tipoSanguineo(),
-                dto.hemocomponente(),
-                dto.quantidade(),
-                dto.janelaEntrega()
-        );
-        Requisicao salva = requisicaoRepository.save(requisicao);
-        requisicoesCriadasCounter.increment(); // métrica de negócio
-        return salva;
+        return Observation.createNotStarted("hemoflow.requisicao.criar", observationRegistry)
+                .observe(() -> {
+                    Hospital hospital = hospitalRepository.findById(dto.hospitalId())
+                            .orElseThrow(() -> new RecursoNaoEncontradoException("Hospital não encontrado: " + dto.hospitalId()));
+                    if (!hospital.isAtivo()) {
+                        throw new RegraNegocioException("Hospital inativo não pode abrir requisição");
+                    }
+                    if (dto.quantidade() < 1) {
+                        throw new RegraNegocioException("Quantidade deve ser pelo menos 1");
+                    }
+                    Requisicao requisicao = new Requisicao(
+                            hospital,
+                            dto.tipoSanguineo(),
+                            dto.hemocomponente(),
+                            dto.quantidade(),
+                            dto.janelaEntrega()
+                    );
+                    Requisicao salva = requisicaoRepository.save(requisicao);
+                    requisicoesCriadasCounter.increment(); // métrica de negócio
+                    log.info("Requisicao criada: id={}, hospitalId={}, tipo={}, componente={}, qtd={}",
+                            salva.getId(), hospital.getId(), salva.getTipoSanguineo(),
+                            salva.getHemocomponente(), salva.getQuantidade());
+                    return salva;
+                });
     }
 
     /**
@@ -158,21 +189,25 @@ public class EstoqueService {
             throw new RegraNegocioException("Requisição em status " + requisicao.getStatus() + " não pode ser alocada");
         }
 
-        // Bolsas que venceram enquanto esperavam saem do índice
-        indiceEstoque.descartarVencidas();
+        List<Bolsa> candidatas = Observation.createNotStarted("hemoflow.estoque.buscar-candidatas", observationRegistry)
+                .observe(() -> {
+                    // Bolsas que venceram enquanto esperavam saem do índice
+                    indiceEstoque.descartarVencidas();
 
-        // U1: filtra apenas por hemocomponente e status DISPONIVEL
-        // Compatibilidade ABO/Rh será aplicada na Unidade 2 (CompatibilidadeAboRh)
-        List<Bolsa> candidatas = bolsaRepository.findByStatusAndHemocomponente(
-                        StatusBolsa.DISPONIVEL,
-                        requisicao.getHemocomponente()
-                ).stream()
-                .filter(b -> !b.isVencida())
-                .toList();
+                    // U1: filtra apenas por hemocomponente e status DISPONIVEL
+                    return bolsaRepository.findByStatusAndHemocomponente(
+                                    StatusBolsa.DISPONIVEL,
+                                    requisicao.getHemocomponente()
+                            ).stream()
+                            .filter(b -> !b.isVencida())
+                            .toList();
+                });
 
         if (candidatas.size() < requisicao.getQuantidade()) {
             requisicao.setStatus(StatusRequisicao.AGUARDANDO_ESTOQUE);
             requisicaoRepository.save(requisicao);
+            log.warn("Estoque insuficiente para requisicao {}: necessarios={}, disponiveis={}",
+                    requisicaoId, requisicao.getQuantidade(), candidatas.size());
             throw new RegraNegocioException(
                     "Estoque insuficiente: necessários " + requisicao.getQuantidade()
                             + ", disponíveis " + candidatas.size()
@@ -180,20 +215,22 @@ public class EstoqueService {
         }
 
         // U1: seleção simples (as primeiras N bolsas da lista)
-        // Timer de negócio envolve a fase de seleção e persistência
-        return alocacaoTimer.record(() -> {
-            List<Bolsa> alocadas = new ArrayList<>();
-            for (int i = 0; i < requisicao.getQuantidade(); i++) {
-                Bolsa bolsa = candidatas.get(i);
-                bolsa.setStatus(StatusBolsa.ALOCADA);
-                alocadas.add(bolsa);
-            }
-            bolsaRepository.saveAll(alocadas);
-            alocadas.forEach(indiceEstoque::retirarAposCommit);
-            requisicao.setStatus(StatusRequisicao.ALOCADA);
-            requisicaoRepository.save(requisicao);
-            return alocadas;
-        });
+        // Timer de negócio + span dedicado envolvem a fase de seleção e persistência
+        return Observation.createNotStarted("hemoflow.estoque.alocar-bolsas", observationRegistry)
+                .observe(() -> alocacaoTimer.record(() -> {
+                    List<Bolsa> alocadas = new ArrayList<>();
+                    for (int i = 0; i < requisicao.getQuantidade(); i++) {
+                        Bolsa bolsa = candidatas.get(i);
+                        bolsa.setStatus(StatusBolsa.ALOCADA);
+                        alocadas.add(bolsa);
+                    }
+                    bolsaRepository.saveAll(alocadas);
+                    alocadas.forEach(indiceEstoque::retirarAposCommit);
+                    requisicao.setStatus(StatusRequisicao.ALOCADA);
+                    requisicaoRepository.save(requisicao);
+                    log.info("Alocacao concluida: requisicaoId={}, bolsasAlocadas={}", requisicaoId, alocadas.size());
+                    return alocadas;
+                }));
     }
 
     @Transactional
