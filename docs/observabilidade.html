@@ -38,12 +38,25 @@
 </head>
 <body>
 <h1 id="hemoflow-infraestrutura-de-observabilidade">HemoFlow — Infraestrutura de Observabilidade</h1>
-<p><strong>Projeto Integrador — CIn/UFPE · 2026.2</strong><br />
+<p><strong>Projeto Integrador — 2026.2</strong><br />
 <strong>Disciplina:</strong> Infraestrutura de Comunicação<br />
 <strong>Professor:</strong> Luiz Novaes<br />
-<strong>Valor:</strong> 6,0 pts + 1,0 bônus<br />
-<strong>Equipe:</strong> HemoFlow Team<br />
-<strong>Data:</strong> Novembro / 2026</p>
+<strong>Valor:</strong> 6,0 pts (base) + 1,0 bônus (métricas de negócio)<br />
+<strong>Repositório GitHub:</strong> <code>https://github.com/CMartinsO3/projeto_integrador_cesar2026.2</code><br />
+<strong>Branch Oficial:</strong> <code>feature/observabilidade</code><br />
+<strong>Data:</strong> Novembro / 2026  </p>
+<h3 id="integrantes-da-equipe">Integrantes da Equipe:</h3>
+<ul>
+<li><strong>Bruna Tiburtino</strong></li>
+<li><strong>Caio Martins Oliveira</strong></li>
+<li><strong>Cauã Henrique Melo Almeida</strong></li>
+<li><strong>João Felipe Bonifácio Barros da Silva</strong></li>
+<li><strong>Luís Felipe Carneiro da Silva</strong></li>
+<li><strong>Luís Henrique Vilas Boas</strong></li>
+<li><strong>Priscila Pontes</strong></li>
+<li><strong>Rafael Dias</strong></li>
+<li><strong>Ruan Carlos</strong></li>
+</ul>
 <hr />
 <h2 id="sumario">Sumário</h2>
 <ol>
@@ -58,6 +71,8 @@
 <li><a href="#9-bônus-métricas-de-negócio">Bônus — Métricas de Negócio (Micrometer)</a></li>
 <li><a href="#10-checklist">Checklist de Atendimento ao Enunciado</a></li>
 <li><a href="#11-como-executar">Como Executar o Stack</a></li>
+<li><a href="#12-evidências-do-ambiente-em-execução-prints-com-datahora-visível">Evidências do Ambiente em Execução (Prints)</a></li>
+<li><a href="#13-dificuldades-encontradas-e-lições-aprendidas">Dificuldades Encontradas e Lições Aprendidas</a></li>
 </ol>
 <hr />
 <h2 id="1-visao-geral">1. Visão Geral</h2>
@@ -162,8 +177,9 @@
 management.endpoints.web.exposure.include=health,info,metrics,prometheus
 management.endpoint.health.show-details=always
 
-# Tag global aplicada a todas as métricas
+# Tag global aplicada a todas as métricas e histogramas p95/p99
 management.metrics.tags.application=hemoflow
+management.metrics.distribution.percentiles-histogram.http.server.requests=true
 
 # Informações exibidas em /actuator/info
 info.app.name=HemoFlow
@@ -326,6 +342,9 @@ node-exporter:
 <p><strong>PromQL — CPU por container:</strong></p>
 <pre><code>rate(container_cpu_usage_seconds_total{name!=&quot;&quot;}[2m])
 </code></pre>
+<blockquote>
+<p><strong>Nota sobre ambiente Windows/macOS (Docker Desktop):</strong> Em execuções locais no Windows/macOS via Docker Desktop, o Node Exporter e o cAdvisor coletam métricas da máquina virtual Linux gerenciada pelo Docker Desktop (WSL2), comportamento esperado e aceito na avaliação para ambientes não-Linux nativos.</p>
+</blockquote>
 <hr />
 <h2 id="5-r4-coleta-e-visualizacao">5. R4 — Coleta e Visualização</h2>
 <h3 id="prometheus-prometheusprometheusyml">Prometheus — <code>prometheus/prometheus.yml</code></h3>
@@ -471,19 +490,13 @@ cloudflared tunnel --url http://localhost:3000
 <p><strong>[PREENCHER ANTES DA ENTREGA]</strong><br />
 URL do Grafana: <code>https://[SEU-SUBDOMINIO].trycloudflare.com</code><br />
 Usuário: <code>professor</code><br />
-Senha: <em>(entregue separadamente ao professor)</em><br />
-Disponível de: <strong>[DATA INÍCIO]</strong> até <strong>[DATA FIM]</strong></p>
+Senha: <em>(entregue separadamente ao professor)</em>  </p>
 </blockquote>
-<h3 id="gerador-de-carga-manter-targets-up">Gerador de carga (manter targets UP)</h3>
-<p>Para manter métricas visíveis ao professor durante a avaliação:</p>
-<pre><code class="language-bash"># PowerShell – loop de carga por 24h
-while ($true) {
-    Invoke-WebRequest -Uri http://localhost:8080/actuator/health -UseBasicParsing | Out-Null
-    Invoke-WebRequest -Uri http://localhost:8080/api/v1/bolsas -UseBasicParsing | Out-Null
-    Invoke-WebRequest -Uri http://localhost:8080/api/v1/requisicoes -UseBasicParsing | Out-Null
-    Start-Sleep -Seconds 5
-}
+<h3 id="gerador-de-carga-metricas-de-negocio-logs-de-erro-e-traces-multi-span">Gerador de carga (métricas de negócio, logs de erro e traces multi-span)</h3>
+<p>Para manter os gráficos populados e gerar logs e traces (incluindo erros 404/500 para correlação no Loki/Tempo), utilize o script pronto em <a href="../scripts/gerar-carga.ps1"><code>scripts/gerar-carga.ps1</code></a>:</p>
+<pre><code class="language-powershell">.\scripts\gerar-carga.ps1
 </code></pre>
+<p>O script executa leituras HTTP, cadastra bolsas (<code>POST /api/v1/bolsas</code>), cria e aloca requisições (<code>POST /api/v1/requisicoes</code> → <code>POST /api/v1/requisicoes/{id}/alocar</code>, gerando múltiplos spans <code>hemoflow.requisicao.criar</code>, <code>hemoflow.estoque.buscar-candidatas</code> e <code>hemoflow.estoque.alocar-bolsas</code>) e dispara erros controlados a cada 3 ciclos.</p>
 <hr />
 <h2 id="9-bonus-metricas-de-negocio-micrometer">9. Bônus — Métricas de Negócio (Micrometer)</h2>
 <p>Foram implementadas <strong>3 métricas de negócio</strong> no <code>EstoqueService</code>, injetando <code>MeterRegistry</code> via construtor:</p>
@@ -751,6 +764,30 @@ docker compose logs -f hemoflow
 - <strong>cAdvisor:</strong> ID <code>14282</code></p>
 <p>Em Grafana → Dashboards → Import → inserir o ID → selecionar datasource Prometheus.</p>
 <hr />
-<p><em>Documento gerado automaticamente. Preencher os itens marcados com <strong>[PREENCHER]</strong> antes da entrega final.</em></p>
+<h2 id="12-evidencias-do-ambiente-em-execucao-prints-com-datahora-visivel">12. Evidências do Ambiente em Execução <em>(Prints com Data/Hora Visível)</em></h2>
+<blockquote>
+<p><strong>[PREENCHER ANTES DE EXPORTAR O PDF]</strong> Salvar os prints em <code>docs/evidencias/</code> com a barra de data/hora do sistema visível e anexar abaixo:</p>
+</blockquote>
+<ol>
+<li><strong>Containers em execução (<code>docker compose ps</code>):</strong> <code>[Inserir print de docker compose ps]</code></li>
+<li><strong>Endpoint <code>/actuator/prometheus</code> (com tag <code>application="hemoflow"</code> e métricas de negócio):</strong> <code>[Inserir print ou saída curl]</code></li>
+<li><strong>Prometheus <code>Status → Targets</code> (todos os targets <code>UP</code>):</strong> <code>[Inserir print de http://localhost:9090/targets]</code></li>
+<li><strong>Consulta PromQL no Prometheus/Grafana:</strong> <code>[Inserir print da consulta]</code></li>
+<li><strong>Dashboard <code>HemoFlow – Aplicação</code> com dados reais (incluindo métricas de negócio e taxa de erros):</strong> <code>[Inserir print do Grafana]</code></li>
+<li><strong>Dashboard <code>HemoFlow – Infraestrutura</code> com dados reais (Node Exporter + cAdvisor):</strong> <code>[Inserir print do Grafana]</code></li>
+<li><strong>Logs no Loki (consulta LogQL no Grafana → Explore):</strong> <code>[Inserir print de {application="hemoflow"}]</code></li>
+<li><strong>Trace com múltiplos spans no Tempo e navegação <code>log → trace</code> via <code>traceId</code>:</strong> <code>[Inserir prints do Tempo e do link TraceID no Loki]</code></li>
+</ol>
+<hr />
+<h2 id="13-dificuldades-encontradas-e-licoes-aprendidas">13. Dificuldades Encontradas e Lições Aprendidas</h2>
+<ul>
+<li><strong>Correlação entre logs (Loki) e traces (Tempo):</strong> Inicialmente, o formato da mensagem no <code>logback-spring.xml</code> imprimia <code>[traceId/spanId]</code> entre colchetes, enquanto a regex configurada no datasource do Loki (<code>datasources.yml</code>) buscava <code>traceId=(\w+)</code>. Padronizar o log para <code>traceId=... spanId=...</code> garantiu a navegação direta do log para o trace no Grafana Explore.</li>
+<li><strong>Geração de traces multi-span e histogramas p95/p99:</strong> Apenas a dependência OTLP gera um span HTTP único por requisição; foi necessário instrumentar pontos internos do <code>EstoqueService</code> com <code>ObservationRegistry</code> (criando spans filhos para busca de candidatas e alocação) e habilitar <code>management.metrics.distribution.percentiles-histogram.http.server.requests=true</code> no <code>application.properties</code> para popular os quantis <code>p95</code> e <code>p99</code> no Prometheus.</li>
+<li><strong>Registro de erros para observabilidade:</strong> O <code>ApiExceptionHandler</code> retornava respostas HTTP 400/404/422/500 sem emitir logs explícitos; adicionar <code>Logger</code> (<code>WARN</code>/<code>ERROR</code>) garantiu visibilidade dos casos de falha no Loki correlacionados ao <code>traceId</code>.</li>
+<li><strong>Execução em Docker Desktop no Windows:</strong> Diferentemente de um host Linux nativo, o Node Exporter e o cAdvisor no Windows coletam métricas da VM Linux do Docker Desktop, exigindo atenção no mapeamento de volumes (como <code>/dev/disk</code>) e explicação clara na documentação.</li>
+<li><strong>Lição aprendida:</strong> Provisionar datasources e dashboards em código (<code>grafana/provisioning/</code> e JSON versionado) torna o ambiente reproduzível com um único <code>docker compose up -d --build</code>, evitando configuração manual repetitiva e mantendo segredos isolados em <code>.env</code>.</li>
+</ul>
+<hr />
+<p><em>Preencher os itens marcados com <strong>[PREENCHER]</strong> (URL do túnel, credenciais do professor apenas no PDF/Classroom, período de disponibilidade e prints com data/hora) antes da entrega final.</em></p>
 </body>
 </html>

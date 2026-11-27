@@ -3,10 +3,21 @@
 **Projeto Integrador — 2026.2**  
 **Disciplina:** Infraestrutura de Comunicação  
 **Professor:** Luiz Novaes  
-**Valor:** 6,0 pts + 1,0 bônus  
-**Equipe:** HemoFlow Team (Bruna Tiburtino, Caio Martins, Cauã Henrique, João Felipe Bonifácio, Luís Felipe Carneiro, Luís Henrique Vilas Boas, Priscila Pontes, Rafael Medeiros, Ruan Carlos)  
-**Repositório:** `https://github.com/CMartinsO3/projeto_integrador_cesar2026.2` 
-**Data:** Novembro / 2026
+**Valor:** 6,0 pts (base) + 1,0 bônus (métricas de negócio)  
+**Repositório GitHub:** `https://github.com/CMartinsO3/projeto_integrador_cesar2026.2`  
+**Branch Oficial:** `feature/observabilidade`  
+**Data:** Novembro / 2026  
+
+### Integrantes da Equipe:
+* **Bruna Tiburtino**
+* **Caio Martins Oliveira**
+* **Cauã Henrique Melo Almeida**
+* **João Felipe Bonifácio Barros da Silva**
+* **Luís Felipe Carneiro da Silva**
+* **Luís Henrique Vilas Boas**
+* **Priscila Pontes**
+* **Rafael Dias**
+* **Ruan Carlos**
 
 ---
 
@@ -23,6 +34,8 @@
 9. [Bônus — Métricas de Negócio (Micrometer)](#9-bônus-métricas-de-negócio)
 10. [Checklist de Atendimento ao Enunciado](#10-checklist)
 11. [Como Executar o Stack](#11-como-executar)
+12. [Evidências do Ambiente em Execução (Prints)](#12-evidências-do-ambiente-em-execução-prints-com-datahora-visível)
+13. [Dificuldades Encontradas e Lições Aprendidas](#13-dificuldades-encontradas-e-lições-aprendidas)
 
 ---
 
