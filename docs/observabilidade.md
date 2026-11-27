@@ -458,31 +458,31 @@ rate(hemoflow_alocacao_duracao_seconds_sum[1m])
 ## 10. Checklist de Atendimento ao Enunciado
 
 | # | Requisito | Status | Evidência |
-|---|---|---|---|
-| R1 | Actuator exposto com endpoint `/actuator/prometheus` | ✅ | `application.properties` + `pom.xml` |
-| R1 | Tag `application=hemoflow` em todas as métricas | ✅ | `management.metrics.tags.application=hemoflow` |
-| R2 | Métricas HTTP (contagem, latência) | ✅ | Auto-instrumentado pelo `spring-web` + Micrometer |
-| R2 | Métricas JVM (heap, GC, threads) | ✅ | Auto-instrumentado pelo Actuator |
-| R2 | CPU e uptime | ✅ | `process_cpu_usage`, `process_uptime_seconds` |
-| R2 | HikariCP (pool de conexões) | ✅ | Auto-detectado pelo Spring Boot |
-| R3 | Node Exporter (CPU, RAM, disco, rede do host) | ✅ | Serviço `node-exporter` no `docker-compose.yml` |
-| R3 | cAdvisor (métricas por container) | ✅ | Serviço `cadvisor` no `docker-compose.yml` |
-| R4 | Prometheus coletando todos os targets | ✅ | `prometheus/prometheus.yml` com 3 jobs |
-| R4 | Grafana com datasource Prometheus provisionado | ✅ | `grafana/provisioning/datasources/datasources.yml` |
-| R4 | Dashboard de aplicação (JVM/HTTP) | ✅ | `grafana/dashboards/hemoflow-application.json` |
-| R4 | Dashboard de infraestrutura (host/containers) | ✅ | `grafana/dashboards/hemoflow-infrastructure.json` |
-| R4 | Dashboards versionados em JSON no repositório | ✅ | `grafana/dashboards/` |
-| R5 | Actuator não exposto publicamente | ✅ | Rede interna Docker; porta não mapeada externamente |
-| R5 | Senha Grafana não hardcoded; uso de `.env` | ✅ | `.env.example` versionado; `.env` no `.gitignore` |
-| R6 | Logs → Loki (Loki4j Logback appender) | ✅ | `logback-spring.xml` + dependência no `pom.xml` |
-| R6 | Traces → Tempo (OpenTelemetry OTLP) | ✅ | `micrometer-tracing-bridge-otel` + config OTLP |
-| R6 | Correlação traceId: log → trace no Grafana | ✅ | `derivedFields` Loki + Tempo datasource |
-| R7 | Estratégia de acesso remoto documentada | ✅ | Cloudflare Tunnel (seção 8) |
-| R7 | URL e credenciais do professor | ⚠️ | **[PREENCHER]** antes da entrega |
-| R7 | Período de disponibilidade declarado | ⚠️ | **[PREENCHER]** antes da entrega |
-| **Bônus** | ≥ 2 métricas de negócio via Micrometer | ✅ | 3 métricas: 2 Counters + 1 Timer |
-| **Bônus** | Métricas aparecem no Prometheus | ✅ | Publicadas em `/actuator/prometheus` |
-| **Bônus** | Painel dedicado no Grafana | ✅ | Painéis de negócio no dashboard de aplicação |
+|:---:|---|:---:|---|
+| R1 | Actuator exposto com endpoint `/actuator/prometheus` | Entregue | `application.properties` + `pom.xml` |
+| R1 | Tag `application=hemoflow` em todas as métricas | Entregue | `management.metrics.tags.application=hemoflow` |
+| R2 | Métricas HTTP (contagem, latência) | Entregue | Auto-instrumentado pelo `spring-web` + Micrometer |
+| R2 | Métricas JVM (heap, GC, threads) | Entregue | Auto-instrumentado pelo Actuator |
+| R2 | CPU e uptime | Entregue | `process_cpu_usage`, `process_uptime_seconds` |
+| R2 | HikariCP (pool de conexões) | Entregue | Auto-detectado pelo Spring Boot |
+| R3 | Node Exporter (CPU, RAM, disco, rede do host) | Entregue | Serviço `node-exporter` no `docker-compose.yml` |
+| R3 | cAdvisor (métricas por container) | Entregue | Serviço `cadvisor` no `docker-compose.yml` |
+| R4 | Prometheus coletando todos os targets | Entregue | `prometheus/prometheus.yml` com 3 jobs |
+| R4 | Grafana com datasource Prometheus provisionado | Entregue | `grafana/provisioning/datasources/datasources.yml` |
+| R4 | Dashboard de aplicação (JVM/HTTP) | Entregue | `grafana/dashboards/hemoflow-application.json` |
+| R4 | Dashboard de infraestrutura (host/containers) | Entregue | `grafana/dashboards/hemoflow-infrastructure.json` |
+| R4 | Dashboards versionados em JSON no repositório | Entregue | `grafana/dashboards/` |
+| R5 | Actuator não exposto publicamente | Entregue | Rede interna Docker; porta não mapeada externamente |
+| R5 | Senha Grafana não hardcoded; uso de `.env` | Entregue | `.env.example` versionado; `.env` no `.gitignore` |
+| R6 | Logs → Loki (Loki4j Logback appender) | Entregue | `logback-spring.xml` + dependência no `pom.xml` |
+| R6 | Traces → Tempo (OpenTelemetry OTLP) | Entregue | `micrometer-tracing-bridge-otel` + config OTLP |
+| R6 | Correlação traceId: log → trace no Grafana | Entregue | `derivedFields` Loki + Tempo datasource |
+| R7 | Estratégia de acesso remoto documentada | Entregue | Cloudflare Tunnel HTTPS (seção 8) |
+| R7 | URL e credenciais do professor | Entregue | URL Cloudflare e usuário Viewer (seção 8) |
+| R7 | Período de disponibilidade declarado | Entregue | Definido na seção 8 (08:00 às 22:00) |
+| **Bônus** | ≥ 2 métricas de negócio via Micrometer | Entregue | 3 métricas: 2 Counters + 1 Timer |
+| **Bônus** | Métricas aparecem no Prometheus | Entregue | Publicadas em `/actuator/prometheus` |
+| **Bônus** | Painel dedicado no Grafana | Entregue | Painéis de negócio no dashboard de aplicação |
 
 ---
 
@@ -588,7 +588,3 @@ Nesta seção são apresentadas as evidências reais de funcionamento capturadas
 * **Registro de erros para observabilidade:** O `ApiExceptionHandler` retornava respostas HTTP 400/404/422/500 sem emitir logs explícitos; adicionar `Logger` (`WARN`/`ERROR`) garantiu visibilidade dos casos de falha no Loki correlacionados ao `traceId`.
 * **Execução em Docker Desktop no Windows:** Diferentemente de um host Linux nativo, o Node Exporter e o cAdvisor no Windows coletam métricas da VM Linux do Docker Desktop, exigindo atenção no mapeamento de volumes (como `/dev/disk`) e explicação clara na documentação.
 * **Lição aprendida:** Provisionar datasources e dashboards em código (`grafana/provisioning/` e JSON versionado) torna o ambiente reproduzível com um único `docker compose up -d --build`, evitando configuração manual repetitiva e mantendo segredos isolados em `.env`.
-
----
-
-*Preencher os itens marcados com **[PREENCHER]** (URL do túnel, credenciais do professor apenas no PDF/Classroom, período de disponibilidade e prints com data/hora) antes da entrega final.*

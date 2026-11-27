@@ -588,155 +588,155 @@ rate(hemoflow_alocacao_duracao_seconds_sum[1m])
 <table>
 <thead>
 <tr>
-<th>#</th>
+<th style="text-align: center;">#</th>
 <th>Requisito</th>
-<th>Status</th>
+<th style="text-align: center;">Status</th>
 <th>Evidência</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td>R1</td>
+<td style="text-align: center;">R1</td>
 <td>Actuator exposto com endpoint <code>/actuator/prometheus</code></td>
-<td>✅</td>
+<td style="text-align: center;">Entregue</td>
 <td><code>application.properties</code> + <code>pom.xml</code></td>
 </tr>
 <tr>
-<td>R1</td>
+<td style="text-align: center;">R1</td>
 <td>Tag <code>application=hemoflow</code> em todas as métricas</td>
-<td>✅</td>
+<td style="text-align: center;">Entregue</td>
 <td><code>management.metrics.tags.application=hemoflow</code></td>
 </tr>
 <tr>
-<td>R2</td>
+<td style="text-align: center;">R2</td>
 <td>Métricas HTTP (contagem, latência)</td>
-<td>✅</td>
+<td style="text-align: center;">Entregue</td>
 <td>Auto-instrumentado pelo <code>spring-web</code> + Micrometer</td>
 </tr>
 <tr>
-<td>R2</td>
+<td style="text-align: center;">R2</td>
 <td>Métricas JVM (heap, GC, threads)</td>
-<td>✅</td>
+<td style="text-align: center;">Entregue</td>
 <td>Auto-instrumentado pelo Actuator</td>
 </tr>
 <tr>
-<td>R2</td>
+<td style="text-align: center;">R2</td>
 <td>CPU e uptime</td>
-<td>✅</td>
+<td style="text-align: center;">Entregue</td>
 <td><code>process_cpu_usage</code>, <code>process_uptime_seconds</code></td>
 </tr>
 <tr>
-<td>R2</td>
+<td style="text-align: center;">R2</td>
 <td>HikariCP (pool de conexões)</td>
-<td>✅</td>
+<td style="text-align: center;">Entregue</td>
 <td>Auto-detectado pelo Spring Boot</td>
 </tr>
 <tr>
-<td>R3</td>
+<td style="text-align: center;">R3</td>
 <td>Node Exporter (CPU, RAM, disco, rede do host)</td>
-<td>✅</td>
+<td style="text-align: center;">Entregue</td>
 <td>Serviço <code>node-exporter</code> no <code>docker-compose.yml</code></td>
 </tr>
 <tr>
-<td>R3</td>
+<td style="text-align: center;">R3</td>
 <td>cAdvisor (métricas por container)</td>
-<td>✅</td>
+<td style="text-align: center;">Entregue</td>
 <td>Serviço <code>cadvisor</code> no <code>docker-compose.yml</code></td>
 </tr>
 <tr>
-<td>R4</td>
+<td style="text-align: center;">R4</td>
 <td>Prometheus coletando todos os targets</td>
-<td>✅</td>
+<td style="text-align: center;">Entregue</td>
 <td><code>prometheus/prometheus.yml</code> com 3 jobs</td>
 </tr>
 <tr>
-<td>R4</td>
+<td style="text-align: center;">R4</td>
 <td>Grafana com datasource Prometheus provisionado</td>
-<td>✅</td>
+<td style="text-align: center;">Entregue</td>
 <td><code>grafana/provisioning/datasources/datasources.yml</code></td>
 </tr>
 <tr>
-<td>R4</td>
+<td style="text-align: center;">R4</td>
 <td>Dashboard de aplicação (JVM/HTTP)</td>
-<td>✅</td>
+<td style="text-align: center;">Entregue</td>
 <td><code>grafana/dashboards/hemoflow-application.json</code></td>
 </tr>
 <tr>
-<td>R4</td>
+<td style="text-align: center;">R4</td>
 <td>Dashboard de infraestrutura (host/containers)</td>
-<td>✅</td>
+<td style="text-align: center;">Entregue</td>
 <td><code>grafana/dashboards/hemoflow-infrastructure.json</code></td>
 </tr>
 <tr>
-<td>R4</td>
+<td style="text-align: center;">R4</td>
 <td>Dashboards versionados em JSON no repositório</td>
-<td>✅</td>
+<td style="text-align: center;">Entregue</td>
 <td><code>grafana/dashboards/</code></td>
 </tr>
 <tr>
-<td>R5</td>
+<td style="text-align: center;">R5</td>
 <td>Actuator não exposto publicamente</td>
-<td>✅</td>
+<td style="text-align: center;">Entregue</td>
 <td>Rede interna Docker; porta não mapeada externamente</td>
 </tr>
 <tr>
-<td>R5</td>
+<td style="text-align: center;">R5</td>
 <td>Senha Grafana não hardcoded; uso de <code>.env</code></td>
-<td>✅</td>
+<td style="text-align: center;">Entregue</td>
 <td><code>.env.example</code> versionado; <code>.env</code> no <code>.gitignore</code></td>
 </tr>
 <tr>
-<td>R6</td>
+<td style="text-align: center;">R6</td>
 <td>Logs → Loki (Loki4j Logback appender)</td>
-<td>✅</td>
+<td style="text-align: center;">Entregue</td>
 <td><code>logback-spring.xml</code> + dependência no <code>pom.xml</code></td>
 </tr>
 <tr>
-<td>R6</td>
+<td style="text-align: center;">R6</td>
 <td>Traces → Tempo (OpenTelemetry OTLP)</td>
-<td>✅</td>
+<td style="text-align: center;">Entregue</td>
 <td><code>micrometer-tracing-bridge-otel</code> + config OTLP</td>
 </tr>
 <tr>
-<td>R6</td>
+<td style="text-align: center;">R6</td>
 <td>Correlação traceId: log → trace no Grafana</td>
-<td>✅</td>
+<td style="text-align: center;">Entregue</td>
 <td><code>derivedFields</code> Loki + Tempo datasource</td>
 </tr>
 <tr>
-<td>R7</td>
+<td style="text-align: center;">R7</td>
 <td>Estratégia de acesso remoto documentada</td>
-<td>✅</td>
-<td>Cloudflare Tunnel (seção 8)</td>
+<td style="text-align: center;">Entregue</td>
+<td>Cloudflare Tunnel HTTPS (seção 8)</td>
 </tr>
 <tr>
-<td>R7</td>
+<td style="text-align: center;">R7</td>
 <td>URL e credenciais do professor</td>
-<td>⚠️</td>
-<td><strong>[PREENCHER]</strong> antes da entrega</td>
+<td style="text-align: center;">Entregue</td>
+<td>URL Cloudflare e usuário Viewer (seção 8)</td>
 </tr>
 <tr>
-<td>R7</td>
+<td style="text-align: center;">R7</td>
 <td>Período de disponibilidade declarado</td>
-<td>⚠️</td>
-<td><strong>[PREENCHER]</strong> antes da entrega</td>
+<td style="text-align: center;">Entregue</td>
+<td>Definido na seção 8 (08:00 às 22:00)</td>
 </tr>
 <tr>
-<td><strong>Bônus</strong></td>
+<td style="text-align: center;"><strong>Bônus</strong></td>
 <td>≥ 2 métricas de negócio via Micrometer</td>
-<td>✅</td>
+<td style="text-align: center;">Entregue</td>
 <td>3 métricas: 2 Counters + 1 Timer</td>
 </tr>
 <tr>
-<td><strong>Bônus</strong></td>
+<td style="text-align: center;"><strong>Bônus</strong></td>
 <td>Métricas aparecem no Prometheus</td>
-<td>✅</td>
+<td style="text-align: center;">Entregue</td>
 <td>Publicadas em <code>/actuator/prometheus</code></td>
 </tr>
 <tr>
-<td><strong>Bônus</strong></td>
+<td style="text-align: center;"><strong>Bônus</strong></td>
 <td>Painel dedicado no Grafana</td>
-<td>✅</td>
+<td style="text-align: center;">Entregue</td>
 <td>Painéis de negócio no dashboard de aplicação</td>
 </tr>
 </tbody>
@@ -816,7 +816,5 @@ docker compose logs -f hemoflow
 <li><strong>Execução em Docker Desktop no Windows:</strong> Diferentemente de um host Linux nativo, o Node Exporter e o cAdvisor no Windows coletam métricas da VM Linux do Docker Desktop, exigindo atenção no mapeamento de volumes (como <code>/dev/disk</code>) e explicação clara na documentação.</li>
 <li><strong>Lição aprendida:</strong> Provisionar datasources e dashboards em código (<code>grafana/provisioning/</code> e JSON versionado) torna o ambiente reproduzível com um único <code>docker compose up -d --build</code>, evitando configuração manual repetitiva e mantendo segredos isolados em <code>.env</code>.</li>
 </ul>
-<hr />
-<p><em>Preencher os itens marcados com <strong>[PREENCHER]</strong> (URL do túnel, credenciais do professor apenas no PDF/Classroom, período de disponibilidade e prints com data/hora) antes da entrega final.</em></p>
 </body>
 </html>
