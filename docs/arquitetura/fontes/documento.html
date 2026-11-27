@@ -1,0 +1,344 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>HemoFlow — Planejamento da remodelagem arquitetural</title>
+<style>
+  @page { size: A4; margin: 18mm 16mm 18mm 16mm;
+          @bottom-right { content: "HemoFlow · Planejamento da remodelagem — " counter(page); font: 9pt "Segoe UI", Arial, sans-serif; color: #8a7f7d; } }
+  @page :first { @bottom-right { content: none; } }
+  * { box-sizing: border-box; }
+  body { font: 10.5pt/1.5 "Segoe UI", Arial, sans-serif; color: #1d1b1b; margin: 0; }
+  h1 { font-size: 26pt; line-height: 1.15; margin: 0 0 8px; color: #1d1b1b; }
+  h2 { font-size: 16pt; color: #b3121f; margin: 0 0 10px; padding-bottom: 4px; border-bottom: 2px solid #b3121f; break-after: avoid; }
+  h3 { font-size: 12pt; margin: 18px 0 6px; break-after: avoid; }
+  p { margin: 0 0 8px; }
+  section { break-before: page; }
+  section.segue { break-before: auto; margin-top: 22px; }
+  table { width: 100%; border-collapse: collapse; margin: 6px 0 12px; font-size: 9.2pt; break-inside: auto; }
+  th { background: #7d0c15; color: #fff; text-align: left; padding: 5px 7px; font-weight: 600; }
+  td { border-bottom: 1px solid #e6dcda; padding: 4px 7px; vertical-align: top; }
+  tr { break-inside: avoid; }
+  tr:nth-child(even) td { background: #fbf8f7; }
+  figure { margin: 8px 0 12px; break-inside: avoid; }
+  figure { text-align: center; }
+  figure img { max-width: 100%; max-height: 92mm; border: 1px solid #e6dcda; border-radius: 6px; }
+  figcaption { font-size: 8.8pt; color: #6b6262; margin-top: 3px; }
+  code { font-family: Consolas, monospace; font-size: 9pt; background: #f4efee; padding: 0 3px; border-radius: 3px; }
+  pre { font: 9pt/1.45 Consolas, monospace; background: #211a1a; color: #f3e9e7; padding: 10px 12px; border-radius: 8px; white-space: pre-wrap; break-inside: avoid; margin: 6px 0 12px; }
+  pre .k { color: #ff8a8a; font-weight: 700; } pre .c { color: #9a8f8d; } pre .s { color: #b5e8a0; }
+  .tag { display: inline-block; padding: 1px 7px; border-radius: 10px; font-size: 8.3pt; font-weight: 700; color: #fff; }
+  .core { background: #b3121f; } .sup { background: #1a7a76; } .gen { background: #6b7280; }
+  .box { border-left: 4px solid #b3121f; background: #fdecea; padding: 8px 12px; border-radius: 0 6px 6px 0; margin: 8px 0 12px; break-inside: avoid; }
+  .box.verde { border-color: #1a7a76; background: #e7f3f2; }
+  .num { text-align: right; white-space: nowrap; }
+  .capa { height: 255mm; display: flex; flex-direction: column; justify-content: space-between; }
+  .capa .faixa { height: 10px; background: #b3121f; width: 120px; margin-bottom: 26px; }
+  .capa .sub { font-size: 13pt; color: #6b6262; max-width: 150mm; }
+  .capa .meta td { border: none; padding: 2px 10px 2px 0; font-size: 10pt; background: none !important; }
+  .sumario li { margin: 3px 0; }
+  .barras { margin: 10px 0 14px; break-inside: avoid; }
+  .barra { display: flex; align-items: center; gap: 10px; margin: 6px 0; font-size: 9.5pt; }
+  .barra .rot { width: 170px; } .barra .trilho { flex: 1; background: #f1ecea; border-radius: 4px; height: 22px; position: relative; }
+  .barra .valor { height: 22px; border-radius: 4px; background: #b3121f; color: #fff; font-weight: 700; font-size: 9pt; line-height: 22px; padding-left: 8px; white-space: nowrap; }
+  .barra.a .valor { background: #9a8f8d; } .barra.b .valor { background: #b3121f; } .barra.c .valor { background: #4b4242; }
+  .duas { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; break-inside: avoid; }
+</style>
+</head>
+<body>
+
+<!-- ======================================================= CAPA -->
+<div class="capa">
+  <div>
+    <div class="faixa"></div>
+    <h1>HemoFlow<br>Planejamento da remodelagem arquitetural</h1>
+    <p class="sub">DDD estratégico e tático, arquitetura em três camadas, projeção com microsserviços e três cenários de implantação com orçamento.</p>
+  </div>
+  <div>
+    <table class="meta">
+      <tr><td><b>Projeto</b></td><td>HemoFlow — Gestão e Distribuição de Hemocomponentes</td></tr>
+      <tr><td><b>Disciplina</b></td><td>Projeto Integrador — CESAR School, 2026.2</td></tr>
+      <tr><td><b>Data</b></td><td>24/11/2026</td></tr>
+      <tr><td><b>Equipe</b></td><td>Bruna Tiburtino · Caio Martins Oliveira · Cauã Henrique Melo Almeida · João Felipe Bonifácio Barros da Silva · Luís Felipe Carneiro da Silva · Luís Henrique Vilas Boas Silva de Sousa · Priscila Pontes Martins da Cunha · Rafael Medeiros Machado Dias · Ruan Carlos Oliveira da Silva</td></tr>
+      <tr><td><b>Repositório</b></td><td>Diagramas, planilha e ADRs em <code>docs/arquitetura/</code></td></tr>
+    </table>
+    <h3>Sumário</h3>
+    <ol class="sumario">
+      <li>Contexto e ponto de partida</li>
+      <li>DDD estratégico: subdomínios, bounded contexts, glossário e mapa de contextos</li>
+      <li>Modelo tático do contexto core <i>Alocação</i> e cenário Gherkin</li>
+      <li>Arquitetura em três camadas</li>
+      <li>Projeção com microsserviços (e serverless opcional)</li>
+      <li>Três cenários de implantação com orçamento</li>
+      <li>Decisões registradas (ADRs), riscos e próximos passos</li>
+    </ol>
+  </div>
+</div>
+
+<!-- ======================================================= 1 -->
+<section>
+  <h2>1. Contexto e ponto de partida</h2>
+  <p>O HemoFlow apoia a rede de distribuição de sangue no fluxo <b>centro de coleta → hemocentro → hospital</b>. O sistema precisa entregar a bolsa certa (<b>compatível</b> e <b>válida</b>), no lugar certo, dentro da janela de tempo e sem romper a <b>cadeia fria</b>. Falhas causam desabastecimento, descarte por vencimento e risco ao paciente.</p>
+  <h3>Como o sistema está hoje</h3>
+  <table>
+    <tr><th style="width:28%">Aspecto</th><th>Situação atual</th></tr>
+    <tr><td>Estilo</td><td>Monólito Spring Boot 3 (Java 17) com REST <code>/api/v1</code> e telas Thymeleaf.</td></tr>
+    <tr><td>Organização do código</td><td>Por camada técnica: <code>api/</code>, <code>dominio/</code>, <code>estoque/</code>, <code>grafo/</code>, <code>rede/</code>, <code>estatistica/</code>, <code>persistencia/</code>.</td></tr>
+    <tr><td>Dados</td><td>Um único PostgreSQL 16 (H2 nos testes), acessado por todos os módulos via Spring Data JPA.</td></tr>
+    <tr><td>Regras implementadas</td><td>Compatibilidade ABO/Rh (matriz 8×8), FEFO, caminho mínimo (Dijkstra) e alerta de cadeia fria; função HTTP serverless da guia de transporte (Cloudflare Workers).</td></tr>
+    <tr><td>Entrega</td><td>Docker + GitHub Actions → imagem no GHCR → deploy no Render, com <i>gate</i> de testes.</td></tr>
+  </table>
+  <h3>Problemas que motivam a remodelagem</h3>
+  <ul>
+    <li><b>Termos ambíguos:</b> <i>Hospital</i> é ao mesmo tempo o solicitante de uma requisição e um nó do grafo; <i>Status</i> tem quatro significados.</li>
+    <li><b>Regras espalhadas:</b> controllers que acessam repositórios diretamente; a alocação depende de detalhes de persistência.</li>
+    <li><b>Escala desigual:</b> a telemetria (uma leitura a cada 30 s por veículo) tem perfil de carga muito diferente do cadastro de doadores, mas tudo sobe junto.</li>
+    <li><b>Acoplamento de dados:</b> qualquer módulo lê qualquer tabela, o que impede separar partes do sistema com segurança.</li>
+  </ul>
+  <div class="box verde"><b>Objetivo deste planejamento:</b> definir as fronteiras do domínio, o modelo do contexto mais crítico, a organização interna em camadas e um caminho de evolução para microsserviços com custo conhecido. A ideia é evoluir em etapas, sem reescrever tudo de uma vez.</div>
+</section>
+
+<!-- ======================================================= 2 -->
+<section>
+  <h2>2. DDD estratégico</h2>
+  <h3>2.1 Subdomínios</h3>
+  <p>O domínio é a <b>distribuição de hemocomponentes com cadeia fria</b>. Classificamos os subdomínios pelo valor para o negócio: o <b>core</b> é o que diferencia o HemoFlow e merece o melhor esforço de modelagem; o <b>suporte</b> é específico do negócio, mas não é o diferencial; o <b>genérico</b> pode ser comprado ou usado pronto.</p>
+  <figure><img src="../diagramas/01-subdominios.svg" alt="Subdomínios"><figcaption>Figura 1 — Subdomínios do HemoFlow (docs/arquitetura/diagramas/01-subdominios.svg)</figcaption></figure>
+  <table>
+    <tr><th style="width:24%">Subdomínio</th><th style="width:10%">Tipo</th><th>Justificativa</th></tr>
+    <tr><td>Alocação de Hemocomponentes</td><td><span class="tag core">Core</span></td><td>Decidir <i>quais</i> bolsas atendem cada pedido (ABO/Rh + FEFO) é o que reduz descarte e evita erro transfusional. É a regra mais crítica e a que mais muda.</td></tr>
+    <tr><td>Logística com Cadeia Fria</td><td><span class="tag core">Core</span></td><td>Rota de menor tempo com limite por componente e guia de transporte: diferencial operacional frente a planilhas e ligações telefônicas.</td></tr>
+    <tr><td>Captação</td><td><span class="tag sup">Suporte</span></td><td>Doadores, agendamentos e campanhas alimentam o estoque, mas seguem processos conhecidos.</td></tr>
+    <tr><td>Estoque</td><td><span class="tag sup">Suporte</span></td><td>Registro de bolsas, lotes, validade e descarte. Necessário, mas é um CRUD com regras simples.</td></tr>
+    <tr><td>Demanda Hospitalar</td><td><span class="tag sup">Suporte</span></td><td>Abertura e acompanhamento de requisições pelo hospital.</td></tr>
+    <tr><td>Telemetria</td><td><span class="tag sup">Suporte</span></td><td>Temperatura e GPS (simulados) durante o transporte, com alertas.</td></tr>
+    <tr><td>Indicadores</td><td><span class="tag sup">Suporte</span></td><td>Estatística descritiva de estoque e demanda para antecipar falta.</td></tr>
+    <tr><td>Identidade, Notificações, Mapas, Observabilidade</td><td><span class="tag gen">Genérico</span></td><td>Problemas resolvidos pelo mercado: Keycloak/Cognito, SES, APIs de mapas, Grafana/CloudWatch.</td></tr>
+  </table>
+
+  <h3>2.2 Bounded contexts</h3>
+  <p>Cada bounded context tem um modelo próprio e uma linguagem ubíqua própria. A mesma palavra pode ter significados diferentes em contextos diferentes, e isso passa a ser explícito.</p>
+  <table>
+    <tr><th style="width:17%">Contexto</th><th style="width:9%">Tipo</th><th style="width:34%">Responsabilidade</th><th>Conceitos principais (código atual → modelo alvo)</th></tr>
+    <tr><td><b>Captação</b></td><td><span class="tag sup">Sup.</span></td><td>Cadastrar doadores, agendar doações, gerir campanhas e registrar a doação realizada.</td><td>Doador, Agendamento, Campanha, DoacaoRealizada</td></tr>
+    <tr><td><b>Estoque</b></td><td><span class="tag sup">Sup.</span></td><td>Manter o inventário físico de bolsas, validade, reservas e descarte.</td><td>Bolsa, Lote, Validade, Reserva, StatusBolsa</td></tr>
+    <tr><td><b>Requisições Hospitalares</b></td><td><span class="tag sup">Sup.</span></td><td>Receber o pedido do hospital e informar o andamento a ele.</td><td>Requisicao, Solicitante (Hospital), JanelaEntrega, StatusRequisicao</td></tr>
+    <tr><td><b>Alocação</b></td><td><span class="tag core">Core</span></td><td>Escolher as bolsas que atendem cada requisição, respeitando compatibilidade e FEFO, e reservá-las.</td><td>Alocacao (agregado), ItemAlocado, PoliticaCompatibilidade, SelecionadorFEFO</td></tr>
+    <tr><td><b>Logística e Rede</b></td><td><span class="tag core">Core</span></td><td>Manter a rede de unidades, calcular rotas, emitir a guia e acompanhar a entrega.</td><td>NoRede, Ligacao, Rota, Entrega, GuiaTransporte, LimiteCadeiaFria</td></tr>
+    <tr><td><b>Telemetria</b></td><td><span class="tag sup">Sup.</span></td><td>Ingerir leituras de sensores e gerar alertas de temperatura e conectividade.</td><td>Dispositivo, LeituraTemperatura, Posicao, AlertaCadeiaFria</td></tr>
+    <tr><td><b>Indicadores</b></td><td><span class="tag sup">Sup.</span></td><td>Projeções de leitura (CQRS) sobre os eventos dos demais contextos.</td><td>IndicadorEstoque, SerieDemanda, RiscoDesabastecimento</td></tr>
+    <tr><td><b>Identidade e Acesso</b></td><td><span class="tag gen">Gen.</span></td><td>Autenticar usuários e emitir tokens com perfis.</td><td>Usuario, Perfil (Admin, Operador, Hospital, Doador, Motorista)</td></tr>
+  </table>
+
+  <h3>2.3 Glossário (linguagem ubíqua)</h3>
+  <table>
+    <tr><th style="width:20%">Termo</th><th>Definição</th><th style="width:20%">Contexto(s)</th></tr>
+    <tr><td><b>Bolsa</b></td><td>Unidade física de um hemocomponente, com tipo sanguíneo, lote e validade.</td><td>Estoque, Alocação</td></tr>
+    <tr><td><b>Hemocomponente</b></td><td>Produto derivado do sangue: hemácias, plasma, plaquetas ou crioprecipitado. Define temperatura e limite de transporte.</td><td>Todos</td></tr>
+    <tr><td><b>Tipo sanguíneo</b></td><td>Combinação ABO/Rh (A+, A−, B+, B−, AB+, AB−, O+, O−).</td><td>Todos</td></tr>
+    <tr><td><b>Compatibilidade ABO/Rh</b></td><td>Regra que diz se uma bolsa de um tipo (doador) pode atender um receptor de outro tipo; matriz 8×8 didática.</td><td>Alocação</td></tr>
+    <tr><td><b>Requisição</b></td><td>Pedido do hospital: tipo, componente, quantidade e janela de entrega.</td><td>Requisições</td></tr>
+    <tr><td><b>Solicitante</b></td><td>O hospital <i>no papel de quem pede</i> (no contexto Logística, o mesmo hospital é um <i>Nó de destino</i>).</td><td>Requisições</td></tr>
+    <tr><td><b>Janela de entrega</b></td><td>Data e hora limite em que o hospital precisa receber as bolsas.</td><td>Requisições, Alocação, Logística</td></tr>
+    <tr><td><b>Alocação</b></td><td>Decisão de quais bolsas atendem uma requisição. Começa <i>proposta</i> e vira <i>confirmada</i> quando as bolsas são reservadas.</td><td>Alocação</td></tr>
+    <tr><td><b>Reserva</b></td><td>Bloqueio temporário de uma bolsa no estoque para uma alocação; expira se não for confirmada.</td><td>Estoque</td></tr>
+    <tr><td><b>FEFO</b></td><td><i>First Expired, First Out</i>: entre bolsas compatíveis, sai primeiro a de validade mais próxima.</td><td>Alocação</td></tr>
+    <tr><td><b>Estoque insuficiente</b></td><td>Situação em que não há bolsas compatíveis e válidas em quantidade suficiente; a requisição fica <i>aguardando estoque</i>.</td><td>Alocação, Requisições</td></tr>
+    <tr><td><b>Cadeia fria</b></td><td>Manutenção da temperatura adequada do componente da saída até o recebimento.</td><td>Logística, Telemetria</td></tr>
+    <tr><td><b>Limite de cadeia fria</b></td><td>Tempo máximo de transporte por componente (ex.: 120 min hemácias, 90 min plaquetas).</td><td>Logística</td></tr>
+    <tr><td><b>Nó da rede</b></td><td>Unidade da rede logística: centro de coleta, hemocentro ou hospital.</td><td>Logística</td></tr>
+    <tr><td><b>Ligação</b></td><td>Aresta entre dois nós, com tempo de deslocamento em minutos.</td><td>Logística</td></tr>
+    <tr><td><b>Rota</b></td><td>Caminho de menor tempo entre origem e destino (Dijkstra) e seu tempo estimado.</td><td>Logística</td></tr>
+    <tr><td><b>Guia de transporte</b></td><td>Documento que acompanha a carga: bolsas em ordem FEFO, rota, temperatura exigida, checklist e assinaturas.</td><td>Logística</td></tr>
+    <tr><td><b>Entrega</b></td><td>Execução do transporte de uma alocação, do despacho ao recebimento.</td><td>Logística</td></tr>
+    <tr><td><b>Leitura</b></td><td>Medição de temperatura e posição enviada por um dispositivo em um instante.</td><td>Telemetria</td></tr>
+    <tr><td><b>Alerta de cadeia fria</b></td><td>Evento gerado quando uma leitura sai da faixa ou o tempo excede o limite.</td><td>Telemetria, Logística</td></tr>
+    <tr><td><b>Doação</b></td><td>Coleta realizada de um doador, que origina uma ou mais bolsas.</td><td>Captação, Estoque</td></tr>
+    <tr><td><b>Descarte</b></td><td>Retirada definitiva de uma bolsa por vencimento ou quebra de cadeia fria.</td><td>Estoque, Indicadores</td></tr>
+  </table>
+
+  <h3 style="break-before: page">2.4 Mapa de contextos</h3>
+  <figure><img src="../diagramas/02-mapa-de-contextos.svg" alt="Mapa de contextos"><figcaption>Figura 2 — Mapa de contextos (docs/arquitetura/diagramas/02-mapa-de-contextos.svg)</figcaption></figure>
+  <table>
+    <tr><th style="width:26%">Relação (upstream → downstream)</th><th style="width:22%">Padrão</th><th>Como funciona</th></tr>
+    <tr><td>Captação → Estoque</td><td>Customer-Supplier</td><td>O evento <code>DoacaoRegistrada</code> faz o Estoque criar as bolsas. O Estoque (cliente) negocia o formato do evento com a Captação.</td></tr>
+    <tr><td>Requisições → Alocação</td><td>Published Language</td><td>O evento <code>RequisicaoAberta</code>, com contrato JSON versionado, dispara a alocação.</td></tr>
+    <tr><td>Estoque → Alocação</td><td>Open Host Service</td><td>O Estoque oferece uma API estável de consulta e <b>reserva</b> de bolsas. A Alocação traduz para o seu modelo (<code>BolsaCandidata</code>).</td></tr>
+    <tr><td>Alocação → Logística</td><td>Customer-Supplier</td><td>O evento <code>AlocacaoConfirmada</code> inicia o planejamento da entrega e a emissão da guia.</td></tr>
+    <tr><td>Telemetria → Logística</td><td>Published Language</td><td>Os eventos <code>LeituraRegistrada</code> e <code>AlertaCadeiaFria</code> atualizam o status da entrega.</td></tr>
+    <tr><td>Sensores/simulador → Telemetria</td><td>ACL (anticorrupção)</td><td>Traduz pacotes brutos (MQTT/JSON do fabricante) para <code>Leitura</code>, protegendo o modelo de mudanças externas.</td></tr>
+    <tr><td>Todos → Indicadores</td><td>Conformist</td><td>Os Indicadores aceitam os eventos como são publicados e montam o próprio read model.</td></tr>
+    <tr><td>Identidade → todos</td><td>OHS + Conformist</td><td>Token JWT com perfis, validado no gateway e usado por todos os contextos.</td></tr>
+  </table>
+</section>
+
+<!-- ======================================================= 3 -->
+<section>
+  <h2>3. Modelo tático do contexto core “Alocação”</h2>
+  <p>Escolhemos a <b>Alocação</b> por ser a regra mais crítica: um erro nela pode significar uma transfusão incompatível ou o descarte de uma bolsa. O modelo tático define <b>o que precisa ser sempre verdade</b> (invariantes) e <b>quem garante</b> isso.</p>
+  <figure><img src="../diagramas/03-modelo-tatico-alocacao.svg" alt="Modelo tático"><figcaption>Figura 3 — Agregado Alocacao, value objects, serviços de domínio e eventos (docs/arquitetura/diagramas/03-modelo-tatico-alocacao.svg)</figcaption></figure>
+  <table>
+    <tr><th style="width:18%">Bloco tático</th><th style="width:28%">Elemento</th><th>Papel</th></tr>
+    <tr><td>Agregado (raiz)</td><td><code>Alocacao</code></td><td>Única porta de entrada para alterar itens e status; garante as invariantes em uma transação.</td></tr>
+    <tr><td>Entidade interna</td><td><code>ItemAlocado</code></td><td>Uma bolsa escolhida, com tipo e validade copiados no momento da decisão (auditoria).</td></tr>
+    <tr><td>Value objects</td><td><code>TipoSanguineo</code>, <code>Hemocomponente</code>, <code>Quantidade</code>, <code>JanelaEntrega</code>, <code>Validade</code>, <code>RequisicaoRef</code></td><td>Imutáveis e comparados por valor; validam a si mesmos (ex.: <code>Quantidade ≥ 1</code>).</td></tr>
+    <tr><td>Serviços de domínio</td><td><code>PoliticaCompatibilidadeAboRh</code>, <code>SelecionadorFEFO</code></td><td>Regras que não pertencem a uma única entidade; reaproveitam a matriz 8×8 e a fila FEFO já testadas.</td></tr>
+    <tr><td>Repositório</td><td><code>AlocacaoRepository</code></td><td>Persiste e recupera o agregado inteiro (nunca itens soltos).</td></tr>
+    <tr><td>Porta / ACL</td><td><code>EstoquePort</code></td><td>Consulta e reserva bolsas no contexto Estoque, traduzindo para <code>BolsaCandidata</code>.</td></tr>
+    <tr><td>Serviço de aplicação</td><td><code>AlocarRequisicaoHandler</code></td><td>Caso de uso: carrega a requisição, busca candidatas, propõe, reserva, confirma e publica eventos.</td></tr>
+    <tr><td>Eventos de domínio</td><td><code>AlocacaoConfirmada</code>, <code>EstoqueInsuficiente</code>, <code>AlocacaoCancelada</code></td><td>Fatos publicados para Logística, Estoque, Requisições e Indicadores.</td></tr>
+  </table>
+  <div class="box"><b>Por que um agregado pequeno?</b> A <i>Bolsa</i> pertence ao Estoque e não entra no agregado <i>Alocacao</i>: o agregado guarda só a referência e o que foi decidido. Assim, duas alocações concorrentes disputam a <b>reserva</b> no Estoque, uma operação atômica, e não ficam bloqueando uma à outra.</div>
+
+  <h3>Cenário Gherkin — alocação por compatibilidade e FEFO</h3>
+<pre><span class="k">Funcionalidade:</span> Alocação de bolsas para requisição hospitalar
+  Para reduzir descarte e evitar incompatibilidade
+  Como operador do hemocentro
+  Quero que o sistema escolha bolsas compatíveis priorizando as de validade mais próxima
+
+  <span class="k">Contexto:</span>
+    <span class="k">Dado</span> que hoje é <span class="s">"01/12/2030"</span>
+    <span class="k">E</span> o estoque possui as bolsas de hemácias disponíveis:
+      | bolsa    | tipo | validade   |
+      | BOL-0007 | A+   | 20/12/2030 |
+      | BOL-0042 | O-   | 05/12/2030 |
+      | BOL-0101 | B+   | 03/12/2030 |
+      | BOL-0150 | A+   | 30/11/2030 |
+
+  <span class="k">Cenário:</span> Alocar bolsas compatíveis respeitando FEFO
+    <span class="k">Dado</span> que o Hospital da Restauração abriu a requisição <span class="s">"REQ-17"</span>
+      | tipo receptor | componente | quantidade | janela de entrega |
+      | A+            | Hemácias   | 2          | 01/12/2030 14:00  |
+    <span class="k">Quando</span> o operador solicitar a alocação da requisição <span class="s">"REQ-17"</span>
+    <span class="k">Então</span> a alocação deve ser confirmada com as bolsas na ordem:
+      | ordem | bolsa    | tipo |
+      | 1     | BOL-0042 | O-   |
+      | 2     | BOL-0007 | A+   |
+    <span class="k">E</span> a bolsa <span class="s">"BOL-0101"</span> não deve ser considerada por ser incompatível com A+
+    <span class="k">E</span> a bolsa <span class="s">"BOL-0150"</span> não deve ser considerada por estar vencida
+    <span class="k">E</span> as bolsas alocadas devem ficar com status <span class="s">"RESERVADA"</span> no estoque
+    <span class="k">E</span> o evento <span class="s">"AlocacaoConfirmada"</span> deve ser publicado para a Logística</pre>
+  <p style="font-size:9.3pt;color:#6b6262">Cenário alternativo previsto: com apenas 1 bolsa compatível e válida para uma requisição de 2, nenhuma bolsa é reservada, a requisição passa para <i>AGUARDANDO_ESTOQUE</i> e o evento <code>EstoqueInsuficiente</code> é publicado (invariante 4). Os dados do cenário são os mesmos usados nos testes da função da guia de transporte.</p>
+</section>
+
+<!-- ======================================================= 4 -->
+<section>
+  <h2>4. Arquitetura em três camadas</h2>
+  <p>Dentro de cada contexto, seja no monólito modular ou num microsserviço, o código segue três camadas, e cada camada só depende da camada de baixo. A mesma estrutura serve para hoje e para depois da extração dos serviços.</p>
+  <figure><img src="../diagramas/04-arquitetura-tres-camadas.svg" alt="Três camadas"><figcaption>Figura 4 — Três camadas, com os pacotes reais do repositório (docs/arquitetura/diagramas/04-arquitetura-tres-camadas.svg)</figcaption></figure>
+  <table>
+    <tr><th style="width:16%">Camada</th><th style="width:38%">Responsabilidade</th><th>Pode / não pode</th></tr>
+    <tr><td><b>Apresentação</b></td><td>Receber HTTP, validar a entrada (DTO + Bean Validation), autenticar e traduzir erros (400/404/422).</td><td>Chama serviços de aplicação. <b>Não</b> acessa repositório nem contém regra de negócio.</td></tr>
+    <tr><td><b>Negócio</b></td><td>Casos de uso (transações) e modelo de domínio: agregados, value objects, serviços de domínio e eventos.</td><td>Depende só de interfaces (repositórios, portas). <b>Não</b> conhece HTTP, JSON nem SQL.</td></tr>
+    <tr><td><b>Dados</b></td><td>Implementar os repositórios com Spring Data JPA e mapear o modelo para o PostgreSQL.</td><td>Não contém regra; um schema por contexto (ADR-005).</td></tr>
+  </table>
+  <h3>Exemplo: <code>POST /api/v1/requisicoes/{id}/alocar</code></h3>
+  <ol>
+    <li><b>Apresentação:</b> <code>RequisicaoController</code> valida o <code>id</code> e chama <code>AlocarRequisicaoHandler.executar(id)</code>.</li>
+    <li><b>Negócio:</b> o handler abre a transação, carrega a requisição, pede candidatas ao <code>EstoquePort</code>, chama <code>Alocacao.propor(...)</code> (ABO/Rh + FEFO + invariantes), reserva as bolsas, confirma e registra <code>AlocacaoConfirmada</code> no outbox.</li>
+    <li><b>Dados:</b> <code>AlocacaoRepository</code> grava o agregado e o evento na mesma transação.</li>
+    <li><b>Apresentação:</b> devolve <code>200</code> com o DTO da alocação, ou <code>422</code> se a regra impedir a alocação (estoque insuficiente).</li>
+  </ol>
+  <div class="box verde"><b>Mudanças concretas no código atual:</b> (1) mover <code>RequisicaoRepository</code> para fora do controller; (2) criar <code>alocacao/</code> com o agregado; (3) teste ArchUnit que falha se <code>api..</code> depender de <code>persistencia..</code>.</div>
+</section>
+
+<!-- ======================================================= 5 -->
+<section class="segue">
+  <h2>5. Projeção com microsserviços</h2>
+  <p>Na projeção, cada bounded context vira um serviço independente, com banco próprio (ADR-005) e integração por eventos (ADR-004). As funções sem estado ficam em <b>serverless</b>, que é opcional (ADR-006).</p>
+  <figure><img src="../diagramas/05-microsservicos.svg" alt="Microsserviços"><figcaption>Figura 5 — Projeção com microsserviços (docs/arquitetura/diagramas/05-microsservicos.svg)</figcaption></figure>
+  <table>
+    <tr><th style="width:19%">Serviço</th><th style="width:14%">Contexto</th><th style="width:20%">Dados</th><th style="width:22%">Publica</th><th>Escala / observação</th></tr>
+    <tr><td><code>svc-captacao</code></td><td>Captação</td><td>PostgreSQL</td><td>DoacaoRegistrada</td><td>1 réplica; carga baixa</td></tr>
+    <tr><td><code>svc-estoque</code></td><td>Estoque</td><td>PostgreSQL</td><td>BolsaVencendo, BolsaDescartada</td><td>API de reserva (OHS)</td></tr>
+    <tr><td><code>svc-requisicoes</code></td><td>Requisições</td><td>PostgreSQL</td><td>RequisicaoAberta</td><td>2 réplicas; acesso dos hospitais</td></tr>
+    <tr><td><code>svc-alocacao</code></td><td>Alocação (core)</td><td>PostgreSQL Multi-AZ</td><td>AlocacaoConfirmada, EstoqueInsuficiente</td><td>2 réplicas; consistência forte</td></tr>
+    <tr><td><code>svc-logistica</code></td><td>Logística (core)</td><td>PostgreSQL Multi-AZ + cache</td><td>GuiaEmitida, EntregaConcluida</td><td>2 réplicas; cache do grafo</td></tr>
+    <tr><td><code>svc-telemetria</code></td><td>Telemetria</td><td>Séries temporais</td><td>LeituraRegistrada, AlertaCadeiaFria</td><td>Escala por volume de leituras</td></tr>
+    <tr><td><code>svc-indicadores</code></td><td>Indicadores</td><td>Read model</td><td>—</td><td>CQRS; só consome eventos</td></tr>
+    <tr><td><code>fn-guia-transporte</code></td><td>Logística</td><td>sem estado</td><td>—</td><td>Serverless; <b>já implementada</b> no Cloudflare Workers</td></tr>
+    <tr><td><code>fn-notificacoes</code></td><td>Genérico</td><td>sem estado</td><td>—</td><td>Serverless; e-mail/push por evento</td></tr>
+  </table>
+  <h3>Fluxo principal por eventos</h3>
+  <p><code>RequisicaoAberta</code> → <b>svc-alocacao</b> reserva no estoque (síncrono) e publica <code>AlocacaoConfirmada</code> → <b>svc-logistica</b> calcula a rota, chama <b>fn-guia-transporte</b> e publica <code>GuiaEmitida</code> → <b>svc-telemetria</b> acompanha a entrega e publica <code>AlertaCadeiaFria</code> se necessário → <b>fn-notificacoes</b> avisa hospital e gestor → <b>svc-indicadores</b> atualiza os painéis.</p>
+  <h3>Estratégia de migração (Strangler Fig)</h3>
+  <table>
+    <tr><th style="width:12%">Fase</th><th>O que acontece</th><th style="width:22%">Resultado</th></tr>
+    <tr><td>1</td><td>Monólito modular: pacotes por contexto, três camadas, eventos internos e um schema por contexto.</td><td>Cenário A</td></tr>
+    <tr><td>2</td><td>Gateway na frente; extração de <b>Telemetria</b> e <b>Logística</b>; broker gerenciado; funções serverless.</td><td>Cenário B (alvo)</td></tr>
+    <tr><td>3</td><td>Extração dos demais contextos e infraestrutura como código, <i>somente se os gatilhos do ADR-007 forem atingidos</i>.</td><td>Cenário C</td></tr>
+  </table>
+</section>
+
+<!-- ======================================================= 6 -->
+<section class="segue">
+  <h2>6. Três cenários de implantação com orçamento</h2>
+  <p>Os valores vêm da planilha <code>docs/arquitetura/orcamento/orcamento-cenarios.xlsx</code>, que mostra cada item com a sua fonte. São <b>preços de lista estimados</b> (referência nov/2026), com câmbio de <b>R$ 5,40/US$</b> e valor-hora de <b>R$ 80</b>, e todos são editáveis na aba <i>Premissas</i>. O volume de referência é um piloto regional com cerca de 20 hospitais.</p>
+  <table>
+    <tr><th>Indicador</th><th class="num">A — Monólito modular</th><th class="num">B — Híbrido</th><th class="num">C — Microsserviços AWS</th></tr>
+    <tr><td>Infraestrutura (US$/mês)</td><td class="num">44,62</td><td class="num">200,62</td><td class="num">498,91</td></tr>
+    <tr><td>Infraestrutura (R$/mês)</td><td class="num">240,95</td><td class="num">1.083,35</td><td class="num">2.694,12</td></tr>
+    <tr><td>Infraestrutura em 12 meses (R$)</td><td class="num">2.891</td><td class="num">13.000</td><td class="num">32.329</td></tr>
+    <tr><td>Esforço de implantação</td><td class="num">112 h · R$ 8.960</td><td class="num">416 h · R$ 33.280</td><td class="num">980 h · R$ 78.400</td></tr>
+    <tr><td><b>Custo total em 12 meses (R$)</b></td><td class="num"><b>11.851</b></td><td class="num"><b>46.280</b></td><td class="num"><b>110.729</b></td></tr>
+  </table>
+  <div class="barras">
+    <div class="barra a"><span class="rot">A — Monólito modular</span><span class="trilho"><span class="valor" style="display:block;width:10.7%">R$ 11,9 mil</span></span></div>
+    <div class="barra b"><span class="rot">B — Híbrido (alvo)</span><span class="trilho"><span class="valor" style="display:block;width:41.8%">R$ 46,3 mil</span></span></div>
+    <div class="barra c"><span class="rot">C — Microsserviços AWS</span><span class="trilho"><span class="valor" style="display:block;width:100%">R$ 110,7 mil</span></span></div>
+  </div>
+  <div class="duas">
+    <div>
+      <h3>Cenário A — Monólito modular</h3>
+      <p>Render Web Standard (US$ 25) + PostgreSQL Basic-1gb (US$ 19) + Cloudflare Workers Free + domínio. É o mesmo deploy de hoje, com o código reorganizado.</p>
+      <p><b>Prós:</b> barato, rápido (~3 semanas) e operação simples. <b>Contras:</b> sem isolamento de falhas; a telemetria disputa recursos com o resto.</p>
+      <h3>Cenário B — Híbrido <span class="tag core">ALVO</span></h3>
+      <p>Monólito + <code>svc-logistica</code> (2 instâncias) + <code>svc-telemetria</code>, 3 PostgreSQL, RabbitMQ gerenciado, Redis, Workers Paid, SES e Sentry.</p>
+      <p><b>Prós:</b> isola o core logístico e a carga de telemetria; custo previsível. <b>Contras:</b> convivência de dois estilos; exige broker e tracing.</p>
+    </div>
+    <div>
+      <h3>Cenário C — Microsserviços completos na AWS</h3>
+      <p>ECS Fargate (10 tasks ≈ US$ 180), 6 RDS (US$ 159, sendo 2 Multi-AZ), ALB, API Gateway, SNS/SQS, DynamoDB, ElastiCache, NAT Gateway (US$ 33, custo fixo muitas vezes esquecido), CloudWatch, X-Ray, Cognito e suporte Developer.</p>
+      <p><b>Prós:</b> escala e implantação independentes, alta disponibilidade. <b>Contras:</b> custo 9,3× o do A, ~7 meses de trabalho e operação complexa para o volume atual.</p>
+      <div class="box"><b>Recomendação:</b> executar o <b>A</b> agora (fase 1) e chegar ao <b>B</b> em 12 meses. O <b>C</b> só entra se houver mais de 50 hospitais, mais de 1 milhão de leituras por dia, exigência de SLA de 99,9% ou mais de 3 squads (ADR-007).</div>
+    </div>
+  </div>
+</section>
+
+<!-- ======================================================= 7 -->
+<section>
+  <h2>7. Decisões registradas, riscos e próximos passos</h2>
+  <h3>ADRs (docs/arquitetura/adr/)</h3>
+  <table>
+    <tr><th style="width:12%">ADR</th><th>Decisão</th><th style="width:14%">Status</th></tr>
+    <tr><td>001</td><td>Organizar o sistema por DDD: subdomínios e 8 bounded contexts</td><td>Aceito</td></tr>
+    <tr><td>002</td><td>Três camadas dentro de cada contexto, com dependência só para baixo</td><td>Aceito</td></tr>
+    <tr><td>003</td><td>Evoluir por monólito modular + Strangler Fig, sem reescrever tudo de uma vez</td><td>Aceito</td></tr>
+    <tr><td>004</td><td>Integração entre contextos por eventos de domínio (outbox, idempotência, DLQ)</td><td>Aceito</td></tr>
+    <tr><td>005</td><td>Banco por serviço (PostgreSQL) e séries temporais para telemetria</td><td>Aceito</td></tr>
+    <tr><td>006</td><td>Serverless apenas para funções pontuais e sem estado</td><td>Aceito</td></tr>
+    <tr><td>007</td><td>Cenário B (Híbrido) como alvo de 12 meses, com gatilhos para o C</td><td>Proposto</td></tr>
+  </table>
+  <h3>Riscos e mitigação</h3>
+  <table>
+    <tr><th style="width:34%">Risco</th><th>Mitigação</th></tr>
+    <tr><td>Consistência eventual confundir o usuário (ex.: requisição “alocada” antes da guia)</td><td>Estados intermediários explícitos na interface; correlation-id para rastrear o fluxo.</td></tr>
+    <tr><td>Fronteiras erradas descobertas tarde</td><td>Validar as fronteiras no monólito modular (ArchUnit) antes de extrair qualquer serviço.</td></tr>
+    <tr><td>Custos de nuvem acima do previsto</td><td>Alertas de orçamento; revisar a planilha a cada trimestre; NAT e logs são os maiores desvios típicos.</td></tr>
+    <tr><td>Perda de evento entre serviços</td><td>Transactional Outbox, consumidores idempotentes e DLQ monitorada.</td></tr>
+    <tr><td>Uso de dados reais (LGPD)</td><td>Manter dados sintéticos; separar dados pessoais de doadores no contexto Captação.</td></tr>
+  </table>
+  <h3>Próximos passos (fase 1)</h3>
+  <ol>
+    <li>Criar os pacotes <code>alocacao/</code>, <code>logistica/</code>, <code>estoque/</code>, <code>requisicoes/</code> e <code>captacao/</code>, e mover as classes.</li>
+    <li>Implementar o agregado <code>Alocacao</code> e automatizar o cenário Gherkin da seção 3 (Cucumber).</li>
+    <li>Adicionar testes ArchUnit para as regras de camadas e de contextos.</li>
+    <li>Trocar chamadas diretas entre módulos por eventos internos do Spring + outbox.</li>
+    <li>Separar o banco em um schema por contexto.</li>
+  </ol>
+  <h3>Referências</h3>
+  <p style="font-size:9.3pt">Evans, E. <i>Domain-Driven Design</i> (2003) · Vernon, V. <i>Implementing Domain-Driven Design</i> (2013) · Newman, S. <i>Building Microservices</i>, 2ª ed. (2021) · Fowler, M. <i>StranglerFigApplication</i> (martinfowler.com) · Nygard, M. <i>Documenting Architecture Decisions</i> (2011) · Páginas de preços de AWS, Render, Cloudflare, CloudAMQP e Sentry (consultadas como referência, nov/2026).</p>
+</section>
+
+</body>
+</html>

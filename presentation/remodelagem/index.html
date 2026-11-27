@@ -1,0 +1,457 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>HemoFlow · Remodelagem</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<canvas id="bg" aria-hidden="true"></canvas>
+
+<div class="app">
+<div class="stage-wrap" id="stage-wrap">
+<main class="stage" id="stage">
+
+<!-- 1 · CAPA -->
+<section class="slide cover" data-title="Capa">
+  <div class="eyebrow">Projeto Integrador · CESAR School 2026.2</div>
+  <h1 class="logo"><span class="drop"></span><span class="wm">Hemo<span>Flow</span></span></h1>
+  <svg class="ecg" viewBox="0 0 1200 120" aria-hidden="true">
+    <path pathLength="1" d="M0 60 H430 L455 60 L475 22 L500 104 L524 8 L548 86 L568 60 H1200"/>
+  </svg>
+  <p class="lead">Planejamento da remodelagem</p>
+  <p class="team">Bruna Tiburtino · Caio Martins Oliveira · Cauã Henrique Melo Almeida · João Felipe Bonifácio · Luís Felipe Carneiro · Luís Henrique Vilas Boas · Priscila Pontes · Rafael Medeiros · Ruan Carlos Oliveira</p>
+  <aside class="notes">
+    <p>Apresentar o grupo e o tema: <b>como remodelar o HemoFlow</b>.</p>
+    <p>Roteiro: ponto de partida → DDD estratégico → DDD tático (agregado + Gherkin) → arquitetura (3 camadas e microsserviços) → como chegar lá → orçamento → recomendação.</p>
+  </aside>
+</section>
+
+<!-- 2 · PONTO DE PARTIDA -->
+<section class="slide" data-title="Ponto de partida">
+  <div class="eyebrow">Ponto de partida</div>
+  <h2>Um monólito que <em>funciona</em>…<br>mas já sente o peso.</h2>
+  <div class="body s-start">
+    <div class="mono" data-shake>
+      <b>Monólito</b>
+      <small>Spring Boot 3 · 1 PostgreSQL</small>
+      <svg class="cracks" viewBox="0 0 360 360" aria-hidden="true">
+        <path data-f="1" pathLength="1" d="M0 70 L60 95 L48 140 L110 170"/>
+        <path data-f="2" pathLength="1" d="M360 40 L300 90 L318 130 L250 160"/>
+        <path data-f="3" pathLength="1" d="M20 360 L80 300 L60 260 L130 230"/>
+        <path data-f="4" pathLength="1" d="M340 360 L290 290 L310 250 L230 210"/>
+      </svg>
+    </div>
+    <ul class="pains focus">
+      <li data-f="1"><b>Termos ambíguos</b><span>“Hospital” é solicitante e nó do grafo</span></li>
+      <li data-f="2"><b>Regras espalhadas</b><span>controller acessa repositório</span></li>
+      <li data-f="3"><b>Escala desigual</b><span>telemetria ≠ cadastro</span></li>
+      <li data-f="4"><b>Dados acoplados</b><span>todo módulo lê toda tabela</span></li>
+    </ul>
+  </div>
+  <aside class="notes">
+    <p><b>Hoje:</b> Spring Boot 3 + Thymeleaf + REST /api/v1, um PostgreSQL para tudo. ABO/Rh, FEFO, Dijkstra e cadeia fria já funcionam. Pipeline Docker → GHCR → Render com gate de testes.</p>
+    <p><b>Problemas</b> (um por clique):</p>
+    <ul>
+      <li>“Hospital” significa duas coisas: quem pede e o nó do grafo.</li>
+      <li>Regras espalhadas — controller falando direto com repositório.</li>
+      <li>Telemetria tem volume muito maior que cadastro: escala desigual.</li>
+      <li>Todo módulo lê toda tabela: dados acoplados.</li>
+    </ul>
+  </aside>
+</section>
+
+<!-- 3 · SUBDOMÍNIOS -->
+<section class="slide" data-title="Subdomínios">
+  <div class="eyebrow">DDD estratégico · subdomínios</div>
+  <h2>Onde está o <em>diferencial</em>?</h2>
+  <div class="body tiers">
+    <div class="tier core" data-f="1">
+      <span class="tier-label">Core</span>
+      <div class="cards">
+        <div class="card"><b>Alocação de Hemocomponentes</b><small>ABO/Rh · FEFO · reserva</small></div>
+        <div class="card"><b>Logística com Cadeia Fria</b><small>grafo · Dijkstra · guia de transporte</small></div>
+      </div>
+    </div>
+    <div class="tier sup" data-f="2">
+      <span class="tier-label">Suporte</span>
+      <div class="chips"><span>Captação</span><span>Estoque</span><span>Demanda Hospitalar</span><span>Telemetria</span><span>Indicadores</span></div>
+    </div>
+    <div class="tier gen" data-f="3">
+      <span class="tier-label">Genérico <i>compra-se pronto</i></span>
+      <div class="chips"><span>Identidade e Acesso</span><span>Notificações</span><span>Mapas</span><span>Observabilidade</span></div>
+    </div>
+  </div>
+  <aside class="notes">
+    <p><b>Domínio:</b> distribuição de hemocomponentes da coleta ao hospital, com cadeia fria.</p>
+    <ul>
+      <li><b>Core:</b> Alocação (matriz ABO/Rh 8×8, FEFO, reserva, estoque insuficiente) e Logística (grafo, Dijkstra, limite por componente, guia e entrega).</li>
+      <li><b>Suporte:</b> Captação, Estoque, Demanda Hospitalar, Telemetria (temperatura/GPS simulados), Indicadores.</li>
+      <li><b>Genérico:</b> login/perfis, e-mail/push/SMS, mapas, logs e métricas — compra-se ou usa-se pronto.</li>
+    </ul>
+  </aside>
+</section>
+
+<!-- 4 · BOUNDED CONTEXTS -->
+<section class="slide" data-title="Bounded contexts" data-steps="1">
+  <div class="eyebrow">DDD estratégico · contextos</div>
+  <h2><span class="count-big" data-count="8">8</span> bounded contexts</h2>
+  <div class="body ctx-grid">
+    <div class="tile core" style="--d:.05s"><b>Alocação</b><small>escolhe e reserva bolsas</small></div>
+    <div class="tile core" style="--d:.12s"><b>Logística e Rede</b><small>rota · cadeia fria · entrega</small></div>
+    <div class="tile" style="--d:.19s"><b>Captação</b><small>doadores e doações</small></div>
+    <div class="tile" style="--d:.26s"><b>Estoque</b><small>inventário e validade</small></div>
+    <div class="tile" style="--d:.33s"><b>Requisições</b><small>pedido do hospital</small></div>
+    <div class="tile" style="--d:.40s"><b>Telemetria</b><small>temperatura e GPS</small></div>
+    <div class="tile" style="--d:.47s"><b>Indicadores</b><small>read model · CQRS</small></div>
+    <div class="tile gen" style="--d:.54s"><b>Identidade</b><small>Keycloak / Cognito</small></div>
+  </div>
+  <div class="legend"><span class="lg core">Core</span><span class="lg sup">Suporte</span><span class="lg gen">Genérico</span></div>
+  <aside class="notes">
+    <ul>
+      <li><b>Alocação (core):</b> escolher e reservar bolsas compatíveis priorizando FEFO.</li>
+      <li><b>Logística e Rede (core):</b> rede, rota de menor tempo, limite de cadeia fria, guia e entrega.</li>
+      <li><b>Captação:</b> doadores, agendamentos, campanhas, doações.</li>
+      <li><b>Estoque:</b> inventário físico, validade, reservas, descarte.</li>
+      <li><b>Requisições Hospitalares:</b> pedido e acompanhamento.</li>
+      <li><b>Telemetria:</b> leituras de temperatura/GPS e alertas.</li>
+      <li><b>Indicadores:</b> read model estatístico (CQRS).</li>
+      <li><b>Identidade (genérico):</b> login, perfis, tokens.</li>
+    </ul>
+    <p>Clique: destaca os dois contextos core.</p>
+  </aside>
+</section>
+
+<!-- 5 · GLOSSÁRIO -->
+<section class="slide" data-title="Glossário">
+  <div class="eyebrow">DDD estratégico · linguagem ubíqua</div>
+  <h2>Mesma palavra, <em>significado explícito</em></h2>
+  <div class="body gloss">
+    <div class="word">“Hospital”</div>
+    <svg class="split-lines" viewBox="0 0 800 90" aria-hidden="true">
+      <path data-f="1" pathLength="1" d="M400 0 C400 50 160 40 160 90"/>
+      <path data-f="1" pathLength="1" d="M400 0 C400 50 640 40 640 90"/>
+    </svg>
+    <div class="meanings">
+      <div class="meaning" data-f="1"><small>Requisições</small><b>Solicitante</b><span>quem pede</span></div>
+      <div class="meaning" data-f="1"><small>Logística</small><b>Nó do grafo</b><span>para onde vai</span></div>
+    </div>
+    <div class="terms" data-f="2">
+      <div><b>Reserva</b> ≠ <b>Alocação</b></div>
+      <div><b>FEFO</b> vence primeiro, sai primeiro</div>
+      <div><b>Cadeia fria</b> 120 min · 90 min</div>
+    </div>
+  </div>
+  <p class="foot" data-f="2">22 termos no documento · seção 2.3</p>
+  <aside class="notes">
+    <p>“Hospital” virou dois conceitos: <b>Solicitante</b> (Requisições) e <b>Nó</b> (Logística).</p>
+    <ul>
+      <li><b>Alocação:</b> decisão de quais bolsas atendem a requisição (proposta → confirmada).</li>
+      <li><b>Reserva:</b> bloqueio temporário no Estoque; expira se não confirmada.</li>
+      <li><b>FEFO:</b> First Expired, First Out.</li>
+      <li><b>Limite de cadeia fria:</b> 120 min hemácias, 90 min plaquetas.</li>
+      <li><b>Guia de transporte:</b> bolsas em FEFO, rota, temperatura, checklist, assinaturas.</li>
+      <li><b>Estoque insuficiente:</b> sem bolsas compatíveis e válidas → aguardando estoque.</li>
+    </ul>
+  </aside>
+</section>
+
+<!-- 6 · MAPA DE CONTEXTOS -->
+<section class="slide" data-title="Mapa de contextos">
+  <div class="eyebrow">DDD estratégico · mapa de contextos</div>
+  <h2>Quem depende de quem</h2>
+  <div class="body cmap">
+    <svg viewBox="0 0 1380 620" aria-label="Mapa de contextos">
+      <defs>
+        <marker id="arr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="#7fd3cc"/></marker>
+        <filter id="glow" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="10" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+      </defs>
+
+      <g class="edge" data-f="1"><path class="line" pathLength="1" marker-end="url(#arr)" d="M140 112 V252"/><path class="flow" pathLength="1" d="M140 112 V252"/><text class="pat" x="158" y="172">Customer-Supplier</text><text class="ev" x="158" y="198">DoacaoRegistrada</text></g>
+      <g class="edge" data-f="1"><path class="line" pathLength="1" marker-end="url(#arr)" d="M560 112 V252"/><path class="flow" pathLength="1" d="M560 112 V252"/><text class="pat" x="578" y="172">Published Language</text><text class="ev" x="578" y="198">RequisicaoAberta</text></g>
+      <g class="edge" data-f="1"><path class="line" pathLength="1" marker-end="url(#arr)" d="M252 300 H444"/><path class="flow" pathLength="1" d="M252 300 H444"/><text class="pat mid" x="348" y="282">Open Host Service</text><text class="ev mid" x="348" y="330">API de reserva</text></g>
+      <g class="edge" data-f="2"><path class="line" pathLength="1" marker-end="url(#arr)" d="M672 300 H864"/><path class="flow" pathLength="1" d="M672 300 H864"/><text class="pat mid" x="768" y="282">Customer-Supplier</text><text class="ev mid" x="768" y="330">AlocacaoConfirmada</text></g>
+      <g class="edge" data-f="2"><path class="line" pathLength="1" marker-end="url(#arr)" d="M560 344 V484"/><path class="flow" pathLength="1" d="M560 344 V484"/><text class="pat" x="578" y="404">Conformist</text><text class="ev" x="578" y="430">read model</text></g>
+      <g class="edge" data-f="3"><path class="line" pathLength="1" marker-end="url(#arr)" d="M980 488 V348"/><path class="flow" pathLength="1" d="M980 488 V348"/><text class="pat" x="998" y="404">Published Language</text><text class="ev" x="998" y="430">LeituraRegistrada</text></g>
+      <g class="edge" data-f="3"><path class="line" pathLength="1" marker-end="url(#arr)" d="M1150 530 H1094"/><path class="flow" pathLength="1" d="M1150 530 H1094"/><text class="pat mid acl" x="1122" y="500">ACL</text></g>
+
+      <g class="node" transform="translate(140 70)"><rect x="-110" y="-42" width="220" height="84" rx="16"/><text y="-2">Captação</text><text class="sub" y="24">suporte</text></g>
+      <g class="node" transform="translate(560 70)"><rect x="-110" y="-42" width="220" height="84" rx="16"/><text y="-2">Requisições</text><text class="sub" y="24">suporte</text></g>
+      <g class="node gen" transform="translate(980 70)"><rect x="-110" y="-42" width="220" height="84" rx="16"/><text y="-2">Identidade</text><text class="sub" y="24">JWT p/ todos</text></g>
+      <g class="node" transform="translate(140 300)"><rect x="-110" y="-42" width="220" height="84" rx="16"/><text y="-2">Estoque</text><text class="sub" y="24">suporte</text></g>
+      <g class="node core" transform="translate(560 300)"><rect x="-110" y="-42" width="220" height="84" rx="16"/><text y="-2">Alocação</text><text class="sub" y="24">CORE</text></g>
+      <g class="node core" transform="translate(980 300)"><rect x="-110" y="-42" width="220" height="84" rx="16"/><text y="-2">Logística</text><text class="sub" y="24">CORE</text></g>
+      <g class="node" transform="translate(560 530)"><rect x="-110" y="-42" width="220" height="84" rx="16"/><text y="-2">Indicadores</text><text class="sub" y="24">suporte</text></g>
+      <g class="node" transform="translate(980 530)"><rect x="-110" y="-42" width="220" height="84" rx="16"/><text y="-2">Telemetria</text><text class="sub" y="24">suporte</text></g>
+      <g class="node ext" transform="translate(1260 530)"><rect x="-110" y="-42" width="220" height="84" rx="16"/><text y="-2">Sensores</text><text class="sub" y="24">externo</text></g>
+    </svg>
+  </div>
+  <aside class="notes">
+    <p>Seta = upstream → downstream.</p>
+    <ul>
+      <li><b>Clique 1 — o que chega na Alocação:</b> Captação → Estoque (Customer-Supplier, evento DoacaoRegistrada); Requisições → Alocação (Published Language, RequisicaoAberta); Estoque → Alocação (Open Host Service: API de reserva de bolsas).</li>
+      <li><b>Clique 2 — o que sai:</b> Alocação → Logística (Customer-Supplier, AlocacaoConfirmada); Indicadores é Conformist (read model dos eventos).</li>
+      <li><b>Clique 3 — telemetria:</b> Telemetria → Logística (LeituraRegistrada); Sensores entram por uma ACL que traduz o pacote do sensor.</li>
+      <li>Identidade: OHS + Conformist — token JWT usado por todos.</li>
+    </ul>
+  </aside>
+</section>
+
+<!-- 7 · AGREGADO -->
+<section class="slide" data-title="Agregado Alocacao">
+  <div class="eyebrow">DDD tático · contexto core</div>
+  <h2>O agregado <em>Alocacao</em> protege 6 regras</h2>
+  <div class="body agg">
+    <div class="agg-left">
+      <div class="root" data-shake>
+        <small>«Aggregate Root»</small>
+        <b>Alocacao</b>
+        <code>propor() · confirmar() · cancelar()</code>
+      </div>
+      <div class="status">
+        <span class="st-p">PROPOSTA</span><i class="st-arrow"></i><span class="st-c">CONFIRMADA</span>
+      </div>
+      <div class="st-alt"><span>CANCELADA</span><span>EXPIRADA</span></div>
+      <div class="events" data-f="7">
+        <span><b>AlocacaoConfirmada</b> → Logística · Estoque · Indicadores</span>
+        <span><b>EstoqueInsuficiente</b> → Requisições</span>
+        <span><b>AlocacaoCancelada</b> → Estoque</span>
+      </div>
+    </div>
+    <ol class="inv focus">
+      <li data-f="1"><b>Compatível</b> ABO/Rh com o receptor</li>
+      <li data-f="2"><b>Válida</b> até o fim da janela de entrega</li>
+      <li data-f="3"><b>Ordem FEFO</b> menor validade primeiro</li>
+      <li data-f="4"><b>Soma = pedido</b> senão não propõe</li>
+      <li data-f="5"><b>Uma ativa</b> por requisição</li>
+      <li data-f="6"><b>Mesmo</b> hemocomponente em tudo</li>
+    </ol>
+  </div>
+  <aside class="notes">
+    <p>Raiz <b>Alocacao</b>: id, requisicao (RequisicaoRef), itens (ItemAlocado 1..*), status. VOs: RequisicaoRef, JanelaEntrega, Quantidade, TipoSanguineo, Hemocomponente, Validade.</p>
+    <p>Domain services: <b>PoliticaCompatibilidadeAboRh</b> (matriz 8×8, O(1)) e <b>SelecionadorFEFO</b>. Repositório AlocacaoRepository. <b>EstoquePort</b> é a ACL que traduz Bolsa → BolsaCandidata. <b>AlocarRequisicaoHandler</b> orquestra: carrega → propõe → reserva → confirma.</p>
+    <p>Invariantes (um por clique): compatível; válida até a janela; FEFO com desempate por id; soma = quantidade; uma alocação ativa (confirmada não volta a proposta); mesmo hemocomponente.</p>
+    <p>Último clique: eventos publicados.</p>
+  </aside>
+</section>
+
+<!-- 8 · GHERKIN -->
+<section class="slide" data-title="Cenário Gherkin">
+  <div class="eyebrow">DDD tático · cenário Gherkin</div>
+  <h2>Alocar respeitando <em>FEFO</em></h2>
+  <div class="ctx-chips"><span>hoje 01/12/2030</span><span>REQ-17</span><span>2 bolsas de hemácias</span><span>receptor <b>A+</b></span></div>
+  <div class="body gherkin">
+    <div class="bags">
+      <div class="scan" data-only="1"></div>
+      <div class="bag b07"><div class="bag-body"><div class="liquid"></div><span class="bag-num">2</span><b>A+</b><code>BOL-0007</code><small>vence 20/12</small></div><span class="stamp">RESERVADA</span></div>
+      <div class="bag b101"><div class="bag-body"><div class="liquid"></div><b>B+</b><code>BOL-0101</code><small>vence 03/12</small></div><span class="flag">incompatível</span></div>
+      <div class="bag b42"><div class="bag-body"><div class="liquid"></div><span class="bag-num">1</span><b>O-</b><code>BOL-0042</code><small>vence 05/12</small></div><span class="stamp">RESERVADA</span></div>
+      <div class="bag b150"><div class="bag-body"><div class="liquid"></div><b>A+</b><code>BOL-0150</code><small>venceu 30/11</small></div><span class="flag">vencida</span></div>
+      <div class="event-fly" data-f="5">AlocacaoConfirmada → Logística</div>
+    </div>
+    <div class="captions">
+      <p data-only="0"><b>Dado</b> que o Hospital da Restauração abriu a REQ-17</p>
+      <p data-only="1"><b>Quando</b> o operador solicitar a alocação</p>
+      <p data-only="2"><b>E</b> BOL-0101 não é considerada — B+ não serve para A+</p>
+      <p data-only="3"><b>E</b> BOL-0150 não é considerada — está vencida</p>
+      <p data-only="4"><b>Então</b> a alocação é confirmada em ordem FEFO</p>
+      <p data-only="5"><b>E</b> as bolsas ficam RESERVADA e a Logística é avisada</p>
+    </div>
+  </div>
+  <aside class="notes">
+<pre>Contexto: hoje é "01/12/2030" e o estoque tem hemácias:
+  | BOL-0007 | A+ | 20/12/2030 |  | BOL-0101 | B+ | 03/12/2030 |
+  | BOL-0042 | O- | 05/12/2030 |  | BOL-0150 | A+ | 30/11/2030 |
+
+Cenário: Alocar bolsas compatíveis respeitando FEFO
+  Dado que o Hospital da Restauração abriu a requisição "REQ-17"
+    de 2 bolsas de hemácias para receptor A+, janela 01/12/2030 14:00
+  Quando o operador solicitar a alocação da requisição "REQ-17"
+  Então a alocação é confirmada com as bolsas, nesta ordem:
+    | 1 | BOL-0042 | O- |
+    | 2 | BOL-0007 | A+ |
+  E "BOL-0101" não é considerada (incompatível com A+)
+  E "BOL-0150" não é considerada (vencida)
+  E as bolsas alocadas ficam "RESERVADA" no estoque
+  E o evento "AlocacaoConfirmada" é publicado para a Logística</pre>
+    <p>Ponto-chave: O- é doadora universal e vence antes (05/12), então sai primeiro.</p>
+  </aside>
+</section>
+
+<!-- 9 · TRÊS CAMADAS -->
+<section class="slide" data-title="Três camadas">
+  <div class="eyebrow">Arquitetura</div>
+  <h2>Três camadas em cada contexto</h2>
+  <div class="body layers">
+    <div class="layer l1" data-f="1"><span class="ln">1</span><div><b>Apresentação</b><span>HTTP · DTO + validação · auth · erros</span></div><code>api/ · web/</code></div>
+    <div class="flowdown" data-f="4"></div>
+    <div class="layer l2" data-f="2"><span class="ln">2</span><div><b>Negócio</b><span>regras e invariantes · sem HTTP, sem SQL</span></div><code>estoque/ · grafo/ · rede/</code></div>
+    <div class="flowdown" data-f="4"></div>
+    <div class="layer l3" data-f="3"><span class="ln">3</span><div><b>Dados</b><span>Spring Data JPA · PostgreSQL 16</span></div><code>persistencia/</code></div>
+  </div>
+  <p class="rule" data-f="4">Cada camada só depende da camada de baixo.</p>
+  <aside class="notes">
+    <ul>
+      <li><b>Apresentação:</b> controllers REST /api/v1 (api/*Controller, api/dto), telas Thymeleaf (web/), ApiExceptionHandler com 400/404/422 padronizados, sessão.</li>
+      <li><b>Negócio:</b> regras e invariantes, transações começam aqui. CompatibilidadeAboRh, FilaFEFO, EstoqueService; Grafo + Dijkstra, RedeService; EstatisticaService; modelo de domínio em dominio/.</li>
+      <li><b>Dados:</b> repositórios Spring Data JPA (persistencia/*Repository). PostgreSQL 16 em volume Docker; H2 nos testes/CI.</li>
+    </ul>
+  </aside>
+</section>
+
+<!-- 10 · MICROSSERVIÇOS -->
+<section class="slide" data-title="Microsserviços">
+  <div class="eyebrow">Projeção</div>
+  <h2>Um serviço por bounded context</h2>
+  <div class="body ms">
+    <div class="gateway"><span class="clients">Web · Hospitais · Motorista</span><b>API Gateway</b><small>roteamento · JWT · rate limit</small></div>
+    <div class="svcs">
+      <div class="svc"><b>svc-captacao</b><i class="db" data-f="1"></i></div>
+      <div class="svc"><b>svc-requisicoes</b><i class="db" data-f="1"></i></div>
+      <div class="svc"><b>svc-estoque</b><i class="db" data-f="1"></i></div>
+      <div class="svc core"><b>svc-alocacao</b><small>core · 2 réplicas</small><i class="db" data-f="1"></i></div>
+      <div class="svc core"><b>svc-logistica</b><small>core · 2 réplicas</small><i class="db" data-f="1"></i></div>
+      <div class="svc"><b>svc-telemetria</b><i class="db ts" data-f="1"></i></div>
+      <div class="svc"><b>svc-indicadores</b><small>CQRS</small></div>
+      <div class="svc gen"><b>svc-identidade</b><small>gerenciado</small></div>
+    </div>
+    <div class="bus-row">
+      <div class="bus" data-f="2">
+        <span class="bus-name">Eventos</span>
+        <div class="bus-track"><div class="bus-roll">
+          <span>DoacaoRegistrada</span><span>RequisicaoAberta</span><span>AlocacaoConfirmada</span><span>EstoqueInsuficiente</span><span>GuiaEmitida</span><span>LeituraRegistrada</span><span>AlertaCadeiaFria</span>
+          <span>DoacaoRegistrada</span><span>RequisicaoAberta</span><span>AlocacaoConfirmada</span><span>EstoqueInsuficiente</span><span>GuiaEmitida</span><span>LeituraRegistrada</span><span>AlertaCadeiaFria</span>
+        </div></div>
+        <i class="pulse"></i><i class="pulse"></i><i class="pulse"></i>
+      </div>
+      <div class="fn" data-f="3"><b>fn-guia-transporte</b><small>Cloudflare Workers · já existe ✓</small></div>
+    </div>
+  </div>
+  <p class="rule" data-f="4">Nenhum serviço lê o banco do outro.</p>
+  <aside class="notes">
+    <ul>
+      <li>Clientes (web, hospitais via REST, app do motorista) → <b>API Gateway</b>: roteamento, JWT, rate limit, CORS.</li>
+      <li><b>Clique 1:</b> banco por serviço — PostgreSQL por contexto; telemetria em séries temporais.</li>
+      <li><b>Clique 2:</b> barramento de eventos (RabbitMQ ou SNS+SQS).</li>
+      <li><b>Clique 3:</b> serverless opcional — fn-guia-transporte já roda em Cloudflare Workers; fn-notificacoes por evento.</li>
+      <li><b>Clique 4:</b> integração só por API ou evento.</li>
+    </ul>
+    <p>Plataforma transversal: segredos em cofre, TLS, JWT validado no gateway; retry + DLQ, outbox, idempotência; GitHub Actions → GHCR/ECR → deploy por serviço; logs centralizados, métricas, OpenTelemetry, /actuator/health.</p>
+  </aside>
+</section>
+
+<!-- 11 · STRANGLER FIG -->
+<section class="slide" data-title="Strangler Fig">
+  <div class="eyebrow">Como chegar lá</div>
+  <h2>Strangler Fig: evoluir <em>sem reescrever</em></h2>
+  <div class="body road">
+    <div class="track"><i class="fill"></i><span class="dot d1"></span><span class="dot d2"></span><span class="dot d3"></span></div>
+    <div class="phases">
+      <div class="phase" data-f="1"><small>Fase 1 · ~3 semanas</small><b>Monólito modular</b><span>pacotes por contexto · outbox · schema por contexto</span><em class="tag a">Cenário A</em></div>
+      <div class="phase hl" data-f="2"><small>Fase 2 · ~3 meses</small><b>Extrair o que dói</b><span>gateway · logística · telemetria · broker</span><em class="tag b">Cenário B · alvo</em></div>
+      <div class="phase" data-f="3"><small>Fase 3 · sob gatilho</small><b>Microsserviços</b><span class="triggers"><i>&gt;50 hospitais</i><i>&gt;1 mi leituras/dia</i><i>SLA 99,9%</i><i>&gt;3 squads</i></span><em class="tag c">Cenário C</em></div>
+    </div>
+  </div>
+  <p class="rule small" data-f="4">A guia de transporte já roda serverless: o 1º pedaço da fase 2 está pronto.</p>
+  <aside class="notes">
+    <ul>
+      <li><b>Fase 1 (~3 semanas):</b> pacotes por contexto, três camadas, eventos internos + outbox, um schema por contexto, testes ArchUnit. = Cenário A.</li>
+      <li><b>Fase 2 (~3 meses):</b> gateway na frente; saem svc-logistica (core) e svc-telemetria (volume); broker gerenciado; funções serverless. = Cenário B (alvo).</li>
+      <li><b>Fase 3 (sob gatilho):</b> demais contextos + infra como código, só se: &gt;50 hospitais, &gt;1 milhão de leituras/dia, SLA 99,9% ou &gt;3 squads. = Cenário C.</li>
+    </ul>
+  </aside>
+</section>
+
+<!-- 12 · ORÇAMENTO -->
+<section class="slide" data-title="Orçamento" data-steps="4">
+  <div class="eyebrow">Orçamento · 12 meses</div>
+  <h2>Três cenários, três preços</h2>
+  <div class="body bars">
+    <div class="barcol a" data-f="1">
+      <div class="val">R$ <span data-count="11.9" data-dec="1">0</span> mil</div>
+      <div class="bar" style="--h:.1075"></div>
+      <b>A</b><span>Monólito modular</span><em>1,0×</em>
+    </div>
+    <div class="barcol b" data-f="2">
+      <div class="val">R$ <span data-count="46.3" data-dec="1">0</span> mil</div>
+      <div class="bar" style="--h:.418"><span class="alvo">ALVO</span></div>
+      <b>B</b><span>Híbrido</span><em>3,9×</em>
+    </div>
+    <div class="barcol c" data-f="3">
+      <div class="val">R$ <span data-count="110.7" data-dec="1">0</span> mil</div>
+      <div class="bar" style="--h:1"></div>
+      <b>C</b><span>Microsserviços AWS</span><em>9,3×</em>
+    </div>
+  </div>
+  <p class="foot" data-f="3">infra 12 meses + esforço de implantação · R$ 5,40/US$ · R$ 80/h · planilha em docs/arquitetura/orcamento</p>
+  <aside class="notes">
+    <ul>
+      <li><b>A — Monólito modular:</b> Render Web + PostgreSQL + Workers Free. US$ 44,62/mês · 112 h → R$ 11,9 mil.</li>
+      <li><b>B — Híbrido (alvo):</b> monólito + logística + telemetria, RabbitMQ, Redis, Sentry. US$ 200,62/mês · 416 h → R$ 46,3 mil.</li>
+      <li><b>C — Microsserviços AWS:</b> ECS Fargate, 6 RDS, ALB, SNS/SQS, NAT, CloudWatch. US$ 498,91/mês · 980 h → R$ 110,7 mil.</li>
+    </ul>
+    <p>Custo total = infra 12 meses + esforço. Câmbio e valor-hora editáveis na aba Premissas. Preços de lista estimados (nov/2026). Último clique destaca o B.</p>
+  </aside>
+</section>
+
+<!-- 13 · RECOMENDAÇÃO -->
+<section class="slide" data-title="Recomendação">
+  <div class="eyebrow">Decisão · 7 ADRs</div>
+  <div class="body reco">
+    <p class="big">Fazer o <b class="ka">A</b> agora.</p>
+    <p class="big" data-f="1">Chegar ao <b class="kb">B</b> em 12 meses.</p>
+    <p class="mid" data-f="2">Isola o core logístico e a telemetria por <strong>~<span data-count="42">0</span>%</strong> do custo do C.</p>
+    <div class="next" data-f="3">
+      <small>Próximos passos</small>
+      <span>Pacotes por contexto + agregado Alocacao</span>
+      <span>Gherkin automatizado com Cucumber</span>
+      <span>ArchUnit para camadas e contextos</span>
+    </div>
+  </div>
+  <aside class="notes">
+    <p><b>ADRs:</b></p>
+    <ul>
+      <li>001 DDD: subdomínios + 8 bounded contexts</li>
+      <li>002 Três camadas em cada contexto</li>
+      <li>003 Monólito modular + Strangler Fig</li>
+      <li>004 Eventos de domínio (outbox, DLQ)</li>
+      <li>005 Banco por serviço</li>
+      <li>006 Serverless só para funções pontuais</li>
+      <li>007 Cenário B como alvo de 12 meses</li>
+    </ul>
+  </aside>
+</section>
+
+<!-- 14 · OBRIGADO -->
+<section class="slide cover end" data-title="Obrigado">
+  <h1 class="logo"><span class="drop"></span>Obrigado!</h1>
+  <svg class="ecg" viewBox="0 0 1200 120" aria-hidden="true">
+    <path pathLength="1" d="M0 60 H430 L455 60 L475 22 L500 104 L524 8 L548 86 L568 60 H1200"/>
+  </svg>
+  <p class="lead">Perguntas?</p>
+  <p class="team">Documento, diagramas, planilha e ADRs em <code>docs/arquitetura/</code></p>
+  <aside class="notes"><p>Abrir para perguntas.</p></aside>
+</section>
+
+</main>
+</div>
+
+<aside class="presenter-panel" id="pp">
+  <div class="pp-top"><span id="pp-timer">00:00</span><span id="pp-pos"></span><button id="pp-reset" type="button">zerar</button></div>
+  <div class="pp-next">A seguir: <b id="pp-next"></b></div>
+  <div class="pp-notes" id="pp-notes"></div>
+</aside>
+</div>
+
+<div class="hud"><div class="progress"><i id="bar"></i></div><span id="counter"></span></div>
+<div class="notes-overlay" id="notes-overlay"></div>
+<div class="blackout" id="blackout"></div>
+<div class="hint" id="hint">→ avançar · ← voltar · <b>N</b> notas · <b>P</b> modo apresentador · <b>B</b> tela preta · <b>F</b> tela cheia</div>
+
+<script src="script.js"></script>
+</body>
+</html>

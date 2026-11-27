@@ -1,0 +1,1175 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>HemoFlow — Docker Pitch Deck | Do Código ao Ambiente Executável</title>
+  <meta name="description" content="Apresentação interativa ultra-premium sobre a conteinerização e orquestração Docker do projeto HemoFlow (CESAR School 2026.2).">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+  <!-- Dynamic Ambient Background -->
+  <div class="bg-canvas" aria-hidden="true"></div>
+
+  <!-- App Shell -->
+  <div class="app-shell" id="app">
+
+    <!-- Top Presentation Navigation Bar -->
+    <header class="top-nav" role="banner">
+      <div class="brand-section">
+        <div class="logo-icon" title="HemoFlow Docker Infrastructure">
+          <svg viewBox="0 0 24 24">
+            <!-- Docker Whale Icon with Blood Drop Node Accent -->
+            <path d="M13.9 8.2h2.2v2H13.9v-2zm-2.7 0h2.2v2h-2.2v-2zm-2.7 0h2.2v2H8.5v-2zm-2.7 0H8v2H5.8v-2zm8.1-2.5h2.2v2h-2.2v-2zm-2.7 0h2.2v2h-2.2v-2zm-2.7 0h2.2v2H8.5v-2zm13.7 6.4c-.4-.3-1.6-.5-2.5-.2-.1-.5-.5-1.5-1.7-2.1-.2-.1-.4-.2-.6-.2-.3.4-.6.9-.7 1.5-.7-.4-1.8-.6-3.2-.6H2.1c-.2 1.3.1 3.5 1.5 5.5 1.6 2.3 4.2 3.5 7.6 3.5 6.1 0 10.1-3.2 11.4-6.8.5 0 1.2-.1 1.7-.6z" />
+          </svg>
+        </div>
+        <div class="brand-title">
+          <span>HemoFlow</span>
+          <span class="brand-tag">Docker Pitch</span>
+        </div>
+      </div>
+
+      <div class="slide-title-crumb">
+        <span class="sep">/</span>
+        <span class="active-topic" id="currentTopicCrumb">Abertura</span>
+      </div>
+
+      <div class="nav-actions">
+        <div class="slide-counter" aria-live="polite">
+          <span class="current-num" id="currentSlideDisplay">01</span> / 09
+        </div>
+
+        <button class="btn-icon" id="btnHelp" title="Atalhos do Teclado (?)" aria-label="Atalhos">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"></circle>
+            <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
+            <line x1="12" y1="17" x2="12.01" y2="17"></line>
+          </svg>
+        </button>
+
+        <button class="btn-icon" id="btnOverview" title="Visão Geral dos Slides (O)" aria-label="Visão Geral">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="3" y="3" width="7" height="7"></rect>
+            <rect x="14" y="3" width="7" height="7"></rect>
+            <rect x="14" y="14" width="7" height="7"></rect>
+            <rect x="3" y="14" width="7" height="7"></rect>
+          </svg>
+        </button>
+
+        <button class="btn-icon" id="btnFullscreen" title="Tela Cheia (F)" aria-label="Alternar Tela Cheia">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"></path>
+          </svg>
+        </button>
+      </div>
+
+      <!-- Top Progress Bar -->
+      <div class="progress-bar-container">
+        <div class="progress-bar-fill" id="progressBar"></div>
+      </div>
+    </header>
+
+    <!-- Slides Viewport -->
+    <main class="slides-viewport" id="viewport">
+
+      <!-- =====================================================================
+           SLIDE 1: ABERTURA CINEMATOGRÁFICA
+           ===================================================================== -->
+      <section class="slide active hero-slide" id="slide-1" data-title="Abertura">
+        <div class="hero-container">
+          <div class="hero-pill">
+            <span class="pulse-indicator"></span>
+            <span>Projeto Integrador CESAR School 2026.2 • Engenharia de Software</span>
+          </div>
+
+          <h1 class="hero-heading">
+            Docker: do código ao <br>
+            <span class="docker-highlight">ambiente executável.</span>
+          </h1>
+
+          <p class="hero-desc">
+            Como conteinerizamos, orquestramos e blindamos a cadeia fria do <strong>HemoFlow</strong> — da compilação multi-stage em <strong>Java 17</strong> ao <strong>PostgreSQL 16</strong> com persistência e healthchecks reais.
+          </p>
+
+          <div class="hero-infra-cards">
+            <div class="hero-card">
+              <div class="hero-card-header">
+                <span class="hero-card-tag">BUILD</span>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#0db7ed" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+              </div>
+              <div class="hero-card-title">Multi-Stage Build</div>
+              <div class="hero-card-sub">Maven Temurin 17 ➔ JRE Jammy minimalista com usuário não-root (UID 1001).</div>
+            </div>
+
+            <div class="hero-card">
+              <div class="hero-card-header">
+                <span class="hero-card-tag">ORCHESTRATION</span>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#2496ed" stroke-width="2"><rect x="2" y="2" width="20" height="8" rx="2"/><rect x="2" y="14" width="20" height="8" rx="2"/><line x1="6" y1="6" x2="6.01" y2="6"/><line x1="6" y1="18" x2="6.01" y2="18"/></svg>
+              </div>
+              <div class="hero-card-title">Docker Compose</div>
+              <div class="hero-card-sub">Stack completa com API Spring Boot + PostgreSQL 16.4 Alpine isolado.</div>
+            </div>
+
+            <div class="hero-card">
+              <div class="hero-card-header">
+                <span class="hero-card-tag">RESILIENCE</span>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+              </div>
+              <div class="hero-card-title">Healthcheck Gate</div>
+              <div class="hero-card-sub">Dependência condicional: API aguarda o status healthy do banco via <code>pg_isready</code>.</div>
+            </div>
+
+            <div class="hero-card">
+              <div class="hero-card-header">
+                <span class="hero-card-tag">PIPELINE</span>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+              </div>
+              <div class="hero-card-title">CI/CD & Smoke Test</div>
+              <div class="hero-card-sub">Validação de compose no GitHub Actions, push no GHCR e deploy monitorado.</div>
+            </div>
+          </div>
+
+          <div class="hero-instruction">
+            <span>Pressione <span class="keycap">Espaço</span> ou <span class="keycap">→</span> para avançar</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- =====================================================================
+           SLIDE 2: O PROBLEMA QUE PRECISÁVAMOS RESOLVER
+           ===================================================================== -->
+      <section class="slide" id="slide-2" data-title="Contexto & O Problema">
+        <header class="slide-header">
+          <div class="slide-badge">
+            <span class="dot"></span>
+            <span>Desafio de Engenharia</span>
+          </div>
+          <h2 class="slide-title">O problema que <span class="gradient-text">precisávamos resolver</span></h2>
+          <p class="slide-subtitle">
+            O HemoFlow gerencia a alocação crítica de hemocomponentes (ABO/Rh + FEFO) e roteamento de cadeia fria entre o HEMOPE e 11 hospitais de Recife. A infraestrutura precisava garantir integridade e prontidão imediatas.
+          </p>
+        </header>
+
+        <div class="slide-content">
+          <div class="split-grid-2">
+            <!-- Problem Column -->
+            <div class="problem-card">
+              <div class="card-title-bar">
+                <h3>
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+                  Sem Docker: O Labirinto do Ambiente
+                </h3>
+                <span class="badge-tag danger">Gargalos Reais</span>
+              </div>
+
+              <div class="items-list">
+                <div class="item-row danger">
+                  <div class="item-icon danger">✕</div>
+                  <div class="item-content">
+                    <h4>Drift de Versões & "Na minha máquina funciona"</h4>
+                    <p>Divergência entre JDKs instalados (Java 17 Temurin vs OpenJDK genérico), versões de Maven e variáveis de ambiente em Windows, macOS e Linux.</p>
+                  </div>
+                </div>
+
+                <div class="item-row danger">
+                  <div class="item-icon danger">✕</div>
+                  <div class="item-content">
+                    <h4>Dependência Externa de PostgreSQL</h4>
+                    <p>Obrigatoriedade de cada desenvolvedor instalar e configurar o PostgreSQL 16 manualmente com usuário <code>hemoflow</code>, porta 5432 e banco local.</p>
+                  </div>
+                </div>
+
+                <div class="item-row danger">
+                  <div class="item-icon danger">✕</div>
+                  <div class="item-content">
+                    <h4>Race Condition na Inicialização</h4>
+                    <p>O Spring Boot iniciava antes do PostgreSQL aceitar conexões TCP, resultando em falhas de conexão imediatas (Connection Refused) na subida.</p>
+                  </div>
+                </div>
+
+                <div class="item-row danger">
+                  <div class="item-icon danger">✕</div>
+                  <div class="item-content">
+                    <h4>Risco de Poluição e Perda de Estado</h4>
+                    <p>Falta de separação limpa entre dados sintéticos de teste e banco de desenvolvimento, com difícil replicação no pipeline de CI/CD.</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Solution Column -->
+            <div class="solution-card">
+              <div class="card-title-bar">
+                <h3>
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#2496ed" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="9 12 11 14 15 10"/></svg>
+                  Com Docker: O Ambiente Blindado
+                </h3>
+                <span class="badge-tag success">Implementado</span>
+              </div>
+
+              <div class="items-list">
+                <div class="item-row success">
+                  <div class="item-icon success">✓</div>
+                  <div class="item-content">
+                    <h4>Multi-Stage Build Padronizado</h4>
+                    <p>O build ocorre dentro de <code>maven:3.9.9-eclipse-temurin-17</code> com dependências em cache e geração de runtime leve em <code>eclipse-temurin:17-jre-jammy</code>.</p>
+                  </div>
+                </div>
+
+                <div class="item-row success">
+                  <div class="item-icon success">✓</div>
+                  <div class="item-content">
+                    <h4>Orquestração com <code>compose.yaml</code></h4>
+                    <p>Um único comando levanta a API Java e o container <code>postgres:16.4-alpine</code>, isolando a porta 5432 dentro da rede interna.</p>
+                  </div>
+                </div>
+
+                <div class="item-row success">
+                  <div class="item-icon success">✓</div>
+                  <div class="item-content">
+                    <h4>Coordenação por Healthcheck (Zero Race Condition)</h4>
+                    <p>Uso de <code>depends_on.db.condition: service_healthy</code>. A API aguarda o PostgreSQL responder ao <code>pg_isready</code> antes de iniciar.</p>
+                  </div>
+                </div>
+
+                <div class="item-row success">
+                  <div class="item-icon success">✓</div>
+                  <div class="item-content">
+                    <h4>Persistência Controlada via Volume Nomeado</h4>
+                    <p>Volume <code>hemoflow_pgdata</code> preserva o estado entre reinicializações e permite descarte limpo através de <code>docker compose down -v</code>.</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- =====================================================================
+           SLIDE 3: A ARQUITETURA DO PROJETO (DIAGRAMA INTERATIVO)
+           ===================================================================== -->
+      <section class="slide" id="slide-3" data-title="Arquitetura do Projeto">
+        <header class="slide-header">
+          <div class="slide-badge">
+            <span class="dot"></span>
+            <span>Diagrama Interativo</span>
+          </div>
+          <h2 class="slide-title">A arquitetura <span class="gradient-text">real do projeto</span></h2>
+          <p class="slide-subtitle">
+            Topologia de containers, rede bridge isolada, volume de dados e healthchecks declarados em <code>compose.yaml</code>. Clique nos componentes para inspecionar a configuração.
+          </p>
+        </header>
+
+        <div class="slide-content">
+          <div class="arch-layout">
+            <!-- Interactive Visual Canvas -->
+            <div class="arch-canvas">
+              <div class="arch-canvas-header">
+                <h4>Topologia Docker • HemoFlow Stack</h4>
+                <div class="interactive-hint">
+                  <span class="pulse-dot"></span>
+                  <span>Clique em um componente para detalhes</span>
+                </div>
+              </div>
+
+              <div class="arch-topology-view">
+                <!-- Host Boundary -->
+                <div class="host-boundary arch-node" id="node-host" data-type="host">
+                  <span class="boundary-label">Host Machine (localhost)</span>
+                  <div class="node-header">
+                    <span class="node-title">Porta Publicada: <strong>:8080</strong> ➔ Container: <strong>:8080</strong></span>
+                    <span class="node-badge">Browser / Client</span>
+                  </div>
+                  <div class="node-meta">
+                    <span>Acessos externos: <code>http://localhost:8080</code> (Endpoints REST & Health Actuator)</span>
+                  </div>
+                </div>
+
+                <!-- Bridge Network Box -->
+                <div class="bridge-network-box">
+                  <span class="bridge-network-label">Rede Bridge: hemoflow-net (Driver: bridge)</span>
+
+                  <div class="containers-row">
+                    <!-- Service API -->
+                    <div class="arch-node selected" id="node-api" data-type="api">
+                      <div class="node-header">
+                        <span class="node-title">
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#0db7ed" stroke-width="2"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/></svg>
+                          hemoflow-api
+                        </span>
+                        <span class="node-badge healthy">healthy</span>
+                      </div>
+                      <div class="node-meta">
+                        <span><strong>Build:</strong> Contexto local (Dockerfile)</span>
+                        <span><strong>Base:</strong> eclipse-temurin:17-jre-jammy</span>
+                        <span><strong>User:</strong> hemoflow (UID 1001)</span>
+                        <span><strong>Depends on:</strong> db (service_healthy)</span>
+                        <span><strong>Healthcheck:</strong> curl /actuator/health</span>
+                      </div>
+                    </div>
+
+                    <!-- Service DB -->
+                    <div class="arch-node" id="node-db" data-type="db">
+                      <div class="node-header">
+                        <span class="node-title">
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#2496ed" stroke-width="2"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>
+                          hemoflow-db
+                        </span>
+                        <span class="node-badge healthy">healthy</span>
+                      </div>
+                      <div class="node-meta">
+                        <span><strong>Imagem:</strong> postgres:16.4-alpine</span>
+                        <span><strong>Porta Interna:</strong> 5432 (não exposta no host)</span>
+                        <span><strong>DNS Alias:</strong> <code>db</code></span>
+                        <span><strong>Healthcheck:</strong> pg_isready -U hemoflow</span>
+                        <span><strong>Volume:</strong> hemoflow_pgdata</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Volume Mount Indicator -->
+                  <div class="volume-mount-indicator">
+                    <div class="volume-node" id="node-volume" data-type="volume">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/><path d="M9 21V9"/></svg>
+                      <span>Volume Nomeado: <strong>hemoflow_pgdata</strong> ➔ /var/lib/postgresql/data</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Inspector Sidebar -->
+            <div class="arch-inspector" id="archInspector">
+              <div class="inspector-header">
+                <span class="inspector-title" id="inspectorTitle">hemoflow-api</span>
+                <span class="inspector-type" id="inspectorType">Container de Aplicação</span>
+              </div>
+
+              <div class="inspector-section">
+                <span class="inspector-label">Papel na Arquitetura</span>
+                <p class="inspector-desc" id="inspectorRole">
+                  Hospeda a API Spring Boot do HemoFlow. Executa o algoritmo de caminhos mínimos (Dijkstra) para a logística da cadeia fria e alocação de hemocomponentes por FEFO e compatibilidade ABO/Rh.
+                </p>
+              </div>
+
+              <div class="inspector-section">
+                <span class="inspector-label">Configuração em <code>compose.yaml</code></span>
+                <pre class="inspector-code" id="inspectorCode">api:
+  build:
+    context: .
+    dockerfile: Dockerfile
+    args:
+      GIT_SHA: ${GIT_SHA:-local-compose}
+      APP_VERSION: ${APP_VERSION:-0.0.1-SNAPSHOT}
+  container_name: hemoflow-api
+  restart: unless-stopped
+  depends_on:
+    db:
+      condition: service_healthy
+  ports:
+    - "${PORT:-8080}:${PORT:-8080}"
+  environment:
+    SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-postgres}
+    SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/hemoflow
+  healthcheck:
+    test: ["CMD-SHELL", "curl -fsS http://localhost:$${PORT:-8080}/actuator/health || exit 1"]
+    interval: 15s
+    timeout: 5s
+    retries: 5
+    start_period: 40s</pre>
+              </div>
+
+              <div class="inspector-section">
+                <span class="inspector-label">Benefício de Engenharia</span>
+                <p class="inspector-desc" id="inspectorBenefit">
+                  A API nunca tenta conectar no banco prematuramente devido à condição <code>service_healthy</code>, garantindo inicialização limpa e determinística.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- =====================================================================
+           SLIDE 4: POR DENTRO DO DOCKERFILE
+           ===================================================================== -->
+      <section class="slide" id="slide-4" data-title="Por Dentro do Dockerfile">
+        <header class="slide-header">
+          <div class="slide-badge">
+            <span class="dot"></span>
+            <span>Construção da Imagem</span>
+          </div>
+          <h2 class="slide-title">Por dentro do <span class="gradient-text">Dockerfile</span></h2>
+          <p class="slide-subtitle">
+            Análise do <code>Dockerfile</code> autêntico do HemoFlow: padrão Multi-Stage Build, otimização de cache de dependências e segurança com usuário não-root.
+          </p>
+        </header>
+
+        <div class="slide-content">
+          <div class="dockerfile-layout">
+            <!-- Code Viewer with Interactive Lines -->
+            <div class="code-viewer-panel">
+              <div class="code-viewer-header">
+                <span>Dockerfile (37 linhas)</span>
+                <div class="stages-tabs">
+                  <button class="stage-tab-btn active" id="btnStage1">Estágio 1: Build (Maven)</button>
+                  <button class="stage-tab-btn" id="btnStage2">Estágio 2: Runtime (JRE)</button>
+                </div>
+              </div>
+
+              <div class="code-lines-container" id="dockerfileLinesContainer">
+                <!-- Dynamically populated or rendered -->
+                <div class="code-line highlight" data-step="1">
+                  <span class="line-num">1</span>
+                  <span class="line-text"><span class="kw-docker">FROM</span> maven:3.9.9-eclipse-temurin-17 <span class="kw-docker">AS</span> build</span>
+                </div>
+                <div class="code-line" data-step="2">
+                  <span class="line-num">2</span>
+                  <span class="line-text"><span class="kw-docker">WORKDIR</span> /app</span>
+                </div>
+                <div class="code-line" data-step="3">
+                  <span class="line-num">4</span>
+                  <span class="line-text"><span class="kw-docker">COPY</span> pom.xml mvnw ./</span>
+                </div>
+                <div class="code-line" data-step="3">
+                  <span class="line-num">5</span>
+                  <span class="line-text"><span class="kw-docker">COPY</span> .mvn .mvn</span>
+                </div>
+                <div class="code-line highlight" data-step="4">
+                  <span class="line-num">6</span>
+                  <span class="line-text"><span class="kw-docker">RUN</span> chmod +x mvnw && ./mvnw -B dependency:go-offline</span>
+                </div>
+                <div class="code-line" data-step="5">
+                  <span class="line-num">8</span>
+                  <span class="line-text"><span class="kw-docker">COPY</span> src src</span>
+                </div>
+                <div class="code-line highlight" data-step="6">
+                  <span class="line-num">9</span>
+                  <span class="line-text"><span class="kw-docker">RUN</span> ./mvnw -B verify</span>
+                </div>
+                <div class="code-line" data-step="7">
+                  <span class="line-num">11</span>
+                  <span class="line-text"><span class="kw-docker">FROM</span> eclipse-temurin:17-jre-jammy <span class="kw-docker">AS</span> runtime</span>
+                </div>
+                <div class="code-line" data-step="8">
+                  <span class="line-num">17</span>
+                  <span class="line-text"><span class="kw-docker">LABEL</span> org.opencontainers.image.title=<span class="str-docker">"HemoFlow API"</span></span>
+                </div>
+                <div class="code-line highlight" data-step="9">
+                  <span class="line-num">26</span>
+                  <span class="line-text"><span class="kw-docker">RUN</span> groupadd --system --gid 1001 hemoflow && useradd --system --uid 1001 --gid hemoflow --shell /sbin/nologin hemoflow</span>
+                </div>
+                <div class="code-line highlight" data-step="10">
+                  <span class="line-num">29</span>
+                  <span class="line-text"><span class="kw-docker">COPY</span> --from=build --chown=hemoflow:hemoflow /app/target/*.jar /app/app.jar</span>
+                </div>
+                <div class="code-line" data-step="11">
+                  <span class="line-num">31</span>
+                  <span class="line-text"><span class="kw-docker">USER</span> hemoflow</span>
+                </div>
+                <div class="code-line" data-step="12">
+                  <span class="line-num">32</span>
+                  <span class="line-text"><span class="kw-docker">EXPOSE</span> 8080</span>
+                </div>
+                <div class="code-line highlight" data-step="13">
+                  <span class="line-num">34</span>
+                  <span class="line-text"><span class="kw-docker">HEALTHCHECK</span> --interval=15s --timeout=5s --start-period=40s --retries=5 CMD curl -fsS http://localhost:${PORT}/actuator/health || exit 1</span>
+                </div>
+                <div class="code-line" data-step="14">
+                  <span class="line-num">37</span>
+                  <span class="line-text"><span class="kw-docker">ENTRYPOINT</span> [<span class="str-docker">"java"</span>, <span class="str-docker">"-jar"</span>, <span class="str-docker">"/app/app.jar"</span>]</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Details Explanation Panel -->
+            <div class="dockerfile-details-panel" id="dockerfileExplainer">
+              <div class="step-card active">
+                <div class="step-title">
+                  <span class="badge-tag success">Estágio 1 • Linhas 4-6</span>
+                  Cache Otimizado de Dependências Maven
+                </div>
+                <div class="step-desc">
+                  O arquivo <code>pom.xml</code> e a pasta <code>.mvn</code> são copiados antes do código-fonte. O comando <code>./mvnw -B dependency:go-offline</code> baixa todas as dependências em uma camada isolada de cache.
+                </div>
+                <div class="step-why">
+                  <strong>Por que no HemoFlow:</strong> Alterações no código em <code>src/</code> não forçam o re-download de ~200MB de bibliotecas Maven a cada novo build.
+                </div>
+              </div>
+
+              <div class="step-card">
+                <div class="step-title">
+                  <span class="badge-tag success">Estágio 1 • Linha 9</span>
+                  Gate de Testes no Próprio Build
+                </div>
+                <div class="step-desc">
+                  O comando <code>./mvnw -B verify</code> compila e executa toda a suíte de testes (39 testes unitários, integração e cenários BDD Cucumber). Se qualquer teste falhar, a imagem sequer é gerada.
+                </div>
+                <div class="step-why">
+                  <strong>Por que no HemoFlow:</strong> Garante que nenhuma imagem com regras de compatibilidade ABO/Rh ou FEFO quebradas seja empacotada.
+                </div>
+              </div>
+
+              <div class="step-card">
+                <div class="step-title">
+                  <span class="badge-tag success">Estágio 2 • Linhas 26-31</span>
+                  Segurança: Princípio do Menor Privilégio
+                </div>
+                <div class="step-desc">
+                  Criação de usuário dedicado de sistema <code>hemoflow</code> (UID 1001, GID 1001) com shell restrita <code>/sbin/nologin</code>. O artefato compilado é copiado com <code>--chown=hemoflow:hemoflow</code> e executado sob <code>USER hemoflow</code>.
+                </div>
+                <div class="step-why">
+                  <strong>Por que no HemoFlow:</strong> Elimina o risco de execução como <code>root</code>, protegendo o sistema host contra eventuais brechas de segurança no container.
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- =====================================================================
+           SLIDE 5: DOCKER COMPOSE E ORQUESTRAÇÃO LOCAL
+           ===================================================================== -->
+      <section class="slide" id="slide-5" data-title="Docker Compose & Orquestração">
+        <header class="slide-header">
+          <div class="slide-badge">
+            <span class="dot"></span>
+            <span>Orquestração Declarativa</span>
+          </div>
+          <h2 class="slide-title">Docker Compose: <span class="gradient-text">stack coordenada</span></h2>
+          <p class="slide-subtitle">
+            Como o <code>compose.yaml</code> coordena dependências, redes, persistência e saúde dos serviços em um único manifesto declarativo reproduzível.
+          </p>
+        </header>
+
+        <div class="slide-content">
+          <div class="compose-grid">
+            <!-- Left Features Column -->
+            <div class="compose-features-col">
+              <div class="feature-box">
+                <div class="feature-header">
+                  <h4>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                    1. Dependência Condicional (service_healthy)
+                  </h4>
+                  <span class="badge-tag success">depends_on</span>
+                </div>
+                <p class="feature-desc">
+                  O Compose aguarda o PostgreSQL passar no teste de saúde (<code>pg_isready</code>) antes de disparar o container da API. Evita o erro clássico de <em>Connection Refused</em> durante o boot do Spring.
+                </p>
+                <div class="feature-snippet">
+depends_on:
+  db:
+    condition: service_healthy
+                </div>
+              </div>
+
+              <div class="feature-box">
+                <div class="feature-header">
+                  <h4>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#2496ed" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/></svg>
+                    2. DNS Embutido & Rede Bridge Isolada
+                  </h4>
+                  <span class="badge-tag success">hemoflow-net</span>
+                </div>
+                <p class="feature-desc">
+                  A API se conecta via JDBC usando o hostname <code>db</code> (resolvido automaticamente pelo Docker). A porta 5432 do banco não fica exposta no host, reduzindo a superfície de ataque.
+                </p>
+                <div class="feature-snippet">
+SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/hemoflow
+networks:
+  - hemoflow-net
+                </div>
+              </div>
+
+              <div class="feature-box">
+                <div class="feature-header">
+                  <h4>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
+                    3. Persistência de Volume (hemoflow_pgdata)
+                  </h4>
+                  <span class="badge-tag success">Named Volume</span>
+                </div>
+                <p class="feature-desc">
+                  Os dados sintéticos de hospitais, bolsas de sangue e requisições são preservados após <code>docker compose down</code>. O reset intencional só ocorre se o usuário passar a flag <code>-v</code>.
+                </p>
+                <div class="feature-snippet">
+volumes:
+  hemoflow_pgdata:
+    name: hemoflow_pgdata
+                </div>
+              </div>
+            </div>
+
+            <!-- Right YAML Display Box -->
+            <div class="code-viewer-panel">
+              <div class="code-viewer-header">
+                <span>compose.yaml (Visão Sintética Integral)</span>
+                <span class="badge-tag success">Docker Compose v2</span>
+              </div>
+              <div class="code-lines-container selectable" style="padding: 14px 18px; font-size: 11px;">
+<span class="kw-docker">services:</span>
+  <span class="kw-docker">db:</span>
+    <span class="str-docker">image:</span> postgres:16.4-alpine
+    <span class="str-docker">container_name:</span> hemoflow-db
+    <span class="str-docker">restart:</span> unless-stopped
+    <span class="str-docker">environment:</span>
+      <span class="str-docker">POSTGRES_DB:</span> ${POSTGRES_DB:-hemoflow}
+      <span class="str-docker">POSTGRES_USER:</span> ${POSTGRES_USER:-hemoflow}
+      <span class="str-docker">POSTGRES_PASSWORD:</span> ${POSTGRES_PASSWORD:-hemoflow_local_dev}
+    <span class="str-docker">volumes:</span>
+      - hemoflow_pgdata:/var/lib/postgresql/data
+    <span class="str-docker">networks:</span>
+      - hemoflow-net
+    <span class="str-docker">healthcheck:</span>
+      <span class="str-docker">test:</span> ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      <span class="str-docker">interval:</span> 10s
+      <span class="str-docker">retries:</span> 5
+
+  <span class="kw-docker">api:</span>
+    <span class="str-docker">build:</span>
+      <span class="str-docker">context:</span> .
+      <span class="str-docker">dockerfile:</span> Dockerfile
+    <span class="str-docker">container_name:</span> hemoflow-api
+    <span class="str-docker">depends_on:</span>
+      <span class="kw-docker">db:</span>
+        <span class="str-docker">condition:</span> service_healthy
+    <span class="str-docker">ports:</span>
+      - "${PORT:-8080}:${PORT:-8080}"
+    <span class="str-docker">environment:</span>
+      <span class="str-docker">SPRING_PROFILES_ACTIVE:</span> postgres
+      <span class="str-docker">SPRING_DATASOURCE_URL:</span> jdbc:postgresql://db:5432/hemoflow
+    <span class="str-docker">healthcheck:</span>
+      <span class="str-docker">test:</span> ["CMD-SHELL", "curl -fsS http://localhost:$${PORT:-8080}/actuator/health || exit 1"]
+
+<span class="kw-docker">volumes:</span>
+  <span class="str-docker">hemoflow_pgdata:</span>
+
+<span class="kw-docker">networks:</span>
+  <span class="str-docker">hemoflow-net:</span>
+    <span class="str-docker">driver:</span> bridge
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- =====================================================================
+           SLIDE 6: O VÍDEO — CÓDIGO E INFRAESTRUTURA GANHANDO VIDA (SIMULAÇÃO)
+           ===================================================================== -->
+      <section class="slide" id="slide-6" data-title="Simulação Interativa da Stack">
+        <header class="slide-header">
+          <div class="slide-badge">
+            <span class="dot"></span>
+            <span>Demonstração Audiovisual Simulada</span>
+          </div>
+          <h2 class="slide-title">Código e infraestrutura <span class="gradient-text">ganhando vida</span></h2>
+          <p class="slide-subtitle">
+            Simulação interativa sincronizada entre o manifesto, execução no terminal, orquestração de containers e indicadores de telemetria baseados em evidências reais.
+          </p>
+        </header>
+
+        <div class="slide-content">
+          <div class="demo-cockpit">
+            <!-- Cockpit Toolbar -->
+            <div class="cockpit-toolbar">
+              <div class="playback-controls">
+                <button class="btn-ctrl" id="btnStepBack" title="Etapa Anterior">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="19 20 9 12 19 4 19 20"/><line x1="5" y1="19" x2="5" y2="5"/></svg>
+                </button>
+                <button class="btn-ctrl btn-play" id="btnPlayPause" title="Reproduzir / Pausar">
+                  <svg id="playIcon" width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                  <svg id="pauseIcon" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="display:none;"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>
+                </button>
+                <button class="btn-ctrl" id="btnStepNext" title="Próxima Etapa">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 4 15 12 5 20 5 4"/><line x1="19" y1="5" x2="19" y2="19"/></svg>
+                </button>
+                <button class="btn-ctrl" id="btnRestart" title="Reiniciar Simulação">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 4v6h6"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>
+                </button>
+              </div>
+
+              <div class="timeline-scrubber-box">
+                <div class="scrubber-track" id="scrubberTrack">
+                  <div class="scrubber-fill" id="scrubberFill"></div>
+                  <div class="milestone-marker passed" style="left: 0%;" title="1. Configuração"></div>
+                  <div class="milestone-marker" style="left: 20%;" title="2. Build Multi-Stage"></div>
+                  <div class="milestone-marker" style="left: 40%;" title="3. Rede & Volume"></div>
+                  <div class="milestone-marker" style="left: 60%;" title="4. PostgreSQL Ready"></div>
+                  <div class="milestone-marker" style="left: 80%;" title="5. API Spring Up"></div>
+                  <div class="milestone-marker" style="left: 100%;" title="6. Stack Healthy"></div>
+                </div>
+                <div class="time-readout" id="timeReadout">00:00 / 00:30</div>
+              </div>
+
+              <div class="speed-selector">
+                <button class="btn-speed" data-speed="0.75">0.75x</button>
+                <button class="btn-speed active" data-speed="1">1x</button>
+                <button class="btn-speed" data-speed="1.5">1.5x</button>
+                <button class="btn-speed" data-speed="2">2x</button>
+              </div>
+
+              <div class="watermark-disclaimer">
+                [ SIMULAÇÃO DE ENGENHARIA • BASEADA EM EVIDÊNCIAS ]
+              </div>
+            </div>
+
+            <!-- 4 Synchronized Panels -->
+            <div class="cockpit-panels-grid">
+              <!-- Panel A: Code -->
+              <div class="cockpit-panel">
+                <div class="cockpit-panel-header">
+                  <span>PAINEL A • CÓDIGO</span>
+                  <span class="panel-tag" id="panelCodeFile">compose.yaml</span>
+                </div>
+                <div class="panel-code-body selectable" id="panelCodeContent">
+# Etapa 1: Validando a configuração do ambiente
+services:
+  db:
+    image: postgres:16.4-alpine
+    container_name: hemoflow-db
+  api:
+    build: .
+    depends_on:
+      db:
+        condition: service_healthy
+                </div>
+              </div>
+
+              <!-- Panel B: Terminal -->
+              <div class="cockpit-panel">
+                <div class="cockpit-panel-header">
+                  <span>PAINEL B • TERMINAL (SAÍDA DA SIMULAÇÃO)</span>
+                  <span class="panel-tag">bash / powershell</span>
+                </div>
+                <div class="panel-term-body selectable" id="panelTermContent">
+<div class="term-line cmd">$ docker compose up --build</div>
+<div class="term-line info">[+] Building 0.0s (0/0)</div>
+<div class="term-line dim">Aguardando comando de execução... <span class="cursor-blink"></span></div>
+                </div>
+              </div>
+
+              <!-- Panel C: Architecture Motion -->
+              <div class="cockpit-panel">
+                <div class="cockpit-panel-header">
+                  <span>PAINEL C • ARQUITETURA EM TEMPO REAL</span>
+                  <span class="panel-tag">Estado da Stack</span>
+                </div>
+                <div class="panel-arch-body">
+                  <!-- Container DB Simulation Box -->
+                  <div class="sim-container-box" id="simBoxDb">
+                    <div class="sim-box-title">hemoflow-db</div>
+                    <div style="font-size: 10px; color: var(--text-muted);">postgres:16.4-alpine</div>
+                    <div class="sim-box-state state-idle" id="simStateDb">IDLE</div>
+                  </div>
+
+                  <!-- Connection Line -->
+                  <div class="sim-connection-link" id="simLink"></div>
+
+                  <!-- Container API Simulation Box -->
+                  <div class="sim-container-box" id="simBoxApi">
+                    <div class="sim-box-title">hemoflow-api</div>
+                    <div style="font-size: 10px; color: var(--text-muted);">eclipse-temurin:17-jre</div>
+                    <div class="sim-box-state state-idle" id="simStateApi">IDLE</div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Panel D: Telemetry Indicators -->
+              <div class="cockpit-panel">
+                <div class="cockpit-panel-header">
+                  <span>PAINEL D • INDICADORES CONTEXTUAIS</span>
+                  <span class="panel-tag">Status Checks</span>
+                </div>
+                <div class="panel-telemetry-body">
+                  <div class="telemetry-card">
+                    <div class="telemetry-title">Build Status</div>
+                    <div class="telemetry-value" id="telBuild">Pronto</div>
+                  </div>
+                  <div class="telemetry-card">
+                    <div class="telemetry-title">hemoflow-db Health</div>
+                    <div class="telemetry-value" id="telDb">Inativo</div>
+                  </div>
+                  <div class="telemetry-card">
+                    <div class="telemetry-title">hemoflow-api Health</div>
+                    <div class="telemetry-value" id="telApi">Inativo</div>
+                  </div>
+                  <div class="telemetry-card">
+                    <div class="telemetry-title">Rede (hemoflow-net)</div>
+                    <div class="telemetry-value" id="telNet">Pendente</div>
+                  </div>
+                  <div class="telemetry-card">
+                    <div class="telemetry-title">Porta 8080 (Host)</div>
+                    <div class="telemetry-value" id="telPort">Fechada</div>
+                  </div>
+                  <div class="telemetry-card">
+                    <div class="telemetry-title">Volume (pgdata)</div>
+                    <div class="telemetry-value" id="telVol">Desconectado</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- =====================================================================
+           SLIDE 7: COMO EXECUTAR O PROJETO (COMANDOS REAIS)
+           ===================================================================== -->
+      <section class="slide" id="slide-7" data-title="Como Executar o Projeto">
+        <header class="slide-header">
+          <div class="slide-badge">
+            <span class="dot"></span>
+            <span>Guia Operacional</span>
+          </div>
+          <h2 class="slide-title">Como executar <span class="gradient-text">o projeto</span></h2>
+          <p class="slide-subtitle">
+            Comandos autênticos para compilar, executar, inspecionar e encerrar o ambiente. Clique no ícone de cópia para transferir o comando para sua área de transferência.
+          </p>
+        </header>
+
+        <div class="slide-content">
+          <div class="commands-grid">
+            <!-- Command 1 -->
+            <div class="command-box">
+              <div class="command-header">
+                <span class="command-badge build">Build & Execução</span>
+                <span style="font-size: 11px; color: var(--text-muted);">Primeiro Boot</span>
+              </div>
+              <div class="command-title">Subir a stack completa com rebuild</div>
+              <p class="command-desc">Compila a imagem multi-stage validando todos os 39 testes e inicializa o PostgreSQL e a API em foreground.</p>
+              <div class="command-code-row">
+                <code>docker compose up --build</code>
+                <button class="btn-copy" data-cmd="docker compose up --build" title="Copiar Comando">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                </button>
+              </div>
+            </div>
+
+            <!-- Command 2 -->
+            <div class="command-box">
+              <div class="command-header">
+                <span class="command-badge build">Background</span>
+                <span style="font-size: 11px; color: var(--text-muted);">Modo Detached</span>
+              </div>
+              <div class="command-title">Subir ambiente em segundo plano</div>
+              <p class="command-desc">Libera o terminal imediatamente, mantendo os containers em execução contínua com política <code>unless-stopped</code>.</p>
+              <div class="command-code-row">
+                <code>docker compose up -d</code>
+                <button class="btn-copy" data-cmd="docker compose up -d" title="Copiar Comando">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                </button>
+              </div>
+            </div>
+
+            <!-- Command 3 -->
+            <div class="command-box">
+              <div class="command-header">
+                <span class="command-badge inspect">Diagnóstico</span>
+                <span style="font-size: 11px; color: var(--text-muted);">Status & Health</span>
+              </div>
+              <div class="command-title">Verificar integridade dos containers</div>
+              <p class="command-desc">Exibe o estado de saúde reportado pelos healthchecks (<code>healthy</code>) de <code>hemoflow-api</code> e <code>hemoflow-db</code>.</p>
+              <div class="command-code-row">
+                <code>docker compose ps</code>
+                <button class="btn-copy" data-cmd="docker compose ps" title="Copiar Comando">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                </button>
+              </div>
+            </div>
+
+            <!-- Command 4 -->
+            <div class="command-box">
+              <div class="command-header">
+                <span class="command-badge inspect">Observabilidade</span>
+                <span style="font-size: 11px; color: var(--text-muted);">Streaming Logs</span>
+              </div>
+              <div class="command-title">Acompanhar logs da API HemoFlow</div>
+              <p class="command-desc">Monitore em tempo real as operações de alocação de sangue (FEFO), cálculo de Dijkstra e logs do Spring Boot.</p>
+              <div class="command-code-row">
+                <code>docker compose logs -f api</code>
+                <button class="btn-copy" data-cmd="docker compose logs -f api" title="Copiar Comando">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                </button>
+              </div>
+            </div>
+
+            <!-- Command 5 -->
+            <div class="command-box">
+              <div class="command-header">
+                <span class="command-badge inspect">Smoke Test</span>
+                <span style="font-size: 11px; color: var(--text-muted);">Validação HTTP</span>
+              </div>
+              <div class="command-title">Validar endpoint de saúde (Actuator)</div>
+              <p class="command-desc">Confirma se a API está online e se a conectividade com o banco PostgreSQL está saudável (retorna <code>status: UP</code>).</p>
+              <div class="command-code-row">
+                <code>curl -fsS http://localhost:8080/actuator/health</code>
+                <button class="btn-copy" data-cmd="curl -fsS http://localhost:8080/actuator/health" title="Copiar Comando">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                </button>
+              </div>
+            </div>
+
+            <!-- Command 6 -->
+            <div class="command-box">
+              <div class="command-header">
+                <span class="command-badge teardown">Encerramento</span>
+                <span style="font-size: 11px; color: var(--text-muted);">Preserva Dados</span>
+              </div>
+              <div class="command-title">Parar stack mantendo o banco de dados</div>
+              <p class="command-desc">Para e remove os containers e redes, preservando os estoques e topologias salvos no volume <code>hemoflow_pgdata</code>.</p>
+              <div class="command-code-row">
+                <code>docker compose down</code>
+                <button class="btn-copy" data-cmd="docker compose down" title="Copiar Comando">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- =====================================================================
+           SLIDE 8: O QUE GANHAMOS COM DOCKER
+           ===================================================================== -->
+      <section class="slide" id="slide-8" data-title="Benefícios & Engenharia">
+        <header class="slide-header">
+          <div class="slide-badge">
+            <span class="dot"></span>
+            <span>Impacto no Projeto</span>
+          </div>
+          <h2 class="slide-title">O que ganhamos <span class="gradient-text">com Docker</span></h2>
+          <p class="slide-subtitle">
+            Conexão direta entre as tecnologias implementadas e os ganhos práticos comprovados no HemoFlow, diferenciando o que foi entregue das evoluções futuras.
+          </p>
+        </header>
+
+        <div class="slide-content">
+          <div class="benefits-layout">
+            <!-- 4 Concrete Cards Grid -->
+            <div class="benefits-cards-grid">
+              <div class="benefit-card">
+                <div class="benefit-card-header">
+                  <div class="benefit-icon-wrapper">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="m4.93 4.93 4.24 4.24"/><path d="m14.83 9.17 4.24-4.24"/><path d="m14.83 14.83 4.24 4.24"/><path d="m9.17 14.83-4.24 4.24"/></svg>
+                  </div>
+                  <h4>Paridade Absoluta Dev / CI / Prod</h4>
+                </div>
+                <p>O mesmo <code>Dockerfile</code> e <code>compose.yaml</code> são executados localmente e no GitHub Actions (job <code>compose-smoke</code>), eliminando divergências de sistema operacional.</p>
+                <div class="evidence-badge">
+                  <span>✓ Evidência: .github/workflows/ci.yml</span>
+                </div>
+              </div>
+
+              <div class="benefit-card">
+                <div class="benefit-card-header">
+                  <div class="benefit-icon-wrapper">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                  </div>
+                  <h4>Segurança com Usuário Não-Root</h4>
+                </div>
+                <p>O container de runtime é executado sob o usuário <code>hemoflow</code> (UID 1001, GID 1001), garantindo conformidade com o princípio de menor privilégio na execução.</p>
+                <div class="evidence-badge">
+                  <span>✓ Evidência: Dockerfile (linhas 26-31)</span>
+                </div>
+              </div>
+
+              <div class="benefit-card">
+                <div class="benefit-card-header">
+                  <div class="benefit-icon-wrapper">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+                  </div>
+                  <h4>Orquestração por Prontidão Real</h4>
+                </div>
+                <p>A eliminação de race conditions através de <code>service_healthy</code> garante que a aplicação Spring Boot só inicialize após o PostgreSQL estar apto a aceitar queries.</p>
+                <div class="evidence-badge">
+                  <span>✓ Evidência: docs/evidencias/e1/compose-ps.txt</span>
+                </div>
+              </div>
+
+              <div class="benefit-card">
+                <div class="benefit-card-header">
+                  <div class="benefit-icon-wrapper">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
+                  </div>
+                  <h4>Isolamento e Persistência Determinística</h4>
+                </div>
+                <p>Nenhum desenvolvedor precisa instalar ou poluir seu host com instâncias PostgreSQL. O ciclo de vida dos dados é controlado perfeitamente via volumes nomeados.</p>
+                <div class="evidence-badge">
+                  <span>✓ Evidência: persistencia-volume.txt</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Rigorous Engineering Distinction Column -->
+            <div class="comparison-card">
+              <div class="comparison-header">
+                Diferenciação Rigorosa de Escopo
+              </div>
+
+              <div class="distinction-item">
+                <div class="distinction-label real">Efetivamente Implementado</div>
+                <p class="distinction-desc">
+                  Containerização multi-stage, compose local com PostgreSQL 16.4 Alpine, validação automatizada de compose em CI (Ubuntu 24.04), smoke test HTTP contra endpoints reais e build com gate de 39 testes.
+                </p>
+              </div>
+
+              <div class="distinction-item">
+                <div class="distinction-label future">Evolução Futura / Potencial</div>
+                <p class="distinction-desc">
+                  Clusterização com Kubernetes (K8s), autoscaling horizontal de pods da API, replicação primário-réplica de banco de dados e balanceamento de carga com Nginx/Traefik.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- =====================================================================
+           SLIDE 9: ENCERRAMENTO
+           ===================================================================== -->
+      <section class="slide closing-slide" id="slide-9" data-title="Conclusão">
+        <div class="closing-container">
+          <div class="slide-badge">
+            <span class="dot"></span>
+            <span>Conclusão & Legado Técnico</span>
+          </div>
+
+          <h2 class="closing-quote">
+            "Na logística de sangue, a rapidez salva vidas.<br>
+            O <span class="accent">Docker</span> garante que a nossa infraestrutura seja tão <span class="accent">confiável e imutável</span> quanto a própria cadeia fria."
+          </h2>
+
+          <div class="closing-divider"></div>
+
+          <p style="font-size: 14px; color: var(--text-secondary); margin-bottom: 24px; max-width: 680px;">
+            HemoFlow conteinerizado com sucesso: conformidade OCI, orquestração desacoplada e reprodutibilidade de ponta a ponta na rede Hemorrede/SUS.
+          </p>
+
+          <div class="closing-team-grid">
+            <div class="team-pill">
+              <span class="team-pill-name">Caio Martins Oliveira</span>
+              <span class="team-pill-role">SO / Pipeline</span>
+            </div>
+            <div class="team-pill">
+              <span class="team-pill-name">Luís Felipe Carneiro</span>
+              <span class="team-pill-role">SO / Deploy</span>
+            </div>
+            <div class="team-pill">
+              <span class="team-pill-name">Luís Henrique Vilas Boas</span>
+              <span class="team-pill-role">Infraestrutura / Telemetria</span>
+            </div>
+            <div class="team-pill">
+              <span class="team-pill-name">Priscila Pontes Martins</span>
+              <span class="team-pill-role">RSD / API</span>
+            </div>
+            <div class="team-pill">
+              <span class="team-pill-name">Cauã Henrique Almeida</span>
+              <span class="team-pill-role">RSD / Topologia</span>
+            </div>
+            <div class="team-pill">
+              <span class="team-pill-name">Bruna Tiburtino</span>
+              <span class="team-pill-role">Frontend / Dashboards</span>
+            </div>
+            <div class="team-pill">
+              <span class="team-pill-name">João Felipe Bonifácio</span>
+              <span class="team-pill-role">Estatística / Front</span>
+            </div>
+            <div class="team-pill">
+              <span class="team-pill-name">Rafael Medeiros Dias</span>
+              <span class="team-pill-role">Estatística & Regras</span>
+            </div>
+            <div class="team-pill">
+              <span class="team-pill-name">Ruan Carlos Oliveira</span>
+              <span class="team-pill-role">Backend / Grafos</span>
+            </div>
+          </div>
+
+          <div class="closing-actions">
+            <button class="btn-primary" id="btnRestartPitch">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 4v6h6"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>
+              <span>Reiniciar Apresentação</span>
+            </button>
+            <button class="btn-secondary" id="btnOpenDocs">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+              <span>Ver Evidências E1</span>
+            </button>
+          </div>
+        </div>
+      </section>
+
+    </main>
+
+    <!-- Floating Navigation Controls -->
+    <aside class="floating-nav" aria-label="Controles de Navegação">
+      <button class="btn-nav" id="btnPrevSlide" title="Slide Anterior (←)" aria-label="Slide Anterior">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="15 18 9 12 15 6"></polyline>
+        </svg>
+      </button>
+
+      <button class="btn-nav" id="btnNextSlide" title="Próximo Slide (→ ou Espaço)" aria-label="Próximo Slide">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="9 18 15 12 9 6"></polyline>
+        </svg>
+      </button>
+    </aside>
+
+  </div>
+
+  <!-- Toast Notification -->
+  <div class="toast-msg" id="toastMsg">Comando copiado com sucesso!</div>
+
+  <!-- Modal: Slides Overview Grid (O) -->
+  <div class="modal-overlay" id="modalOverview" role="dialog" aria-modal="true" aria-labelledby="overviewModalTitle">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 id="overviewModalTitle">Visão Geral dos Slides</h3>
+        <button class="btn-icon" id="btnCloseOverview" aria-label="Fechar Modal">✕</button>
+      </div>
+      <div class="slides-overview-grid" id="overviewGrid">
+        <!-- Rendered by JS -->
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Keyboard Shortcuts (?) -->
+  <div class="modal-overlay" id="modalHelp" role="dialog" aria-modal="true" aria-labelledby="helpModalTitle">
+    <div class="modal-content" style="max-width: 520px;">
+      <div class="modal-header">
+        <h3 id="helpModalTitle">Atalhos de Teclado</h3>
+        <button class="btn-icon" id="btnCloseHelp" aria-label="Fechar Modal">✕</button>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 12px; font-size: 13px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: rgba(255,255,255,0.03); border-radius: 6px;">
+          <span>Próximo Slide</span>
+          <div><span class="keycap">→</span> <span class="keycap">Espaço</span> <span class="keycap">PageDown</span></div>
+        </div>
+        <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: rgba(255,255,255,0.03); border-radius: 6px;">
+          <span>Slide Anterior</span>
+          <div><span class="keycap">←</span> <span class="keycap">PageUp</span></div>
+        </div>
+        <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: rgba(255,255,255,0.03); border-radius: 6px;">
+          <span>Primeiro / Último Slide</span>
+          <div><span class="keycap">Home</span> / <span class="keycap">End</span></div>
+        </div>
+        <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: rgba(255,255,255,0.03); border-radius: 6px;">
+          <span>Alternar Modo Tela Cheia</span>
+          <div><span class="keycap">F</span></div>
+        </div>
+        <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: rgba(255,255,255,0.03); border-radius: 6px;">
+          <span>Abrir Visão Geral de Slides</span>
+          <div><span class="keycap">O</span></div>
+        </div>
+        <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: rgba(255,255,255,0.03); border-radius: 6px;">
+          <span>Fechar Modais</span>
+          <div><span class="keycap">Esc</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>

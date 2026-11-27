@@ -1,0 +1,1720 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HemoFlow — Pitch</title>
+<style>
+/* ═══════════════════════════════════════════════
+   TOKENS & RESET
+═══════════════════════════════════════════════ */
+:root {
+  --ink:        #0d1f2d;
+  --ink-soft:   #3a5068;
+  --navy:       #0f2a3f;
+  --navy-mid:   #163348;
+  --navy-light: #1e4060;
+  --teal:       #1a7a76;
+  --teal-glow:  rgba(26,122,118,.18);
+  --red:        #c0333a;
+  --red-soft:   rgba(192,51,58,.12);
+  --red-glow:   rgba(192,51,58,.25);
+  --gold:       #c49a3c;
+  --white:      #ffffff;
+  --off-white:  #f0f4f7;
+  --mist:       #d8e6ef;
+  --line:       rgba(216,230,239,.18);
+
+  --font-sans:  'Inter', 'IBM Plex Sans', system-ui, sans-serif;
+  --font-serif: 'Georgia', 'Newsreader', serif;
+
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in-out: cubic-bezier(0.76, 0, 0.24, 1);
+  --dur: 700ms;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { width: 100%; height: 100%; overflow: hidden; background: var(--ink); }
+
+body {
+  font-family: var(--font-sans);
+  color: var(--white);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ═══════════════════════════════════════════════
+   DECK SHELL
+═══════════════════════════════════════════════ */
+#deck {
+  position: fixed; inset: 0;
+  display: flex; align-items: center; justify-content: center;
+}
+
+.slide {
+  position: absolute; inset: 0;
+  display: flex; align-items: center; justify-content: center;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--dur) var(--ease-out),
+              transform var(--dur) var(--ease-out);
+  transform: translateX(60px);
+  overflow: hidden;
+}
+.slide.active {
+  opacity: 1; pointer-events: all; transform: translateX(0);
+}
+.slide.exit-left {
+  opacity: 0; transform: translateX(-60px);
+  transition: opacity calc(var(--dur) * .7) var(--ease-in-out),
+              transform calc(var(--dur) * .7) var(--ease-in-out);
+}
+
+/* ═══════════════════════════════════════════════
+   NAV UI
+═══════════════════════════════════════════════ */
+#nav {
+  position: fixed; bottom: clamp(16px,3vh,32px); left: 50%;
+  transform: translateX(-50%);
+  display: flex; align-items: center; gap: 12px;
+  z-index: 100;
+  background: rgba(13,31,45,.72);
+  backdrop-filter: blur(16px);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 8px 16px;
+}
+#nav button {
+  background: none; border: none; color: var(--mist);
+  width: 32px; height: 32px;
+  display: grid; place-items: center;
+  border-radius: 50%; cursor: pointer;
+  transition: background .2s, color .2s;
+  font-size: 18px;
+}
+#nav button:hover { background: var(--line); color: var(--white); }
+#counter {
+  font-size: clamp(10px,1.1vw,13px);
+  color: var(--mist);
+  letter-spacing: .08em;
+  min-width: 56px; text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+#progress-bar {
+  position: fixed; top: 0; left: 0; height: 2px;
+  background: linear-gradient(90deg, var(--teal), var(--red));
+  transition: width .4s var(--ease-out);
+  z-index: 200;
+}
+#fullscreen-btn {
+  position: fixed; top: clamp(12px,2vh,20px); right: clamp(16px,2vw,28px);
+  background: rgba(13,31,45,.6); backdrop-filter: blur(12px);
+  border: 1px solid var(--line); border-radius: 8px;
+  color: var(--mist); padding: 6px 12px;
+  font-size: 11px; letter-spacing: .06em; text-transform: uppercase;
+  cursor: pointer; z-index: 100;
+  transition: background .2s, color .2s;
+}
+#fullscreen-btn:hover { background: var(--navy-light); color: var(--white); }
+
+/* ═══════════════════════════════════════════════
+   SHARED LAYOUT HELPERS
+═══════════════════════════════════════════════ */
+.slide-inner {
+  position: relative; z-index: 2;
+  width: 100%; height: 100%;
+  display: flex; align-items: center; justify-content: center;
+  padding: clamp(32px,5vw,80px) clamp(32px,7vw,120px);
+}
+.col-center { flex-direction: column; text-align: center; }
+.col-left   { flex-direction: column; align-items: flex-start; }
+.two-col    { display: grid; grid-template-columns: 1fr 1fr; gap: clamp(32px,5vw,80px); align-items: center; }
+.three-col  { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: clamp(20px,3vw,48px); align-items: start; }
+
+/* ═══════════════════════════════════════════════
+   TYPOGRAPHY SCALE
+═══════════════════════════════════════════════ */
+.eyebrow {
+  font-size: clamp(10px,1.1vw,13px);
+  letter-spacing: .18em; text-transform: uppercase;
+  color: var(--teal); font-weight: 500;
+  margin-bottom: clamp(10px,1.5vh,20px);
+}
+.eyebrow.red { color: var(--red); }
+.eyebrow.gold { color: var(--gold); }
+
+.headline {
+  font-size: clamp(28px,4.5vw,72px);
+  line-height: 1.07; font-weight: 700;
+  letter-spacing: -.025em;
+}
+.headline-xl {
+  font-size: clamp(40px,7vw,110px);
+  line-height: 1.0; font-weight: 800;
+  letter-spacing: -.04em;
+}
+.headline-sm {
+  font-size: clamp(22px,3vw,46px);
+  line-height: 1.1; font-weight: 700;
+  letter-spacing: -.02em;
+}
+.subline {
+  font-size: clamp(14px,1.6vw,22px);
+  line-height: 1.55; color: var(--mist);
+  font-weight: 400; max-width: 56ch;
+}
+.subline.narrow { max-width: 38ch; }
+.accent { color: var(--red); }
+.accent-teal { color: var(--teal); }
+.accent-gold { color: var(--gold); }
+
+/* ═══════════════════════════════════════════════
+   BACKGROUND SYSTEMS
+═══════════════════════════════════════════════ */
+.bg-dark { background: var(--ink); }
+.bg-navy { background: var(--navy); }
+.bg-gradient-dark {
+  background: radial-gradient(ellipse 80% 60% at 50% 0%, #163348 0%, var(--ink) 70%);
+}
+.bg-gradient-navy {
+  background: radial-gradient(ellipse 100% 80% at 20% 50%, #1a3a52 0%, #0f2030 100%);
+}
+.bg-red-accent {
+  background: radial-gradient(ellipse 60% 60% at 80% 50%, rgba(192,51,58,.14) 0%, transparent 70%),
+              var(--navy);
+}
+
+/* Animated grain overlay */
+.slide::before {
+  content: '';
+  position: absolute; inset: 0; z-index: 1;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
+  background-size: 200px 200px;
+  pointer-events: none; opacity: .5;
+}
+
+/* Grid lines background */
+.grid-bg::after {
+  content: '';
+  position: absolute; inset: 0; z-index: 0;
+  background-image:
+    linear-gradient(rgba(216,230,239,.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(216,230,239,.04) 1px, transparent 1px);
+  background-size: clamp(32px,4vw,64px) clamp(32px,4vw,64px);
+  pointer-events: none;
+}
+
+/* ═══════════════════════════════════════════════
+   SLIDE 1 — COVER
+═══════════════════════════════════════════════ */
+#s1 {
+  background: radial-gradient(ellipse 100% 90% at 50% -10%, #1e4060 0%, var(--ink) 65%);
+}
+#s1 .drop-mark {
+  width: clamp(48px,6vw,88px);
+  height: clamp(48px,6vw,88px);
+  border-radius: clamp(14px,1.8vw,26px);
+  background: linear-gradient(145deg, var(--red) 0%, #7a1821 100%);
+  display: grid; place-items: center;
+  margin-bottom: clamp(20px,3vh,40px);
+  box-shadow: 0 0 60px var(--red-glow), 0 24px 48px rgba(0,0,0,.4);
+  position: relative;
+}
+#s1 .drop-mark::after {
+  content: '';
+  position: absolute; inset: -1px;
+  border-radius: inherit;
+  background: linear-gradient(145deg, rgba(255,255,255,.2), transparent 50%);
+  pointer-events: none;
+}
+#s1 .drop-mark svg {
+  width: clamp(24px,3vw,44px); height: clamp(24px,3vw,44px);
+  color: white;
+}
+#s1 .brand-name {
+  font-size: clamp(48px,8vw,128px);
+  font-weight: 800; letter-spacing: -.05em;
+  line-height: .9;
+  background: linear-gradient(135deg, #ffffff 0%, #c8dde8 100%);
+  -webkit-background-clip: text; background-clip: text;
+  -webkit-text-fill-color: transparent;
+  margin-bottom: clamp(10px,1.5vh,20px);
+}
+#s1 .brand-tagline {
+  font-size: clamp(14px,1.8vw,26px);
+  color: var(--mist); letter-spacing: .01em;
+  font-weight: 300;
+  max-width: 50ch; text-align: center;
+  line-height: 1.5;
+}
+#s1 .cover-meta {
+  position: absolute; bottom: clamp(60px,8vh,100px);
+  display: flex; gap: clamp(24px,4vw,56px);
+  font-size: clamp(10px,1.1vw,13px);
+  color: var(--ink-soft); letter-spacing: .08em; text-transform: uppercase;
+}
+#s1 .cover-meta span { color: var(--mist); font-weight: 500; }
+#s1 .orb {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(80px);
+  pointer-events: none;
+  z-index: 0;
+}
+#s1 .orb-1 {
+  width: clamp(200px,30vw,480px); height: clamp(200px,30vw,480px);
+  background: radial-gradient(circle, rgba(26,122,118,.18) 0%, transparent 70%);
+  top: -10%; left: -10%;
+  animation: drift 12s ease-in-out infinite alternate;
+}
+#s1 .orb-2 {
+  width: clamp(160px,25vw,380px); height: clamp(160px,25vw,380px);
+  background: radial-gradient(circle, rgba(192,51,58,.13) 0%, transparent 70%);
+  bottom: -5%; right: -5%;
+  animation: drift 16s ease-in-out infinite alternate-reverse;
+}
+@keyframes drift {
+  from { transform: translate(0, 0); }
+  to   { transform: translate(30px, -30px); }
+}
+
+/* ═══════════════════════════════════════════════
+   SLIDE 2 — PROBLEM
+═══════════════════════════════════════════════ */
+#s2 {
+  background: radial-gradient(ellipse 70% 60% at 85% 50%, rgba(192,51,58,.1) 0%, transparent 60%),
+              var(--navy);
+}
+#s2 .problem-quote {
+  font-size: clamp(22px,3.5vw,56px);
+  font-weight: 700; line-height: 1.15;
+  letter-spacing: -.025em;
+  max-width: 20ch;
+  position: relative;
+}
+#s2 .problem-quote em {
+  font-style: normal; color: var(--red);
+}
+#s2 .problem-list {
+  list-style: none;
+  display: flex; flex-direction: column; gap: clamp(16px,2.2vh,28px);
+}
+#s2 .problem-list li {
+  display: flex; align-items: flex-start; gap: 14px;
+  font-size: clamp(13px,1.4vw,18px);
+  color: var(--mist); line-height: 1.4;
+}
+#s2 .problem-list li::before {
+  content: '';
+  flex-shrink: 0;
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--red);
+  margin-top: .55em;
+  box-shadow: 0 0 8px var(--red-glow);
+}
+#s2 .problem-list li strong { color: var(--white); display: block; font-size: 1.08em; }
+
+/* ═══════════════════════════════════════════════
+   SLIDE 3 — WHY IT MATTERS
+═══════════════════════════════════════════════ */
+#s3 {
+  background: var(--ink);
+}
+#s3 .stat-grid {
+  display: grid; grid-template-columns: repeat(3,1fr);
+  gap: clamp(16px,2.5vw,40px);
+  width: 100%;
+  margin-top: clamp(24px,4vh,56px);
+}
+#s3 .stat-card {
+  background: rgba(255,255,255,.04);
+  border: 1px solid var(--line);
+  border-radius: clamp(12px,1.5vw,20px);
+  padding: clamp(20px,2.5vw,36px) clamp(16px,2vw,28px);
+  display: flex; flex-direction: column; gap: 8px;
+  position: relative; overflow: hidden;
+  transition: border-color .3s, background .3s;
+}
+#s3 .stat-card:hover {
+  border-color: rgba(216,230,239,.35);
+  background: rgba(255,255,255,.07);
+}
+#s3 .stat-card::before {
+  content: ''; position: absolute;
+  top: 0; left: 0; right: 0; height: 2px;
+  background: linear-gradient(90deg, var(--red), transparent);
+}
+#s3 .stat-num {
+  font-size: clamp(32px,4.5vw,66px);
+  font-weight: 800; letter-spacing: -.04em;
+  line-height: 1; color: var(--white);
+}
+#s3 .stat-num .unit {
+  font-size: .45em; font-weight: 500;
+  color: var(--mist); letter-spacing: 0;
+}
+#s3 .stat-label {
+  font-size: clamp(12px,1.3vw,16px);
+  color: var(--mist); line-height: 1.4;
+}
+#s3 .stat-src {
+  font-size: clamp(9px,.9vw,11px);
+  color: var(--ink-soft); margin-top: 4px;
+  letter-spacing: .04em;
+}
+
+/* ═══════════════════════════════════════════════
+   SLIDE 4 — CURRENT JOURNEY (PAIN)
+═══════════════════════════════════════════════ */
+#s4 {
+  background: radial-gradient(ellipse 80% 60% at 50% 100%, #1a3a52 0%, var(--ink) 60%);
+}
+#s4 .flow-steps {
+  display: flex; align-items: stretch;
+  gap: 0;
+  width: 100%;
+  position: relative;
+  margin-top: clamp(24px,4vh,52px);
+}
+#s4 .flow-step {
+  flex: 1; position: relative;
+  padding: clamp(16px,2vw,28px) clamp(12px,1.5vw,20px);
+  background: rgba(255,255,255,.04);
+  border: 1px solid var(--line);
+  border-radius: 0;
+  transition: background .3s;
+}
+#s4 .flow-step:first-child { border-radius: clamp(10px,1.2vw,16px) 0 0 clamp(10px,1.2vw,16px); }
+#s4 .flow-step:last-child  { border-radius: 0 clamp(10px,1.2vw,16px) clamp(10px,1.2vw,16px) 0; }
+#s4 .flow-step + .flow-step { border-left: none; }
+#s4 .flow-step.pain {
+  border-top: 2px solid var(--red);
+  background: rgba(192,51,58,.07);
+}
+#s4 .step-num {
+  font-size: clamp(9px,.9vw,11px);
+  letter-spacing: .15em; text-transform: uppercase;
+  color: var(--ink-soft); margin-bottom: 10px;
+}
+#s4 .step-icon {
+  font-size: clamp(22px,2.5vw,36px);
+  margin-bottom: 8px; display: block;
+}
+#s4 .step-title {
+  font-size: clamp(12px,1.3vw,16px);
+  font-weight: 600; color: var(--white);
+  margin-bottom: 6px;
+}
+#s4 .step-desc {
+  font-size: clamp(11px,1.1vw,14px);
+  color: var(--mist); line-height: 1.4;
+}
+#s4 .pain-tag {
+  display: inline-flex; align-items: center; gap: 5px;
+  margin-top: 10px; padding: 3px 10px;
+  background: var(--red-soft); border-radius: 999px;
+  font-size: clamp(9px,.9vw,11px);
+  color: #f08080; font-weight: 600;
+  letter-spacing: .06em; text-transform: uppercase;
+}
+#s4 .pain-tag::before { content: '⚠'; }
+
+/* ═══════════════════════════════════════════════
+   SLIDE 5 — SOLUTION
+═══════════════════════════════════════════════ */
+#s5 {
+  background: radial-gradient(ellipse 90% 70% at 50% 50%, #122e44 0%, var(--ink) 70%);
+}
+#s5 .solution-word {
+  font-size: clamp(14px,2vw,28px);
+  letter-spacing: .18em; text-transform: uppercase;
+  font-weight: 700; color: var(--teal);
+  margin-bottom: clamp(12px,2vh,24px);
+}
+#s5 .solution-headline {
+  font-size: clamp(32px,5.5vw,88px);
+  font-weight: 800; letter-spacing: -.04em;
+  line-height: .95; margin-bottom: clamp(16px,2.5vh,32px);
+}
+#s5 .solution-pillars {
+  display: flex; gap: clamp(12px,2vw,24px);
+  margin-top: clamp(24px,4vh,48px);
+  flex-wrap: wrap;
+}
+#s5 .pillar {
+  display: flex; align-items: center; gap: 10px;
+  padding: clamp(10px,1.2vw,16px) clamp(14px,1.8vw,24px);
+  background: rgba(26,122,118,.12);
+  border: 1px solid rgba(26,122,118,.3);
+  border-radius: 999px;
+  font-size: clamp(12px,1.3vw,16px);
+  color: var(--mist); font-weight: 500;
+  transition: background .2s, border-color .2s;
+}
+#s5 .pillar:hover {
+  background: rgba(26,122,118,.2);
+  border-color: rgba(26,122,118,.5);
+}
+#s5 .pillar-icon { font-size: 1.1em; }
+#s5 .visual-side {
+  position: relative; display: flex; align-items: center; justify-content: center;
+}
+#s5 .hex-diagram {
+  position: relative;
+  width: clamp(240px,32vw,480px); height: clamp(240px,32vw,480px);
+}
+/* Central orb */
+#s5 .hex-center {
+  position: absolute; top: 50%; left: 50%;
+  transform: translate(-50%,-50%);
+  width: 36%; height: 36%;
+  border-radius: 50%;
+  background: linear-gradient(145deg, var(--red), #8a1a22);
+  box-shadow: 0 0 60px var(--red-glow), 0 0 120px rgba(192,51,58,.1);
+  display: flex; align-items: center; justify-content: center;
+  font-size: clamp(10px,1.2vw,15px); font-weight: 700;
+  letter-spacing: .08em; color: rgba(255,255,255,.9);
+  flex-direction: column; gap: 2px;
+  z-index: 2;
+}
+#s5 .hex-center svg { width: 32%; height: 32%; }
+#s5 .hex-ring {
+  position: absolute; inset: 0;
+  border-radius: 50%;
+  border: 1px solid var(--line);
+  animation: spin-slow 30s linear infinite;
+}
+#s5 .hex-ring-2 {
+  position: absolute; inset: 15%;
+  border-radius: 50%;
+  border: 1px dashed rgba(216,230,239,.12);
+  animation: spin-slow 20s linear infinite reverse;
+}
+@keyframes spin-slow { to { transform: rotate(360deg); } }
+#s5 .hex-node {
+  position: absolute;
+  width: clamp(50px,6.5vw,90px); height: clamp(50px,6.5vw,90px);
+  border-radius: 50%;
+  background: rgba(255,255,255,.05);
+  border: 1px solid var(--line);
+  display: flex; align-items: center; justify-content: center;
+  flex-direction: column; gap: 2px;
+  font-size: clamp(8px,.9vw,11px);
+  color: var(--mist); font-weight: 500;
+  letter-spacing: .04em; text-align: center;
+  backdrop-filter: blur(8px);
+  transition: background .3s;
+}
+#s5 .hex-node:hover { background: rgba(255,255,255,.1); }
+#s5 .hex-node span { font-size: 1.5em; display: block; }
+
+/* ═══════════════════════════════════════════════
+   SLIDE 6 — HOW IT WORKS
+═══════════════════════════════════════════════ */
+#s6 {
+  background: var(--navy);
+}
+#s6 .flow-diagram {
+  width: 100%;
+  display: grid;
+  grid-template-columns: auto 1fr auto 1fr auto 1fr auto 1fr auto;
+  align-items: center;
+  gap: 0;
+  margin-top: clamp(24px,4vh,52px);
+}
+#s6 .flow-node {
+  background: rgba(255,255,255,.06);
+  border: 1px solid var(--line);
+  border-radius: clamp(10px,1.2vw,16px);
+  padding: clamp(14px,2vw,24px) clamp(12px,1.5vw,18px);
+  text-align: center;
+  min-width: clamp(80px,10vw,150px);
+  transition: border-color .3s, background .3s;
+}
+#s6 .flow-node:hover { border-color: rgba(26,122,118,.5); background: rgba(26,122,118,.08); }
+#s6 .flow-node.highlight {
+  border-color: rgba(26,122,118,.4);
+  background: rgba(26,122,118,.1);
+}
+#s6 .flow-node-icon { font-size: clamp(22px,2.8vw,40px); margin-bottom: 8px; display: block; }
+#s6 .flow-node-label {
+  font-size: clamp(10px,1.1vw,14px); font-weight: 600;
+  color: var(--white); line-height: 1.3;
+}
+#s6 .flow-node-sub {
+  font-size: clamp(9px,.95vw,12px); color: var(--mist);
+  margin-top: 4px; line-height: 1.3;
+}
+#s6 .flow-arrow {
+  display: flex; align-items: center; justify-content: center;
+  color: var(--teal); padding: 0 clamp(4px,.5vw,8px);
+  font-size: clamp(14px,1.8vw,24px);
+  opacity: .7;
+}
+#s6 .status-badges {
+  display: flex; gap: clamp(8px,1vw,14px);
+  flex-wrap: wrap;
+  margin-top: clamp(24px,3.5vh,48px);
+}
+#s6 .badge {
+  padding: 5px clamp(12px,1.5vw,18px);
+  border-radius: 999px;
+  font-size: clamp(10px,1.1vw,13px); font-weight: 600;
+  letter-spacing: .06em;
+}
+#s6 .badge-pend  { background: rgba(176,137,58,.15); color: var(--gold); border: 1px solid rgba(176,137,58,.3); }
+#s6 .badge-aloc  { background: rgba(26,122,118,.15); color: #5fd6d2; border: 1px solid rgba(26,122,118,.3); }
+#s6 .badge-tran  { background: rgba(30,96,160,.15); color: #7ab8e8; border: 1px solid rgba(30,96,160,.3); }
+#s6 .badge-entr  { background: rgba(31,122,77,.15); color: #6dd4a0; border: 1px solid rgba(31,122,77,.3); }
+#s6 .arrow-hint { font-size: clamp(10px,1.1vw,13px); color: var(--ink-soft); margin: 0 4px; }
+
+/* ═══════════════════════════════════════════════
+   SLIDE 7 — CORE INTELLIGENCE
+═══════════════════════════════════════════════ */
+#s7 {
+  background: radial-gradient(ellipse 60% 80% at 0% 50%, rgba(26,122,118,.1) 0%, transparent 60%),
+              var(--ink);
+}
+#s7 .intel-cards {
+  display: grid; grid-template-columns: repeat(3,1fr);
+  gap: clamp(16px,2.5vw,36px);
+  width: 100%; margin-top: clamp(24px,4vh,52px);
+}
+#s7 .intel-card {
+  background: rgba(255,255,255,.04);
+  border: 1px solid var(--line);
+  border-radius: clamp(14px,1.8vw,22px);
+  padding: clamp(22px,3vw,40px) clamp(18px,2.5vw,32px);
+  display: flex; flex-direction: column; gap: 12px;
+  position: relative; overflow: hidden;
+  transition: transform .3s var(--ease-out), border-color .3s;
+}
+#s7 .intel-card:hover { transform: translateY(-4px); border-color: rgba(216,230,239,.3); }
+#s7 .intel-card .card-accent {
+  position: absolute; top: 0; left: 0; right: 0; height: 3px;
+}
+#s7 .intel-card:nth-child(1) .card-accent { background: linear-gradient(90deg, var(--red), transparent); }
+#s7 .intel-card:nth-child(2) .card-accent { background: linear-gradient(90deg, var(--gold), transparent); }
+#s7 .intel-card:nth-child(3) .card-accent { background: linear-gradient(90deg, var(--teal), transparent); }
+#s7 .card-label {
+  font-size: clamp(9px,.9vw,11px);
+  letter-spacing: .18em; text-transform: uppercase;
+  color: var(--ink-soft); font-weight: 600;
+}
+#s7 .card-title {
+  font-size: clamp(18px,2.2vw,32px);
+  font-weight: 700; letter-spacing: -.02em;
+  line-height: 1.1;
+}
+#s7 .card-desc {
+  font-size: clamp(12px,1.3vw,16px);
+  color: var(--mist); line-height: 1.5;
+}
+#s7 .card-code {
+  font-family: 'Fira Code', 'JetBrains Mono', 'Courier New', monospace;
+  font-size: clamp(10px,1.1vw,14px);
+  background: rgba(0,0,0,.35); border-radius: 8px;
+  padding: 12px 14px;
+  color: #9fd8d6; line-height: 1.6;
+  border: 1px solid rgba(216,230,239,.08);
+  overflow: hidden;
+  white-space: pre;
+}
+#s7 .card-code .kw { color: var(--teal); }
+#s7 .card-code .fn { color: #c9b1ff; }
+#s7 .card-code .cm { color: var(--ink-soft); }
+
+/* ═══════════════════════════════════════════════
+   SLIDE 8 — REAL NETWORK MAP
+═══════════════════════════════════════════════ */
+#s8 {
+  background: radial-gradient(ellipse 100% 80% at 50% 50%, #122840 0%, var(--ink) 70%);
+}
+#s8 .network-container {
+  position: relative;
+  width: clamp(300px,45vw,680px); height: clamp(300px,40vw,560px);
+  flex-shrink: 0;
+}
+#s8 svg.network-svg {
+  width: 100%; height: 100%;
+}
+#s8 .network-info {
+  display: flex; flex-direction: column; gap: clamp(16px,2.5vh,30px);
+}
+#s8 .net-stat {
+  display: flex; flex-direction: column; gap: 4px;
+}
+#s8 .net-num {
+  font-size: clamp(28px,4vw,60px);
+  font-weight: 800; letter-spacing: -.04em;
+  line-height: 1;
+}
+#s8 .net-label {
+  font-size: clamp(12px,1.3vw,16px);
+  color: var(--mist);
+}
+#s8 .net-divider {
+  height: 1px; background: var(--line); margin: clamp(4px,.5vh,8px) 0;
+}
+#s8 .fastest-route {
+  background: rgba(26,122,118,.12);
+  border: 1px solid rgba(26,122,118,.3);
+  border-radius: clamp(10px,1.2vw,16px);
+  padding: clamp(14px,2vw,22px) clamp(12px,1.5vw,18px);
+}
+#s8 .fastest-route .label {
+  font-size: clamp(9px,.9vw,11px); letter-spacing: .15em; text-transform: uppercase;
+  color: var(--teal); margin-bottom: 6px;
+}
+#s8 .fastest-route .route-line {
+  font-size: clamp(14px,1.6vw,20px); font-weight: 600; color: var(--white);
+}
+#s8 .fastest-route .route-time {
+  font-size: clamp(22px,2.8vw,40px); font-weight: 800; letter-spacing: -.03em;
+  color: var(--teal); margin-top: 4px;
+}
+
+/* ═══════════════════════════════════════════════
+   SLIDE 9 — PRODUCT
+═══════════════════════════════════════════════ */
+#s9 {
+  background: var(--navy);
+}
+#s9 .product-grid {
+  display: grid; grid-template-columns: 1fr 1fr;
+  gap: clamp(14px,2vw,28px);
+  width: 100%; margin-top: clamp(16px,3vh,40px);
+}
+#s9 .product-card {
+  background: rgba(255,255,255,.04);
+  border: 1px solid var(--line);
+  border-radius: clamp(12px,1.5vw,18px);
+  padding: clamp(18px,2vw,28px) clamp(14px,1.8vw,24px);
+  display: flex; gap: 14px;
+  align-items: flex-start;
+  transition: background .2s, border-color .2s;
+}
+#s9 .product-card:hover { background: rgba(255,255,255,.07); border-color: rgba(216,230,239,.28); }
+#s9 .product-card .p-icon {
+  flex-shrink: 0;
+  width: clamp(36px,4vw,52px); height: clamp(36px,4vw,52px);
+  border-radius: clamp(8px,1vw,12px);
+  display: grid; place-items: center;
+  font-size: clamp(16px,2vw,26px);
+}
+#s9 .p-icon.red-bg   { background: rgba(192,51,58,.18); }
+#s9 .p-icon.teal-bg  { background: rgba(26,122,118,.18); }
+#s9 .p-icon.gold-bg  { background: rgba(196,154,60,.18); }
+#s9 .p-icon.blue-bg  { background: rgba(29,95,138,.18); }
+#s9 .product-card .p-title {
+  font-size: clamp(13px,1.4vw,18px); font-weight: 600; color: var(--white);
+  margin-bottom: 5px;
+}
+#s9 .product-card .p-desc {
+  font-size: clamp(11px,1.1vw,14px); color: var(--mist); line-height: 1.45;
+}
+#s9 .product-card .p-tag {
+  display: inline-flex; align-items: center;
+  margin-top: 8px; padding: 2px 8px;
+  border-radius: 4px; font-size: clamp(9px,.9vw,11px);
+  font-weight: 600; letter-spacing: .06em; text-transform: uppercase;
+}
+#s9 .p-tag.live { background: rgba(31,122,77,.2); color: #6dd4a0; }
+#s9 .p-tag.api  { background: rgba(29,95,138,.2); color: #7ab8e8; }
+
+/* ═══════════════════════════════════════════════
+   SLIDE 10 — TECHNOLOGY
+═══════════════════════════════════════════════ */
+#s10 {
+  background: radial-gradient(ellipse 60% 60% at 100% 50%, rgba(26,122,118,.08) 0%, transparent 60%),
+              var(--ink);
+}
+#s10 .tech-stack {
+  display: grid; grid-template-columns: repeat(4,1fr);
+  gap: clamp(12px,1.8vw,24px);
+  width: 100%; margin-top: clamp(24px,4vh,52px);
+}
+#s10 .tech-item {
+  background: rgba(255,255,255,.04);
+  border: 1px solid var(--line);
+  border-radius: clamp(10px,1.2vw,16px);
+  padding: clamp(16px,2vw,24px) clamp(12px,1.5vw,18px);
+  display: flex; flex-direction: column; gap: 8px;
+  align-items: center; text-align: center;
+  transition: background .2s, transform .2s var(--ease-out);
+}
+#s10 .tech-item:hover { background: rgba(255,255,255,.08); transform: translateY(-3px); }
+#s10 .tech-icon { font-size: clamp(22px,2.8vw,40px); }
+#s10 .tech-name {
+  font-size: clamp(12px,1.3vw,16px); font-weight: 600; color: var(--white);
+}
+#s10 .tech-role {
+  font-size: clamp(10px,1.05vw,13px); color: var(--mist); line-height: 1.3;
+}
+#s10 .tech-badge {
+  font-size: clamp(9px,.85vw,11px); font-weight: 600;
+  letter-spacing: .07em; padding: 2px 8px; border-radius: 4px;
+  margin-top: 4px;
+}
+#s10 .tb-prod  { background: rgba(31,122,77,.2); color: #6dd4a0; }
+#s10 .tb-test  { background: rgba(29,95,138,.2); color: #7ab8e8; }
+#s10 .tb-build { background: rgba(176,137,58,.2); color: var(--gold); }
+
+/* ═══════════════════════════════════════════════
+   SLIDE 11 — EVIDENCE / TESTS
+═══════════════════════════════════════════════ */
+#s11 {
+  background: radial-gradient(ellipse 80% 60% at 50% 0%, #163348 0%, var(--ink) 65%);
+}
+#s11 .evidence-grid {
+  display: grid; grid-template-columns: 1fr 1fr;
+  gap: clamp(16px,2.5vw,36px);
+  width: 100%; margin-top: clamp(24px,4vh,52px);
+}
+#s11 .ev-panel {
+  background: rgba(255,255,255,.04);
+  border: 1px solid var(--line);
+  border-radius: clamp(12px,1.5vw,20px);
+  padding: clamp(20px,2.5vw,32px) clamp(16px,2vw,24px);
+  display: flex; flex-direction: column; gap: 12px;
+}
+#s11 .ev-panel .ev-label {
+  font-size: clamp(9px,.9vw,11px); letter-spacing: .15em; text-transform: uppercase;
+  color: var(--ink-soft); font-weight: 600;
+}
+#s11 .ev-big {
+  font-size: clamp(44px,6.5vw,88px); font-weight: 800;
+  letter-spacing: -.05em; line-height: 1;
+}
+#s11 .ev-big.green { color: #6dd4a0; }
+#s11 .ev-big.teal  { color: var(--teal); }
+#s11 .ev-desc {
+  font-size: clamp(12px,1.3vw,16px); color: var(--mist); line-height: 1.4;
+}
+#s11 .test-list {
+  display: flex; flex-direction: column; gap: 8px;
+  margin-top: 4px;
+}
+#s11 .test-item {
+  display: flex; align-items: center; gap: 10px;
+  font-size: clamp(11px,1.2vw,15px); color: var(--mist);
+}
+#s11 .test-item::before {
+  content: '✓'; flex-shrink: 0;
+  width: 20px; height: 20px;
+  background: rgba(31,122,77,.2); color: #6dd4a0;
+  border-radius: 50%; display: grid; place-items: center;
+  font-size: 11px; font-weight: 700;
+}
+#s11 .bdd-scenarios {
+  background: rgba(0,0,0,.3);
+  border-radius: 10px; padding: 14px;
+  font-family: 'Fira Code', monospace;
+  font-size: clamp(10px,1.1vw,13px);
+  color: #9fd8d6; line-height: 1.7;
+  border: 1px solid rgba(216,230,239,.08);
+}
+#s11 .bdd-scenarios .sc { color: var(--gold); }
+#s11 .bdd-scenarios .pa { color: #6dd4a0; }
+
+/* ═══════════════════════════════════════════════
+   SLIDE 12 — VISION / ROADMAP
+═══════════════════════════════════════════════ */
+#s12 {
+  background: radial-gradient(ellipse 70% 60% at 50% 50%, #132030 0%, var(--ink) 65%);
+}
+#s12 .timeline {
+  position: relative; width: 100%;
+  margin-top: clamp(24px,4vh,52px);
+  display: flex; flex-direction: column; gap: 0;
+}
+#s12 .timeline::before {
+  content: '';
+  position: absolute; left: clamp(18px,2vw,28px); top: 0; bottom: 0;
+  width: 1px; background: var(--line);
+}
+#s12 .tl-item {
+  position: relative; padding-left: clamp(52px,6vw,80px);
+  padding-bottom: clamp(20px,3vh,36px);
+}
+#s12 .tl-dot {
+  position: absolute; left: clamp(10px,1.2vw,16px); top: 2px;
+  width: clamp(16px,1.8vw,24px); height: clamp(16px,1.8vw,24px);
+  border-radius: 50%;
+  border: 2px solid var(--line);
+  background: var(--ink);
+  transform: translateX(-50%);
+  display: grid; place-items: center;
+}
+#s12 .tl-dot.done  { border-color: #6dd4a0; background: rgba(31,122,77,.2); }
+#s12 .tl-dot.now   { border-color: var(--teal); background: rgba(26,122,118,.2); animation: pulse-dot 2s ease-in-out infinite; }
+#s12 .tl-dot.next  { border-color: var(--mist); }
+#s12 .tl-dot.far   { border-color: rgba(216,230,239,.2); }
+#s12 .tl-dot-inner {
+  width: 8px; height: 8px; border-radius: 50%;
+}
+#s12 .tl-dot.done  .tl-dot-inner { background: #6dd4a0; }
+#s12 .tl-dot.now   .tl-dot-inner { background: var(--teal); }
+#s12 .tl-dot.next  .tl-dot-inner { background: var(--mist); }
+@keyframes pulse-dot {
+  0%,100% { box-shadow: 0 0 0 0 rgba(26,122,118,.4); }
+  50%      { box-shadow: 0 0 0 8px rgba(26,122,118,0); }
+}
+#s12 .tl-phase {
+  font-size: clamp(9px,.9vw,11px); letter-spacing: .15em;
+  text-transform: uppercase; font-weight: 600;
+  margin-bottom: 4px;
+}
+#s12 .tl-phase.done  { color: #6dd4a0; }
+#s12 .tl-phase.now   { color: var(--teal); }
+#s12 .tl-phase.next  { color: var(--mist); }
+#s12 .tl-phase.far   { color: var(--ink-soft); }
+#s12 .tl-title {
+  font-size: clamp(14px,1.8vw,24px); font-weight: 600; color: var(--white);
+  margin-bottom: 4px;
+}
+#s12 .tl-desc {
+  font-size: clamp(11px,1.2vw,15px); color: var(--mist); line-height: 1.4;
+}
+
+/* ═══════════════════════════════════════════════
+   SLIDE 13 — CLOSE
+═══════════════════════════════════════════════ */
+#s13 {
+  background: radial-gradient(ellipse 90% 70% at 50% 50%, #1a2f42 0%, var(--ink) 65%);
+}
+#s13 .close-eyebrow {
+  font-size: clamp(10px,1.1vw,14px); letter-spacing: .2em; text-transform: uppercase;
+  color: var(--red); font-weight: 600; margin-bottom: clamp(16px,2.5vh,28px);
+}
+#s13 .close-headline {
+  font-size: clamp(28px,5vw,76px);
+  font-weight: 800; letter-spacing: -.04em;
+  line-height: 1.0; max-width: 18ch;
+  text-align: center;
+  margin-bottom: clamp(16px,2.5vh,32px);
+}
+#s13 .close-sub {
+  font-size: clamp(14px,1.6vw,22px); color: var(--mist);
+  line-height: 1.5; max-width: 42ch; text-align: center;
+  margin-bottom: clamp(28px,4vh,56px);
+}
+#s13 .close-cta {
+  display: flex; gap: clamp(12px,1.8vw,20px); align-items: center;
+}
+#s13 .cta-primary {
+  padding: clamp(12px,1.5vw,18px) clamp(24px,3vw,40px);
+  background: linear-gradient(135deg, var(--red), #8a1a22);
+  border-radius: 999px;
+  font-size: clamp(13px,1.4vw,18px); font-weight: 600; color: var(--white);
+  box-shadow: 0 8px 32px var(--red-glow);
+  cursor: pointer; border: none;
+  transition: transform .2s, box-shadow .2s;
+}
+#s13 .cta-primary:hover { transform: translateY(-2px); box-shadow: 0 12px 40px var(--red-glow); }
+#s13 .cta-ghost {
+  padding: clamp(12px,1.5vw,18px) clamp(24px,3vw,40px);
+  background: rgba(255,255,255,.06);
+  border: 1px solid var(--line); border-radius: 999px;
+  font-size: clamp(13px,1.4vw,18px); font-weight: 500; color: var(--mist);
+  cursor: pointer;
+  transition: background .2s, border-color .2s;
+}
+#s13 .cta-ghost:hover { background: rgba(255,255,255,.1); border-color: rgba(216,230,239,.35); }
+#s13 .close-drop {
+  position: absolute;
+  width: clamp(300px,40vw,600px); height: clamp(300px,40vw,600px);
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(192,51,58,.07) 0%, transparent 70%);
+  top: 50%; left: 50%; transform: translate(-50%,-50%);
+  animation: pulse-orb 4s ease-in-out infinite;
+  pointer-events: none; z-index: 0;
+}
+@keyframes pulse-orb {
+  0%,100% { transform: translate(-50%,-50%) scale(1); opacity: 1; }
+  50%      { transform: translate(-50%,-50%) scale(1.08); opacity: .7; }
+}
+#s13 .close-brand {
+  position: absolute; bottom: clamp(60px,8vh,100px);
+  font-size: clamp(10px,1.1vw,13px); color: var(--ink-soft);
+  letter-spacing: .08em; text-transform: uppercase;
+  display: flex; align-items: center; gap: 10px;
+}
+#s13 .close-brand::before, #s13 .close-brand::after {
+  content: ''; flex: 1; height: 1px; background: var(--line); width: 40px;
+}
+
+/* ═══════════════════════════════════════════════
+   SLIDE-IN ANIMATIONS FOR CHILDREN
+═══════════════════════════════════════════════ */
+.slide.active [data-anim] {
+  animation: fadeUp var(--dur) var(--ease-out) both;
+}
+.slide.active [data-anim="1"] { animation-delay: 80ms; }
+.slide.active [data-anim="2"] { animation-delay: 200ms; }
+.slide.active [data-anim="3"] { animation-delay: 320ms; }
+.slide.active [data-anim="4"] { animation-delay: 440ms; }
+.slide.active [data-anim="5"] { animation-delay: 560ms; }
+.slide.active [data-anim="6"] { animation-delay: 680ms; }
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(28px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+</style>
+</head>
+<body>
+
+<div id="progress-bar"></div>
+<button id="fullscreen-btn" onclick="toggleFullscreen()">⛶ Fullscreen</button>
+
+<div id="deck">
+
+  <!-- ═══ SLIDE 1 — COVER ═══ -->
+  <div class="slide bg-dark grid-bg" id="s1">
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
+    <div class="slide-inner col-center" style="z-index:2">
+      <div class="drop-mark" data-anim="1">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">
+          <path d="M12 3c-1.8 3.2-6 6.4-6 10.2A6 6 0 0 0 12 21a6 6 0 0 0 6-7.8C18 9.4 13.8 6.2 12 3Z"/>
+          <path d="M12 11v6M9 14h6"/>
+        </svg>
+      </div>
+      <div class="brand-name" data-anim="2">HemoFlow</div>
+      <div class="brand-tagline" data-anim="3">
+        Gestão inteligente de estoque, compatibilidade, roteirização<br>
+        e monitoramento da cadeia fria de hemocomponentes.
+      </div>
+      <div class="cover-meta" data-anim="4">
+        <div>Plataforma &nbsp;<span>Spring Boot · REST API</span></div>
+        <div>Rede &nbsp;<span>HEMOPE + 11 Hospitais · Recife</span></div>
+        <div>Versão &nbsp;<span>0.0.1-SNAPSHOT</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ SLIDE 2 — PROBLEM ═══ -->
+  <div class="slide bg-red-accent" id="s2">
+    <div class="slide-inner two-col">
+      <div>
+        <div class="eyebrow red" data-anim="1">O Problema</div>
+        <div class="problem-quote" data-anim="2">
+          A bolsa certa <em>não chega</em><br>
+          no momento certo.
+        </div>
+        <p class="subline" style="margin-top:clamp(16px,2.5vh,28px)" data-anim="3">
+          A distribuição de hemocomponentes exige precisão absoluta
+          de ponta a ponta — e qualquer falha tem consequências diretas para vidas humanas.
+        </p>
+      </div>
+      <ul class="problem-list" data-anim="4">
+        <li>
+          <div>
+            <strong>Desabastecimento de emergência</strong>
+            Hospitais não sabem quando ou se a bolsa compatível vai chegar.
+          </div>
+        </li>
+        <li>
+          <div>
+            <strong>Descarte por validade</strong>
+            Sem priorização FEFO, bolsas próximas do vencimento são alocadas por último — e descartadas.
+          </div>
+        </li>
+        <li>
+          <div>
+            <strong>Incompatibilidade ABO/Rh</strong>
+            Sem validação automatizada, o risco de alocação errada depende de processos manuais.
+          </div>
+        </li>
+        <li>
+          <div>
+            <strong>Cadeia fria comprometida</strong>
+            Rotas ineficientes ou não monitoradas colocam o hemocomponente em risco durante o transporte.
+          </div>
+        </li>
+        <li>
+          <div>
+            <strong>Visibilidade zero</strong>
+            Hospitais solicitantes não conseguem acompanhar o status da requisição em tempo real.
+          </div>
+        </li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- ═══ SLIDE 3 — WHY IT MATTERS ═══ -->
+  <div class="slide bg-dark grid-bg" id="s3">
+    <div class="slide-inner col-center" style="max-width:1100px; margin:0 auto;">
+      <div class="eyebrow red" data-anim="1">Por que isso importa</div>
+      <div class="headline" style="text-align:center;max-width:22ch" data-anim="2">
+        Por trás de cada bolsa,<br>
+        há uma <span class="accent">vida</span> que depende dela.
+      </div>
+      <div class="stat-grid" data-anim="3">
+        <div class="stat-card">
+          <div class="stat-num">4<span class="unit"> tipos</span></div>
+          <div class="stat-label">de hemocomponentes com janelas de temperatura e validade distintas, gerenciados simultaneamente</div>
+          <div class="stat-src">Hemácias · Plasma · Plaquetas · Crioprecipitado</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-num">8×8</div>
+          <div class="stat-label">matriz de compatibilidade ABO/Rh validada pelo sistema — cobrindo todos os grupos sanguíneos</div>
+          <div class="stat-src">O−, O+, A−, A+, B−, B+, AB−, AB+</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-num">120<span class="unit"> min</span></div>
+          <div class="stat-label">limite crítico da cadeia fria — acima desse tempo, a viabilidade do hemocomponente é comprometida</div>
+          <div class="stat-src">Alerta automático no sistema ao ultrapassar</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ SLIDE 4 — CURRENT JOURNEY ═══ -->
+  <div class="slide bg-gradient-dark grid-bg" id="s4">
+    <div class="slide-inner col-center" style="max-width:1300px;margin:0 auto;">
+      <div class="eyebrow red" data-anim="1">O processo atual</div>
+      <div class="headline" style="text-align:center" data-anim="2">
+        Cada etapa é uma oportunidade<br>para <span class="accent">algo falhar.</span>
+      </div>
+      <div class="flow-steps" data-anim="3">
+        <div class="flow-step">
+          <div class="step-num">01</div>
+          <span class="step-icon">🩸</span>
+          <div class="step-title">Coleta</div>
+          <div class="step-desc">Doação registrada no centro de coleta com tipo sanguíneo e componente.</div>
+        </div>
+        <div class="flow-step">
+          <div class="step-num">02</div>
+          <span class="step-icon">🏥</span>
+          <div class="step-title">Processamento</div>
+          <div class="step-desc">Hemocentro recebe, processa e estoca as bolsas por lote e validade.</div>
+        </div>
+        <div class="flow-step pain">
+          <div class="step-num">03</div>
+          <span class="step-icon">📋</span>
+          <div class="step-title">Requisição</div>
+          <div class="step-desc">Hospital solicita componente. Sem visibilidade de estoque em tempo real.</div>
+          <div class="pain-tag">Ponto cego</div>
+        </div>
+        <div class="flow-step pain">
+          <div class="step-num">04</div>
+          <span class="step-icon">🔍</span>
+          <div class="step-title">Triagem manual</div>
+          <div class="step-desc">Compatibilidade ABO/Rh verificada manualmente. Risco de erro humano.</div>
+          <div class="pain-tag">Risco crítico</div>
+        </div>
+        <div class="flow-step pain">
+          <div class="step-num">05</div>
+          <span class="step-icon">🚚</span>
+          <div class="step-title">Transporte</div>
+          <div class="step-desc">Rota não otimizada. Temperatura não monitorada. Cadeia fria vulnerável.</div>
+          <div class="pain-tag">Sem rastreio</div>
+        </div>
+        <div class="flow-step">
+          <div class="step-num">06</div>
+          <span class="step-icon">✅</span>
+          <div class="step-title">Entrega</div>
+          <div class="step-desc">Se tudo correu bem, a bolsa chega ao hospital solicitante a tempo.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ SLIDE 5 — SOLUTION ═══ -->
+  <div class="slide bg-gradient-navy" id="s5">
+    <div class="slide-inner two-col">
+      <div>
+        <div class="solution-word" data-anim="1">A Solução</div>
+        <div class="solution-headline" data-anim="2">
+          Uma central<br>
+          <span class="accent-teal">inteligente</span><br>
+          para a malha.
+        </div>
+        <p class="subline narrow" data-anim="3">
+          HemoFlow unifica estoque, requisições hospitalares, alocação compatível por FEFO e roteirização com Dijkstra em uma única plataforma web.
+        </p>
+        <div class="solution-pillars" data-anim="4">
+          <div class="pillar"><span class="pillar-icon">🧬</span>Compatibilidade ABO/Rh</div>
+          <div class="pillar"><span class="pillar-icon">📅</span>Prioridade FEFO</div>
+          <div class="pillar"><span class="pillar-icon">🗺️</span>Roteirização Dijkstra</div>
+          <div class="pillar"><span class="pillar-icon">🌡️</span>Cadeia Fria</div>
+        </div>
+      </div>
+      <div class="visual-side" data-anim="5">
+        <div class="hex-diagram">
+          <div class="hex-ring"></div>
+          <div class="hex-ring-2"></div>
+          <div class="hex-center">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">
+              <path d="M12 3c-1.8 3.2-6 6.4-6 10.2A6 6 0 0 0 12 21a6 6 0 0 0 6-7.8C18 9.4 13.8 6.2 12 3Z"/>
+            </svg>
+            <span style="font-size:.7em">HEMO<br>FLOW</span>
+          </div>
+          <div class="hex-node" style="top:0;left:50%;transform:translateX(-50%)">
+            <span>📦</span>Estoque
+          </div>
+          <div class="hex-node" style="top:50%;right:0;transform:translateY(-50%)">
+            <span>🏥</span>Hospitais
+          </div>
+          <div class="hex-node" style="bottom:0;left:50%;transform:translateX(-50%)">
+            <span>🗺️</span>Rotas
+          </div>
+          <div class="hex-node" style="top:50%;left:0;transform:translateY(-50%)">
+            <span>🧬</span>ABO/Rh
+          </div>
+          <div class="hex-node" style="top:12%;right:12%">
+            <span>📅</span>FEFO
+          </div>
+          <div class="hex-node" style="bottom:12%;left:12%">
+            <span>🌡️</span>Frio
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ SLIDE 6 — HOW IT WORKS ═══ -->
+  <div class="slide bg-navy grid-bg" id="s6">
+    <div class="slide-inner col-center" style="max-width:1300px;margin:0 auto;">
+      <div class="eyebrow" data-anim="1">Fluxo operacional</div>
+      <div class="headline-sm" data-anim="2">Da coleta à entrega — sem ponto cego.</div>
+      <div class="flow-diagram" data-anim="3">
+        <div class="flow-node">
+          <span class="flow-node-icon">🩸</span>
+          <div class="flow-node-label">Coleta</div>
+          <div class="flow-node-sub">Centro de doação</div>
+        </div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-node highlight">
+          <span class="flow-node-icon">📦</span>
+          <div class="flow-node-label">Estoque FEFO</div>
+          <div class="flow-node-sub">Hemocentro</div>
+        </div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-node highlight">
+          <span class="flow-node-icon">🧬</span>
+          <div class="flow-node-label">Triagem ABO/Rh</div>
+          <div class="flow-node-sub">Automática</div>
+        </div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-node highlight">
+          <span class="flow-node-icon">🗺️</span>
+          <div class="flow-node-label">Rota Dijkstra</div>
+          <div class="flow-node-sub">Caminho mínimo</div>
+        </div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-node">
+          <span class="flow-node-icon">🏥</span>
+          <div class="flow-node-label">Hospital</div>
+          <div class="flow-node-sub">Entrega rastreada</div>
+        </div>
+      </div>
+      <div class="status-badges" data-anim="4">
+        <span style="font-size:clamp(10px,1.1vw,13px);color:var(--ink-soft)">Status da requisição:</span>
+        <span class="badge badge-pend">Pendente</span>
+        <span class="arrow-hint">→</span>
+        <span class="badge badge-aloc">Alocada</span>
+        <span class="arrow-hint">→</span>
+        <span class="badge badge-tran">Em trânsito</span>
+        <span class="arrow-hint">→</span>
+        <span class="badge badge-entr">Entregue</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ SLIDE 7 — CORE INTELLIGENCE ═══ -->
+  <div class="slide" id="s7">
+    <div class="slide-inner col-center" style="max-width:1300px;margin:0 auto;">
+      <div class="eyebrow" data-anim="1">Inteligência do núcleo</div>
+      <div class="headline-sm" data-anim="2">Três algoritmos. Um objetivo.</div>
+      <div class="intel-cards" data-anim="3">
+        <div class="intel-card">
+          <div class="card-accent"></div>
+          <div class="card-label">Segurança</div>
+          <div class="card-title accent">Compatibilidade<br>ABO/Rh</div>
+          <div class="card-desc">Matriz 8×8 impede qualquer alocação incompatível. Validação automática em cada requisição, sem dependência humana.</div>
+          <div class="card-code"><span class="cm">// 12 testes unitários · 0 falhas</span>
+<span class="kw">if</span> (!<span class="fn">CompatibilidadeAboRh</span>
+      .compativel(bolsa, req)) {
+  <span class="kw">throw</span> RegraNegocioException;
+}</div>
+        </div>
+        <div class="intel-card">
+          <div class="card-accent"></div>
+          <div class="card-label">Eficiência</div>
+          <div class="card-title accent-gold">Priorização<br>FEFO</div>
+          <div class="card-desc">First Expired, First Out — entre as bolsas compatíveis, o sistema prioriza as mais próximas do vencimento, minimizando descarte.</div>
+          <div class="card-code"><span class="cm">// FilaFEFO com desempate por ID</span>
+bolsas.<span class="fn">sort</span>(
+  Comparator.<span class="fn">comparing</span>(
+    Bolsa::getDataValidade)
+  .<span class="fn">thenComparing</span>(Bolsa::getId)
+);</div>
+        </div>
+        <div class="intel-card">
+          <div class="card-accent"></div>
+          <div class="card-label">Logística</div>
+          <div class="card-title accent-teal">Roteamento<br>Dijkstra</div>
+          <div class="card-desc">Caminho mínimo em grafo ponderado. Pesos em minutos. Alerta automático quando a rota ultrapassa 120 min da cadeia fria.</div>
+          <div class="card-code"><span class="cm">// Grafo: lista adjacência</span>
+<span class="cm">// 5 testes · 0 falhas</span>
+ResultadoRota rota = <span class="fn">dijkstra</span>(
+  grafo, origemId, destinoId
+);
+<span class="cm">// tempoTotal, caminho[], existeRota</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ SLIDE 8 — REAL NETWORK ═══ -->
+  <div class="slide" id="s8">
+    <div class="slide-inner two-col" style="gap:clamp(32px,5vw,80px)">
+      <div class="network-container" data-anim="1">
+        <svg class="network-svg" viewBox="0 0 500 480" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <marker id="arrow" markerWidth="6" markerHeight="6" refX="3" refY="3" orient="auto">
+              <path d="M0,0 L6,3 L0,6 Z" fill="rgba(26,122,118,.5)"/>
+            </marker>
+            <radialGradient id="hemope-glow" cx="50%" cy="50%" r="50%">
+              <stop offset="0%" stop-color="#c0333a" stop-opacity="0.3"/>
+              <stop offset="100%" stop-color="#c0333a" stop-opacity="0"/>
+            </radialGradient>
+          </defs>
+
+          <!-- glow behind center -->
+          <circle cx="250" cy="240" r="70" fill="url(#hemope-glow)"/>
+
+          <!-- EDGES — connections from HEMOPE to hospitals -->
+          <line x1="250" y1="240" x2="250" y2="80" stroke="rgba(26,122,118,.3)" stroke-width="1.5"/>
+          <line x1="250" y1="240" x2="400" y2="130" stroke="rgba(26,122,118,.3)" stroke-width="1.5"/>
+          <line x1="250" y1="240" x2="430" y2="260" stroke="rgba(26,122,118,.3)" stroke-width="1.5"/>
+          <line x1="250" y1="240" x2="380" y2="390" stroke="rgba(26,122,118,.3)" stroke-width="1.5"/>
+          <line x1="250" y1="240" x2="220" y2="420" stroke="rgba(26,122,118,.3)" stroke-width="1.5"/>
+          <line x1="250" y1="240" x2="80"  y2="380" stroke="rgba(26,122,118,.3)" stroke-width="1.5"/>
+          <line x1="250" y1="240" x2="60"  y2="260" stroke="rgba(26,122,118,.3)" stroke-width="1.5"/>
+          <line x1="250" y1="240" x2="80"  y2="130" stroke="rgba(26,122,118,.3)" stroke-width="1.5"/>
+          <line x1="250" y1="240" x2="150" y2="70"  stroke="rgba(26,122,118,.3)" stroke-width="1.5"/>
+          <line x1="250" y1="240" x2="340" y2="60"  stroke="rgba(26,122,118,.3)" stroke-width="1.5"/>
+          <line x1="250" y1="240" x2="420" y2="175" stroke="rgba(26,122,118,.3)" stroke-width="1.5"/>
+          <!-- HR-IMIP cross edge -->
+          <line x1="250" y1="80" x2="150" y2="70" stroke="rgba(26,122,118,.18)" stroke-width="1" stroke-dasharray="4,4"/>
+
+          <!-- Edge weight labels (selected) -->
+          <text x="255" y="155" fill="rgba(26,122,118,.7)" font-size="10" font-family="monospace">5 min</text>
+          <text x="348" y="178" fill="rgba(26,122,118,.7)" font-size="10" font-family="monospace">4 min</text>
+          <text x="140" y="155" fill="rgba(26,122,118,.7)" font-size="10" font-family="monospace">6 min</text>
+          <text x="130" y="300" fill="rgba(26,122,118,.7)" font-size="10" font-family="monospace">8 min</text>
+
+          <!-- HOSPITAL NODES -->
+          <!-- HR: Hospital da Restauração -->
+          <circle cx="250" cy="80" r="22" fill="rgba(26,122,118,.15)" stroke="rgba(26,122,118,.5)" stroke-width="1.5"/>
+          <text x="250" y="76" text-anchor="middle" fill="#9fd8d6" font-size="8.5" font-family="sans-serif" font-weight="600">HR</text>
+          <text x="250" y="88" text-anchor="middle" fill="rgba(216,230,239,.5)" font-size="7">Restauração</text>
+
+          <!-- IMIP -->
+          <circle cx="150" cy="70" r="22" fill="rgba(26,122,118,.15)" stroke="rgba(26,122,118,.4)" stroke-width="1.5"/>
+          <text x="150" y="66" text-anchor="middle" fill="#9fd8d6" font-size="8.5" font-family="sans-serif" font-weight="600">IMIP</text>
+          <text x="150" y="78" text-anchor="middle" fill="rgba(216,230,239,.5)" font-size="7">IMIP</text>
+
+          <!-- HUOC: 4 min — closest -->
+          <circle cx="400" cy="130" r="24" fill="rgba(192,51,58,.15)" stroke="rgba(192,51,58,.55)" stroke-width="2"/>
+          <text x="400" y="126" text-anchor="middle" fill="#f08080" font-size="8.5" font-family="sans-serif" font-weight="700">HUOC</text>
+          <text x="400" y="138" text-anchor="middle" fill="rgba(216,230,239,.5)" font-size="7">4 min ⚡</text>
+
+          <!-- HAM -->
+          <circle cx="430" cy="260" r="22" fill="rgba(26,122,118,.15)" stroke="rgba(26,122,118,.4)" stroke-width="1.5"/>
+          <text x="430" y="256" text-anchor="middle" fill="#9fd8d6" font-size="8.5" font-family="sans-serif" font-weight="600">HAM</text>
+          <text x="430" y="268" text-anchor="middle" fill="rgba(216,230,239,.5)" font-size="7">10 min</text>
+
+          <!-- HBL -->
+          <circle cx="380" cy="390" r="22" fill="rgba(26,122,118,.15)" stroke="rgba(26,122,118,.4)" stroke-width="1.5"/>
+          <text x="380" y="386" text-anchor="middle" fill="#9fd8d6" font-size="8.5" font-family="sans-serif" font-weight="600">HBL</text>
+          <text x="380" y="398" text-anchor="middle" fill="rgba(216,230,239,.5)" font-size="7">8 min</text>
+
+          <!-- HGV -->
+          <circle cx="220" cy="420" r="22" fill="rgba(26,122,118,.15)" stroke="rgba(26,122,118,.4)" stroke-width="1.5"/>
+          <text x="220" y="416" text-anchor="middle" fill="#9fd8d6" font-size="8.5" font-family="sans-serif" font-weight="600">HGV</text>
+          <text x="220" y="428" text-anchor="middle" fill="rgba(216,230,239,.5)" font-size="7">7 min</text>
+
+          <!-- HPS -->
+          <circle cx="80" cy="380" r="22" fill="rgba(26,122,118,.15)" stroke="rgba(26,122,118,.4)" stroke-width="1.5"/>
+          <text x="80" y="376" text-anchor="middle" fill="#9fd8d6" font-size="8.5" font-family="sans-serif" font-weight="600">HPS</text>
+          <text x="80" y="388" text-anchor="middle" fill="rgba(216,230,239,.5)" font-size="7">9 min</text>
+
+          <!-- RHP -->
+          <circle cx="60" cy="260" r="22" fill="rgba(26,122,118,.15)" stroke="rgba(26,122,118,.4)" stroke-width="1.5"/>
+          <text x="60" y="256" text-anchor="middle" fill="#9fd8d6" font-size="8.5" font-family="sans-serif" font-weight="600">RHP</text>
+          <text x="60" y="268" text-anchor="middle" fill="rgba(216,230,239,.5)" font-size="7">6 min</text>
+
+          <!-- HE -->
+          <circle cx="80" cy="130" r="22" fill="rgba(26,122,118,.15)" stroke="rgba(26,122,118,.4)" stroke-width="1.5"/>
+          <text x="80" y="126" text-anchor="middle" fill="#9fd8d6" font-size="8.5" font-family="sans-serif" font-weight="600">HE</text>
+          <text x="80" y="138" text-anchor="middle" fill="rgba(216,230,239,.5)" font-size="7">12 min</text>
+
+          <!-- HSJ -->
+          <circle cx="340" cy="60" r="22" fill="rgba(26,122,118,.15)" stroke="rgba(26,122,118,.4)" stroke-width="1.5"/>
+          <text x="340" y="56" text-anchor="middle" fill="#9fd8d6" font-size="8.5" font-family="sans-serif" font-weight="600">HSJ</text>
+          <text x="340" y="68" text-anchor="middle" fill="rgba(216,230,239,.5)" font-size="7">8 min</text>
+
+          <!-- HML — furthest -->
+          <circle cx="420" cy="175" r="22" fill="rgba(176,137,58,.15)" stroke="rgba(176,137,58,.4)" stroke-width="1.5"/>
+          <text x="420" y="171" text-anchor="middle" fill="#c9a85a" font-size="8.5" font-family="sans-serif" font-weight="600">HML</text>
+          <text x="420" y="183" text-anchor="middle" fill="rgba(216,230,239,.5)" font-size="7">15 min</text>
+
+          <!-- HEMOPE — central -->
+          <circle cx="250" cy="240" r="38" fill="rgba(13,31,45,.8)" stroke="#c0333a" stroke-width="2.5"/>
+          <circle cx="250" cy="240" r="30" fill="rgba(192,51,58,.2)"/>
+          <text x="250" y="236" text-anchor="middle" fill="#fff" font-size="10" font-family="sans-serif" font-weight="800">HEMOPE</text>
+          <text x="250" y="250" text-anchor="middle" fill="rgba(216,230,239,.7)" font-size="8">Hemocentro</text>
+        </svg>
+      </div>
+      <div class="network-info" data-anim="2">
+        <div class="eyebrow">Rede real · Recife</div>
+        <div class="net-stat">
+          <div class="net-num" style="color:var(--red)">1</div>
+          <div class="net-label">Hemocentro origem — HEMOPE</div>
+        </div>
+        <div class="net-divider"></div>
+        <div class="net-stat">
+          <div class="net-num" style="color:#9fd8d6">11</div>
+          <div class="net-label">Hospitais conectados na rede</div>
+        </div>
+        <div class="net-divider"></div>
+        <div class="net-stat">
+          <div class="net-num" style="color:var(--gold)">12</div>
+          <div class="net-label">Ligações (arestas) com peso em minutos</div>
+        </div>
+        <div class="net-divider"></div>
+        <div class="fastest-route">
+          <div class="label">⚡ Rota mais rápida</div>
+          <div class="route-line">HEMOPE → HUOC</div>
+          <div class="route-time">4 min</div>
+        </div>
+        <div style="font-size:clamp(11px,1.1vw,14px);color:var(--ink-soft);line-height:1.4">
+          Dijkstra calcula o caminho ótimo em qualquer par de nós. Alerta automático acima de 120 min.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ SLIDE 9 — PRODUCT ═══ -->
+  <div class="slide bg-navy" id="s9">
+    <div class="slide-inner col-center" style="max-width:1200px;margin:0 auto;">
+      <div class="eyebrow" data-anim="1">O produto</div>
+      <div class="headline-sm" data-anim="2">10 histórias de usuário implementadas.</div>
+      <div class="product-grid" data-anim="3">
+        <div class="product-card">
+          <div class="p-icon red-bg">🩸</div>
+          <div>
+            <div class="p-title">Gestão de Estoque</div>
+            <div class="p-desc">Cadastro de bolsas com tipo sanguíneo, hemocomponente, lote e validade. Status automático: Disponível → Alocada → Entregue.</div>
+            <span class="p-tag live">Live · REST API</span>
+          </div>
+        </div>
+        <div class="product-card">
+          <div class="p-icon teal-bg">🧬</div>
+          <div>
+            <div class="p-title">Alocação ABO/Rh + FEFO</div>
+            <div class="p-desc">Triagem automática por compatibilidade. Entre as compatíveis, prioriza as de vencimento mais próximo (FEFO) com desempate por ID.</div>
+            <span class="p-tag live">POST /requisicoes/{id}/alocar</span>
+          </div>
+        </div>
+        <div class="product-card">
+          <div class="p-icon gold-bg">🗺️</div>
+          <div>
+            <div class="p-title">Roteirização Dijkstra</div>
+            <div class="p-desc">Calcula o caminho de menor tempo entre HEMOPE e o hospital solicitante. Sinaliza alerta quando a rota ultrapassa 120 min.</div>
+            <span class="p-tag api">GET /rotas/caminho-minimo</span>
+          </div>
+        </div>
+        <div class="product-card">
+          <div class="p-icon blue-bg">📊</div>
+          <div>
+            <div class="p-title">Dashboard & Telemetria</div>
+            <div class="p-desc">Painel em tempo real com KPIs de estoque, requisições pendentes, bolsas quase vencendo e taxa de atendimento. Monitoramento de temperatura simulado.</div>
+            <span class="p-tag live">Web · Thymeleaf</span>
+          </div>
+        </div>
+        <div class="product-card">
+          <div class="p-icon teal-bg">🏥</div>
+          <div>
+            <div class="p-title">Portal Hospitalar</div>
+            <div class="p-desc">Hospitais criam requisições, acompanham status (Pendente → Alocada → Em trânsito → Entregue) sem ligar para o hemocentro.</div>
+            <span class="p-tag live">GET /requisicoes/{id}</span>
+          </div>
+        </div>
+        <div class="product-card">
+          <div class="p-icon red-bg">🌡️</div>
+          <div>
+            <div class="p-title">Cadeia Fria & Rede</div>
+            <div class="p-desc">Monitoramento de conectividade de dispositivos (Online/Offline/Instável). Telemetria de temperatura por hemocomponente. Alerta visual no painel.</div>
+            <span class="p-tag api">Telemetria Simulada</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ SLIDE 10 — TECHNOLOGY ═══ -->
+  <div class="slide" id="s10">
+    <div class="slide-inner col-center" style="max-width:1200px;margin:0 auto;">
+      <div class="eyebrow" data-anim="1">Arquitetura</div>
+      <div class="headline-sm" data-anim="2">Stack moderno. Fundamentos sólidos.</div>
+      <div class="tech-stack" data-anim="3">
+        <div class="tech-item">
+          <span class="tech-icon">☕</span>
+          <div class="tech-name">Java 17</div>
+          <div class="tech-role">Linguagem principal</div>
+          <span class="tech-badge tb-prod">LTS · Produção</span>
+        </div>
+        <div class="tech-item">
+          <span class="tech-icon">🌱</span>
+          <div class="tech-name">Spring Boot 3.3</div>
+          <div class="tech-role">Framework web + DI + JPA</div>
+          <span class="tech-badge tb-prod">REST API</span>
+        </div>
+        <div class="tech-item">
+          <span class="tech-icon">🗄️</span>
+          <div class="tech-name">PostgreSQL 16</div>
+          <div class="tech-role">Banco de dados produção</div>
+          <span class="tech-badge tb-prod">Docker Compose</span>
+        </div>
+        <div class="tech-item">
+          <span class="tech-icon">🧪</span>
+          <div class="tech-name">H2 / JUnit 5</div>
+          <div class="tech-role">Testes in-memory</div>
+          <span class="tech-badge tb-test">39 testes · 0 falhas</span>
+        </div>
+        <div class="tech-item">
+          <span class="tech-icon">🥒</span>
+          <div class="tech-name">Cucumber BDD</div>
+          <div class="tech-role">Cenários de aceitação Gherkin</div>
+          <span class="tech-badge tb-test">4 cenários · pass</span>
+        </div>
+        <div class="tech-item">
+          <span class="tech-icon">🐳</span>
+          <div class="tech-name">Docker</div>
+          <div class="tech-role">Containerização completa</div>
+          <span class="tech-badge tb-build">Multi-stage build</span>
+        </div>
+        <div class="tech-item">
+          <span class="tech-icon">⚙️</span>
+          <div class="tech-name">GitHub Actions</div>
+          <div class="tech-role">CI/CD pipeline</div>
+          <span class="tech-badge tb-build">Build → Test → Deploy</span>
+        </div>
+        <div class="tech-item">
+          <span class="tech-icon">☁️</span>
+          <div class="tech-name">Render</div>
+          <div class="tech-role">Deploy cloud com rollback</div>
+          <span class="tech-badge tb-prod">GHCR · Produção</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ SLIDE 11 — EVIDENCE ═══ -->
+  <div class="slide bg-gradient-dark" id="s11">
+    <div class="slide-inner col-center" style="max-width:1100px;margin:0 auto;">
+      <div class="eyebrow gold" data-anim="1">Evidências</div>
+      <div class="headline-sm" data-anim="2">Verde em todas as suites. Sem exceção.</div>
+      <div class="evidence-grid" data-anim="3">
+        <div class="ev-panel">
+          <div class="ev-label">Suite completa</div>
+          <div class="ev-big green">39</div>
+          <div class="ev-desc">testes executados — unitários, integração Spring/JPA e aceitação BDD</div>
+          <div class="test-list">
+            <div class="test-item">CompatibilidadeAboRhTest — 12 casos</div>
+            <div class="test-item">EstoqueServiceTest — 4 casos</div>
+            <div class="test-item">EstruturasEstoqueServiceTest — 4 casos</div>
+            <div class="test-item">EstruturasTest (Lista/Fila/Pilha) — 3 casos</div>
+            <div class="test-item">GrafoTest (Dijkstra) — 5 casos</div>
+            <div class="test-item">RedeServiceTest — 5 casos</div>
+            <div class="test-item">CucumberAcceptanceTest — 4 cenários BDD</div>
+          </div>
+        </div>
+        <div class="ev-panel">
+          <div class="ev-label">Cenários BDD — Cucumber / Gherkin</div>
+          <div class="bdd-scenarios"><span class="sc">Cenário A:</span> Bloquear alocação incompatível
+  AB+ → O− = <span class="pa">BLOQUEADO ✓</span>
+
+<span class="sc">Cenário A:</span> Permitir O− para receptor A+
+  O− → A+ = <span class="pa">COMPATÍVEL ✓</span>
+
+<span class="sc">Cenário B:</span> Priorizar vencimento mais próximo
+  3 dias vs 20 dias → <span class="pa">3 dias eleito ✓</span>
+
+<span class="sc">Cenário C:</span> Dijkstra — rota ótima
+  Direto: 180 min vs Indireto: 130 min
+  → <span class="pa">130 min selecionado ✓</span></div>
+          <div style="font-size:clamp(10px,1.05vw,13px);color:var(--ink-soft);margin-top:8px">
+            4 Scenarios (4 passed) · 15 Steps (15 passed) · Build SUCCESS
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ SLIDE 12 — VISION ═══ -->
+  <div class="slide" id="s12">
+    <div class="slide-inner two-col">
+      <div>
+        <div class="eyebrow gold" data-anim="1">Visão</div>
+        <div class="headline-sm" data-anim="2">
+          A fundação está<br>
+          <span class="accent-teal">construída.</span>
+        </div>
+        <p class="subline" style="margin-top:clamp(12px,2vh,20px)" data-anim="3">
+          HemoFlow nasce como plataforma acadêmica com arquitetura e fundamentos prontos para escalar para redes reais de saúde pública.
+        </p>
+      </div>
+      <div class="timeline" data-anim="4">
+        <div class="tl-item">
+          <div class="tl-dot done"><div class="tl-dot-inner"></div></div>
+          <div class="tl-phase done">Concluído</div>
+          <div class="tl-title">Core Engine</div>
+          <div class="tl-desc">ABO/Rh + FEFO + Dijkstra + API REST + CI/CD + Docker</div>
+        </div>
+        <div class="tl-item">
+          <div class="tl-dot now"><div class="tl-dot-inner"></div></div>
+          <div class="tl-phase now">Atual</div>
+          <div class="tl-title">Plataforma Hospitalar</div>
+          <div class="tl-desc">Portal de requisições, acompanhamento em tempo real e telemetria de temperatura</div>
+        </div>
+        <div class="tl-item">
+          <div class="tl-dot next"><div class="tl-dot-inner"></div></div>
+          <div class="tl-phase next">Próximo passo</div>
+          <div class="tl-title">Autenticação & Perfis</div>
+          <div class="tl-desc">Separação de papéis: operador hemocentro, gestor hospitalar, administrador logístico</div>
+        </div>
+        <div class="tl-item">
+          <div class="tl-dot far"><div class="tl-dot-inner"></div></div>
+          <div class="tl-phase far">Visão futura</div>
+          <div class="tl-title">Integração com Hemorrede/SUS</div>
+          <div class="tl-desc">Topologia real, telemetria de GPS, alertas preditivos de desabastecimento e integração com sistemas de saúde públicos</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ SLIDE 13 — CLOSE ═══ -->
+  <div class="slide bg-gradient-dark" id="s13">
+    <div class="close-drop"></div>
+    <div class="slide-inner col-center" style="z-index:2">
+      <div class="close-eyebrow" data-anim="1">Missão</div>
+      <div class="close-headline" data-anim="2">
+        O sangue certo.<br>
+        No lugar certo.<br>
+        <span class="accent">No momento certo.</span>
+      </div>
+      <div class="close-sub" data-anim="3">
+        HemoFlow é mais do que software. É a infraestrutura silenciosa que conecta uma doação de sangue a uma vida que precisa dela.
+      </div>
+      <div class="close-cta" data-anim="4">
+        <button class="cta-primary" onclick="window.open('http://localhost:8080','_blank')">Ver plataforma ao vivo</button>
+        <button class="cta-ghost" onclick="window.open('http://localhost:8080/docs','_blank')">Explorar API</button>
+      </div>
+      <div class="close-brand" data-anim="5">
+        HemoFlow · CESAR School · Recife · 2026
+      </div>
+    </div>
+  </div>
+
+</div><!-- /deck -->
+
+<!-- Navigation -->
+<div id="nav">
+  <button onclick="go(-1)" title="Anterior (←)">←</button>
+  <span id="counter">1 / 13</span>
+  <button onclick="go(1)" title="Próximo (→)">→</button>
+</div>
+
+<script>
+/* ═══════════════════════════════════
+   DECK ENGINE
+═══════════════════════════════════ */
+const slides = Array.from(document.querySelectorAll('.slide'));
+const total  = slides.length;
+let cur      = 0;
+let busy     = false;
+
+function show(idx, dir = 1) {
+  if (busy) return;
+  busy = true;
+
+  const prev = slides[cur];
+  const next = slides[idx];
+  if (!next || idx === cur) { busy = false; return; }
+
+  // Exit current
+  prev.classList.add(dir > 0 ? 'exit-left' : 'exit-right');
+  prev.classList.remove('active');
+
+  // Set incoming start transform
+  next.style.transform = `translateX(${dir > 0 ? '60px' : '-60px'})`;
+  next.style.opacity   = '0';
+  next.classList.add('active');
+
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      next.style.transform = '';
+      next.style.opacity   = '';
+    });
+  });
+
+  setTimeout(() => {
+    prev.classList.remove('exit-left', 'exit-right');
+    busy = false;
+  }, 750);
+
+  cur = idx;
+  document.getElementById('counter').textContent = `${cur + 1} / ${total}`;
+
+  const pct = ((cur + 1) / total) * 100;
+  document.getElementById('progress-bar').style.width = pct + '%';
+}
+
+function go(d) {
+  const next = Math.max(0, Math.min(total - 1, cur + d));
+  show(next, d);
+}
+
+// Init
+slides[0].classList.add('active');
+document.getElementById('progress-bar').style.width = `${(1/total)*100}%`;
+
+// Keyboard
+document.addEventListener('keydown', e => {
+  if (e.key === 'ArrowRight' || e.key === ' ') { e.preventDefault(); go(1); }
+  if (e.key === 'ArrowLeft')                   { e.preventDefault(); go(-1); }
+  if (e.key === 'ArrowUp' || e.key === 'Home') { e.preventDefault(); show(0, -1); }
+  if (e.key === 'End')                         { e.preventDefault(); show(total - 1, 1); }
+  if (e.key === 'f' || e.key === 'F')          { toggleFullscreen(); }
+});
+
+// Touch / swipe
+let tsX = 0;
+document.addEventListener('touchstart', e => { tsX = e.touches[0].clientX; }, { passive: true });
+document.addEventListener('touchend', e => {
+  const dx = e.changedTouches[0].clientX - tsX;
+  if (Math.abs(dx) > 50) go(dx < 0 ? 1 : -1);
+}, { passive: true });
+
+// Fullscreen
+function toggleFullscreen() {
+  if (!document.fullscreenElement) {
+    document.documentElement.requestFullscreen().catch(() => {});
+  } else {
+    document.exitFullscreen().catch(() => {});
+  }
+}
+document.addEventListener('fullscreenchange', () => {
+  document.getElementById('fullscreen-btn').textContent =
+    document.fullscreenElement ? '✕ Exit' : '⛶ Fullscreen';
+});
+</script>
+</body>
+</html>
